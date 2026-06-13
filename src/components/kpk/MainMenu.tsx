@@ -11,7 +11,8 @@ const MENU = [
 ] as const;
 
 export function MainMenu() {
-  const { user, logout, go, sessionSeconds, totalScore, level1, level2, level3, round, turn } = useKpk();
+  const { user, logout, go, sessionSeconds, totalScore, level1, level2, level3, round, turn,
+    roomCode, players, isHost, playerId } = useKpk();
   const factionColor = user ? FACTIONS[user.faction] : "#fff";
 
   return (
@@ -38,6 +39,27 @@ export function MainMenu() {
 
       <div className="hud-scroll flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-5xl">
+          {/* Room info */}
+          {roomCode && (
+            <div className="hud-panel-corners-4 relative mb-5 border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] p-3">
+              <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="hud-label text-[0.6rem] text-[color:var(--hud-cyan)]">// КОД КІМНАТИ {isHost ? "· HOST" : ""}</div>
+                  <div className="hud-title text-3xl tracking-[0.4em] text-[color:var(--hud-cyan)]">{roomCode}</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {players.map((p) => (
+                    <span key={p.id} className={`hud-mono text-[0.7rem] border px-2 py-1 ${p.id === playerId ? "border-[color:var(--hud-amber)] text-[color:var(--hud-amber)]" : "border-[color:var(--hud-amber)]/30 text-[color:var(--muted-foreground)]"}`}>
+                      <span className="inline-block h-1.5 w-1.5 rounded-full mr-1.5" style={{ background: FACTIONS[p.faction] ?? "#fff" }} />
+                      {p.nickname}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* KPI row */}
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Kpi label="Загальні бали" value={totalScore} accent="var(--hud-amber)" />

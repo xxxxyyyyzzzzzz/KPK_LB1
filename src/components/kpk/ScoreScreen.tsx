@@ -1,28 +1,39 @@
 import { ScreenShell } from "./ScreenShell";
-import { MOCK_TOP_PLYRS, MOCK_HISTORY, FACTIONS } from "@/lib/kpkData";
+import { FACTIONS } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
 
 export function ScoreScreen() {
-  const { user } = useKpk();
+  const { user, totalScore, level1, level2, level3, currency, history } = useKpk();
+  const me = {
+    nickname: user?.nickname ?? "—",
+    faction: user?.faction ?? "",
+    total: totalScore,
+    l1: level1, l2: level2, l3: level3,
+  };
+  const top = [me];
   return (
     <ScreenShell title="ЄБали">
       <div className="mx-auto max-w-4xl space-y-6">
-        <h2 className="hud-title text-2xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ЄБАЛИ</h2>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="hud-title text-2xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ЄБАЛИ</h2>
+          <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">
+            Валюта: <span className="text-[color:var(--hud-amber)]">{currency}</span> ⛁
+          </div>
+        </div>
 
         <section>
-          <h3 className="hud-label mb-2">// Топ гравців</h3>
+          <h3 className="hud-label mb-2">// Поточний оперативник</h3>
           <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-3">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <div className="divide-y divide-[color:var(--hud-amber)]/15">
-              {MOCK_TOP_PLYRS.map((p, i) => {
+              {top.map((p, i) => {
                 const fc = FACTIONS[p.faction] ?? "#fff";
-                const me = p.nickname === user?.nickname;
                 return (
                   <div key={p.nickname} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5">
                     <span className="hud-mono w-6 text-[color:var(--hud-amber)] text-sm">{String(i+1).padStart(2,"0")}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="hud-title text-sm truncate" style={{ color: me ? "var(--hud-green)" : "var(--foreground)" }}>{p.nickname}</span>
+                        <span className="hud-title text-sm truncate text-[color:var(--hud-green)]">{p.nickname}</span>
                         <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: fc, boxShadow: `0 0 6px ${fc}` }} />
                         <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] truncate">{p.faction}</span>
                       </div>
@@ -40,9 +51,12 @@ export function ScoreScreen() {
 
         <section>
           <h3 className="hud-label mb-2">// Історія балів</h3>
-          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-3 hover:bg-[color:var(--surface-3)] cursor-pointer transition-colors">
+          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-3">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-            {MOCK_HISTORY.map((h, i) => (
+            {history.length === 0 && (
+              <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">// Поки що пусто. Виконуй місії.</div>
+            )}
+            {history.map((h, i) => (
               <div key={i} className="flex items-center justify-between border-b border-[color:var(--hud-amber)]/10 py-2 last:border-0">
                 <div className="min-w-0">
                   <div className="hud-mono text-xs text-[color:var(--foreground)] truncate">{h.nickname}</div>

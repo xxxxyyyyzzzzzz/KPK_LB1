@@ -1,11 +1,9 @@
-import { useState } from "react";
 import { ScreenShell } from "./ScreenShell";
-import { MOCK_NEWS } from "@/lib/kpkData";
+import { useKpk } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 
 export function NewsScreen() {
-  const [round, setRound] = useState(1);
-  const [idx, setIdx] = useState(0);
+  const { round, news, nextPlayer } = useKpk();
   return (
     <ScreenShell title="Новини">
       <div className="mx-auto max-w-3xl">
@@ -16,10 +14,14 @@ export function NewsScreen() {
 
         <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-5 space-y-3 min-h-[200px]">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-          {MOCK_NEWS.slice(0, idx + 1).map((n, i) => (
+          {news.length === 0 && (
+            <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">// Тиша в ефірі...</div>
+          )}
+          {news.map((n, i) => (
             <div key={i} className="hud-screen-enter border-l-2 border-[color:var(--hud-amber)] bg-[color:var(--surface-3)]/50 p-3 hud-mono text-sm">
               <div className="hud-label mb-1 text-[0.6rem]">// СИГНАЛ #{i + 1}</div>
-              {n}
+              <span className="text-[color:var(--hud-amber-glow)]">{n.entity}</span>
+              {n.note ? <span className="ml-2">— {n.note}</span> : <span className="ml-2">×{n.count}{n.zone && n.zone !== "any" ? ` · ${n.zone}` : ""}</span>}
             </div>
           ))}
         </div>
@@ -27,13 +29,8 @@ export function NewsScreen() {
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             className="hud-btn flex-1 min-w-[200px]"
-            onClick={() => {
-              sfx.notify();
-              if (idx < MOCK_NEWS.length - 1) setIdx(idx + 1);
-              else { setRound(round + 1); setIdx(0); }
-            }}
-          >▸ Наступна новина</button>
-          <button className="hud-btn hud-btn-danger" onClick={() => { sfx.deny(); setIdx(0); setRound(1); }}>⟲ Скинути</button>
+            onClick={() => { sfx.notify(); nextPlayer(); }}
+          >▸ Завершити хід / Наступний</button>
         </div>
       </div>
     </ScreenShell>
