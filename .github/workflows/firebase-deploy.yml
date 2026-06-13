@@ -27,11 +27,11 @@ jobs:
           NITRO_PRESET: static
 
       - name: Write service account key
-        run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > $HOME/gcp-key.json
+        run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > gcp-key.json
 
       - name: Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v14.18.0
         with:
           args: deploy --only hosting --project kpk-1-caa5a
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: /github/home/gcp-key.json
+          GOOGLE_APPLICATION_CREDENTIALS: /github/workspace/gcp-key.json
