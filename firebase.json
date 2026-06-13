@@ -1,6 +1,5 @@
 {
   "hosting": {
-    "site": "kpk-1-caa5a",
     "public": "dist",
     "ignore": [
       "firebase.json",
