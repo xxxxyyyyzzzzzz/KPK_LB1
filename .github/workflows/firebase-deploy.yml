@@ -41,3 +41,4 @@ jobs:
           args: deploy --only hosting --project kpk-1-caa5a
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /github/workspace/gcp-key.json
+          
