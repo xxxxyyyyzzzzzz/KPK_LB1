@@ -93,7 +93,7 @@ export function LoginScreen() {
               id="nickname"
               name="nickname"
               autoComplete="off"
-              className="hud-input"
+              autoComplete="off" autoComplete="off" className="hud-input"
               placeholder="введіть нікнейм..."
               value={nickname}
               onChange={(e) => setNick(e.target.value)}
