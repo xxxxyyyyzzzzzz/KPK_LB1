@@ -8,7 +8,4 @@ export default defineConfig({
       publicDir: "dist",
     },
   },
-  tanstackStart: {
-    server: { entry: "server" },
-  },
 });
