@@ -17,7 +17,6 @@ export function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [taken, setTaken] = useState<string[]>([]);
 
-  // refresh taken factions when user types a 4-char code in join mode
   useEffect(() => {
     if (mode !== "join") { setTaken([]); return; }
     const c = code.trim().toUpperCase();
