@@ -17,6 +17,7 @@ export function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [taken, setTaken] = useState<string[]>([]);
 
+  // refresh taken factions when user types a 4-char code in join mode
   useEffect(() => {
     if (mode !== "join") { setTaken([]); return; }
     const c = code.trim().toUpperCase();
@@ -90,7 +91,7 @@ export function LoginScreen() {
               className="hud-input"
               placeholder="введіть нікнейм..."
               value={nickname}
-              onChange={(e) => setNick(e.target.value)}
+              onFocus={() => console.log("INPUT FOCUSED")} onChange={(e) => { console.log("CHANGE", e.target.value); setNick(e.target.value); }}
               onKeyDown={(e) => e.key === "Enter" && submit()}
             />
           </div>
