@@ -17,7 +17,6 @@ export function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [taken, setTaken] = useState<string[]>([]);
 
-  // refresh taken factions when user types a 4-char code in join mode
   useEffect(() => {
     if (mode !== "join") { setTaken([]); return; }
     const c = code.trim().toUpperCase();
@@ -75,8 +74,11 @@ export function LoginScreen() {
         <div className="space-y-4">
           {mode === "join" && (
             <div>
-              <label className="hud-label mb-1.5 block">Код кімнати (4 символи)</label>
+              <label htmlFor="room-code" className="hud-label mb-1.5 block">Код кімнати (4 символи)</label>
               <input
+                id="room-code"
+                name="room-code"
+                autoComplete="off"
                 className="hud-input tracking-[0.5em] text-center uppercase"
                 placeholder="A1B2"
                 value={code}
@@ -86,12 +88,15 @@ export function LoginScreen() {
             </div>
           )}
           <div>
-            <label className="hud-label mb-1.5 block">Оперативник</label>
+            <label htmlFor="nickname" className="hud-label mb-1.5 block">Оперативник</label>
             <input
+              id="nickname"
+              name="nickname"
+              autoComplete="off"
               className="hud-input"
               placeholder="введіть нікнейм..."
               value={nickname}
-              onFocus={() => console.log("INPUT FOCUSED")} onChange={(e) => { console.log("CHANGE", e.target.value); setNick(e.target.value); }}
+              onChange={(e) => setNick(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
             />
           </div>
