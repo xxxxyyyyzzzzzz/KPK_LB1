@@ -32,11 +32,27 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
 
-      - name: Show build output
+      - name: Generate index.html
         run: |
-          echo "=== .output ===" && ls -la .output/ 2>/dev/null || echo "немає .output"
-          echo "=== dist ===" && ls -la dist/ 2>/dev/null || echo "немає dist"
-          echo "=== .output/public ===" && ls -la .output/public/ 2>/dev/null || echo "немає .output/public"
+          JS1=$(ls dist/client/assets/index-*.js | head -1 | sed 's|dist/client||')
+          JS2=$(ls dist/client/assets/index-*.js | tail -1 | sed 's|dist/client||')
+          CSS=$(ls dist/client/assets/styles-*.css | sed 's|dist/client||')
+          cat > dist/client/index.html << HTML
+          <!DOCTYPE html>
+          <html lang="uk">
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>КПК — Тактичний термінал</title>
+              <link rel="stylesheet" crossorigin href="${CSS}">
+              <script type="module" crossorigin src="${JS1}"></script>
+              <script type="module" crossorigin src="${JS2}"></script>
+            </head>
+            <body>
+              <div id="root"></div>
+            </body>
+          </html>
+          HTML
 
       - name: Write service account key
         run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > gcp-key.json
