@@ -34,9 +34,7 @@ jobs:
 
       - name: Generate index.html
         run: |
-          JS1=$(ls dist/client/assets/index-*.js | head -1 | sed 's|dist/client||')
-          JS2=$(ls dist/client/assets/index-*.js | tail -1 | sed 's|dist/client||')
-          CSS=$(ls dist/client/assets/styles-*.css | sed 's|dist/client||')
+          ENTRY=$(ls dist/client/assets/index-*.js | head -1 | sed 's|dist/client||')
           cat > dist/client/index.html << HTML
           <!DOCTYPE html>
           <html lang="uk">
@@ -44,12 +42,9 @@ jobs:
               <meta charset="UTF-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1.0" />
               <title>КПК — Тактичний термінал</title>
-              <link rel="stylesheet" crossorigin href="${CSS}">
-              <script type="module" crossorigin src="${JS1}"></script>
-              <script type="module" crossorigin src="${JS2}"></script>
             </head>
             <body>
-              <div id="root"></div>
+              <script type="module" src="${ENTRY}"></script>
             </body>
           </html>
           HTML
