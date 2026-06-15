@@ -78,6 +78,7 @@ type KpkState = {
   login: (u: User) => void;
   createGame: (u: User) => Promise<RoomResult>;
   joinGame: (code: string, u: User) => Promise<RoomResult>;
+  rejoinAs: (code: string, existingPid: string) => Promise<RoomResult>;
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
@@ -502,6 +503,18 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     return { ok: true, code: c };
   }, []);
 
+  const rejoinAs = useCallback(async (code: string, existingPid: string): Promise<RoomResult> => {
+    const c = code.trim().toUpperCase();
+    const s = await readSession(c);
+    if (!s) return { ok: false, reason: "Сесію не знайдено" };
+    if (!s.players?.[existingPid]) return { ok: false, reason: "Гравця не знайдено" };
+    setRoomCode(c);
+    setPlayerId(existingPid);
+    setScreen(s.status === "active" ? "main" : "lobby");
+    sfx.confirm();
+    return { ok: true, code: c };
+  }, []);
+
   const startGame = useCallback(async () => {
     if (!roomCode) return;
     await txSession(roomCode, (cur) => {
@@ -533,7 +546,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
     news, history,
     login: (u) => { createGame(u); },
-    createGame, joinGame, roomCode, playerId, isHost, players, takenFactions,
+    createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players, takenFactions,
     status: (session?.status ?? "waiting") as "waiting" | "active" | "finished",
     startGame, reorderPlayers,
     leaveSession: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
@@ -565,7 +578,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, replacements,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, news, history,
-    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame,
+    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, replaceSlot,
   ]);

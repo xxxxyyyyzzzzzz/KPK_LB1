@@ -59,7 +59,7 @@ export function LobbyScreen() {
   }
 
   return (
-    <div className="hud-screen-enter safe-pt safe-pb flex h-full w-full flex-col items-center px-4 sm:px-6">
+    <div className="hud-screen-enter safe-pt safe-pb safe-px flex h-full w-full flex-col items-center">
       <div className="hud-scroll w-full max-w-md sm:max-w-[600px] lg:max-w-[640px] flex-1 overflow-y-auto py-4 sm:py-6">
         <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />

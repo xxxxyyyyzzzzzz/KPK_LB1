@@ -330,11 +330,11 @@
 }
 
 /* ============ Safe-area helpers (iOS notch / Dynamic Island) ============ */
-.safe-pt { padding-top: max(0.25rem, env(safe-area-inset-top)); }
-.safe-pb { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
-.safe-px { padding-left: max(0.75rem, env(safe-area-inset-left)); padding-right: max(0.75rem, env(safe-area-inset-right)); }
-.safe-top { top: max(0.25rem, env(safe-area-inset-top)); }
-.safe-bottom { bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.safe-pt { padding-top: max(1rem, env(safe-area-inset-top)); }
+.safe-pb { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.safe-px { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+.safe-top { top: max(0.5rem, env(safe-area-inset-top)); }
+.safe-bottom { bottom: max(1rem, env(safe-area-inset-bottom)); }
 
 /* ============ Focus-visible ring (keyboard a11y) ============ */
 .hud-btn:focus-visible,
