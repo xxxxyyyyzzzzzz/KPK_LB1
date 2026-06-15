@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { KpkProvider, useKpk } from "@/lib/kpkStore";
 import { installGlobalSfx, sfx } from "@/lib/sounds";
 import { LoginScreen } from "@/components/kpk/LoginScreen";
+import { LobbyScreen } from "@/components/kpk/LobbyScreen";
 import { MainMenu } from "@/components/kpk/MainMenu";
 import { MissionsScreen } from "@/components/kpk/MissionsScreen";
 import { ScoreScreen } from "@/components/kpk/ScoreScreen";
@@ -42,7 +43,7 @@ function KpkApp() {
       <div className="hud-scanbar" />
 
       {/* Status strip */}
-      <div className="pointer-events-none absolute top-0 left-0 right-0 z-50 flex justify-between px-3 py-1 hud-mono text-[0.6rem] uppercase text-[color:var(--hud-amber)]/60 tracking-widest">
+      <div className="safe-pt pointer-events-none absolute top-0 left-0 right-0 z-50 flex justify-between px-3 py-1 hud-mono text-[0.6rem] uppercase text-[color:var(--hud-amber)]/60 tracking-widest">
         <span>● REC · ZONE-7</span>
         <span className="hud-blink">SIGNAL OK</span>
         <span>v1.0 · 2026.06.10</span>
@@ -50,7 +51,8 @@ function KpkApp() {
 
       <button
         onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
-        className="hud-btn hud-btn-ghost pointer-events-auto absolute bottom-3 right-3 z-50 !py-1.5 !px-3 !text-[0.65rem]"
+        className="hud-btn hud-btn-ghost pointer-events-auto absolute safe-bottom right-3 z-50 !py-1.5 !px-3 !text-[0.65rem]"
+        aria-label={muted ? "Увімкнути звук" : "Вимкнути звук"}
         title="Mute / Unmute"
       >
         {muted ? "🔇 SFX" : "🔊 SFX"}
@@ -59,6 +61,7 @@ function KpkApp() {
       {/* Screen router */}
       <div className="relative z-10 h-full w-full">
         {screen === "login" && <LoginScreen />}
+        {screen === "lobby" && <LobbyScreen />}
         {screen === "main" && <MainMenu />}
         {screen === "missions" && <MissionsScreen />}
         {screen === "score" && <ScoreScreen />}

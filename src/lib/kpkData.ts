@@ -28,7 +28,7 @@ export const CURRENCY_COEFFICIENT = 0.33;
 export const TIER_LIMITS: Record<1 | 2 | 3, number> = { 1: 4, 2: 3, 3: 2 };
 
 export type Screen =
-  | "login" | "main" | "missions" | "score" | "news" | "upgrades" | "timer";
+  | "login" | "lobby" | "main" | "missions" | "score" | "news" | "upgrades" | "timer";
 
 // ───────── Формули (3.2) ─────────
 const round1 = (n: number) => Math.round(n * 10) / 10;

@@ -78,11 +78,16 @@ type KpkState = {
   login: (u: User) => void;
   createGame: (u: User) => Promise<RoomResult>;
   joinGame: (code: string, u: User) => Promise<RoomResult>;
+  rejoinAs: (code: string, existingPid: string) => Promise<RoomResult>;
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
   players: { id: string; nickname: string; faction: string }[];
   takenFactions: (code: string) => Promise<string[]>;
+  status: "waiting" | "active" | "finished";
+  startGame: () => Promise<void>;
+  reorderPlayers: (order: string[]) => Promise<void>;
+  leaveSession: () => void;
   logout: () => void;
   go: (s: Screen) => void;
   setAP: (k: keyof ActionPoints, v: number) => void;
@@ -452,7 +457,6 @@ export function KpkProvider({ children }: { children: ReactNode }) {
 
   const createGame = useCallback(async (u: User): Promise<RoomResult> => {
     let code = generateRoomCode();
-    // ensure no collision
     for (let i = 0; i < 5; i++) {
       const existing = await readSession(code);
       if (!existing) break;
@@ -464,11 +468,11 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     sess.players[pid] = player;
     sess.player_order = [pid];
     sess.active_player_id = pid;
-    sess.status = "active";
+    sess.status = "waiting";
     await writeSession(code, sess);
     setRoomCode(code);
     setPlayerId(pid);
-    setScreen("main");
+    setScreen("lobby");
     sfx.confirm();
     return { ok: true, code };
   }, []);
@@ -476,7 +480,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const joinGame = useCallback(async (code: string, u: User): Promise<RoomResult> => {
     const c = code.trim().toUpperCase();
     const s = await readSession(c);
-    if (!s) return { ok: false, reason: "Кімнату не знайдено" };
+    if (!s) return { ok: false, reason: "Сесію не знайдено" };
     const taken = Object.values(s.players ?? {}).map((p) => p.faction);
     if (taken.includes(u.faction)) return { ok: false, reason: "Угрупування вже зайняте" };
     if (Object.keys(s.players ?? {}).length >= 4) return { ok: false, reason: "Кімната заповнена (4/4)" };
@@ -494,10 +498,44 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     });
     setRoomCode(c);
     setPlayerId(pid);
-    setScreen("main");
+    setScreen(s.status === "active" ? "main" : "lobby");
     sfx.confirm();
     return { ok: true, code: c };
   }, []);
+
+  const rejoinAs = useCallback(async (code: string, existingPid: string): Promise<RoomResult> => {
+    const c = code.trim().toUpperCase();
+    const s = await readSession(c);
+    if (!s) return { ok: false, reason: "Сесію не знайдено" };
+    if (!s.players?.[existingPid]) return { ok: false, reason: "Гравця не знайдено" };
+    setRoomCode(c);
+    setPlayerId(existingPid);
+    setScreen(s.status === "active" ? "main" : "lobby");
+    sfx.confirm();
+    return { ok: true, code: c };
+  }, []);
+
+  const startGame = useCallback(async () => {
+    if (!roomCode) return;
+    await txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
+      if (order.length < 2) return undefined;
+      return { ...cur, status: "active", active_player_id: order[0], turn: 1, round: 1 };
+    });
+    sfx.confirm();
+  }, [roomCode]);
+
+  const reorderPlayers = useCallback(async (order: string[]) => {
+    if (!roomCode) return;
+    await txSession(roomCode, (cur) => cur ? ({ ...cur, player_order: order, active_player_id: order[0] ?? cur.active_player_id }) : undefined);
+  }, [roomCode]);
+
+  // Auto-navigate lobby → main when host starts the game
+  useEffect(() => {
+    if (!session) return;
+    if (session.status === "active" && screen === "lobby") setScreen("main");
+  }, [session?.status, screen]);
 
   const value: KpkState = useMemo(() => ({
     screen, prevScreen, user,
@@ -508,7 +546,10 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
     news, history,
     login: (u) => { createGame(u); },
-    createGame, joinGame, roomCode, playerId, isHost, players, takenFactions,
+    createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players, takenFactions,
+    status: (session?.status ?? "waiting") as "waiting" | "active" | "finished",
+    startGame, reorderPlayers,
+    leaveSession: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
     logout: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
     go: (s) => { setPrev(screen); setScreen(s); },
     setAP: (k, v) => {
@@ -537,7 +578,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, replacements,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, news, history,
-    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame,
+    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame, rejoinAs,
+    session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, replaceSlot,
   ]);
 

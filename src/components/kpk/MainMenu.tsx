@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useKpk, fmtSession } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
@@ -14,9 +15,10 @@ export function MainMenu() {
   const { user, logout, go, sessionSeconds, totalScore, level1, level2, level3, round, turn,
     roomCode, players, isHost, playerId } = useKpk();
   const factionColor = user ? FACTIONS[user.faction] : "#fff";
+  const [confirmExit, setConfirmExit] = useState(false);
 
   return (
-    <div className="hud-screen-enter flex h-full w-full flex-col">
+    <div className="hud-screen-enter safe-pt safe-pb flex h-full w-full flex-col">
       {/* Status bar */}
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]/80 px-3 py-2 sm:flex sm:px-6 sm:py-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -90,14 +92,52 @@ export function MainMenu() {
           </div>
 
           <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--hud-amber)]/20 pt-4">
-            <button onClick={logout} className="hud-btn hud-btn-ghost">↶ Вийти</button>
+            <button
+              onClick={() => { sfx.click(); setConfirmExit(true); }}
+              className="hud-btn hud-btn-ghost"
+              aria-label="Вийти з сесії"
+            >↶ Вийти</button>
             <button
               onClick={() => { sfx.deny(); }}
               className="hud-btn hud-btn-danger"
+              aria-label="Скинути гру"
             >⚠ Скинути гру</button>
           </div>
         </div>
       </div>
+
+      {confirmExit && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exit-confirm-title"
+          onClick={() => setConfirmExit(false)}
+        >
+          <div
+            className="hud-panel-corners-4 relative w-full max-w-sm border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <div id="exit-confirm-title" className="hud-title text-lg text-[color:var(--hud-amber)]">// ВИХІД?</div>
+            <p className="hud-mono mt-2 text-sm text-[color:var(--foreground)]">
+              Ви впевнені? Ваш обліковий запис залишиться в сесії і ви зможете повернутись.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => { sfx.back(); setConfirmExit(false); }}
+                className="hud-btn hud-btn-ghost flex-1"
+                aria-label="Скасувати вихід"
+              >Скасувати</button>
+              <button
+                onClick={() => { setConfirmExit(false); logout(); }}
+                className="hud-btn hud-btn-danger flex-1"
+                aria-label="Підтвердити вихід"
+              >Вийти</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
