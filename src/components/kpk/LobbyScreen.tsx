@@ -27,9 +27,7 @@ export function LobbyScreen() {
 
   const joinLink = useMemo(() => {
     if (!roomCode) return "";
-    try {
-      return `${window.location.origin}/?room=${roomCode}`;
-    } catch { return roomCode; }
+    return `https://kpk-1-caa5a.web.app/join/${roomCode}`;
   }, [roomCode]);
 
   if (!roomCode) return null;
