@@ -73,10 +73,10 @@ export function installGlobalSfx() {
     const el = (e.target as HTMLElement)?.closest?.(".hud-btn, [data-hud-sound='click']") as HTMLElement | null;
     if (el && !(el as HTMLButtonElement).disabled) sfx.click();
   };
-  const onPointerOver = (e: Event) => {
+  const onPointerEnter = (e: Event) => {
     const el = (e.target as HTMLElement)?.closest?.(".hud-btn, [data-hud-sound='hover']") as HTMLElement | null;
     if (el && !(el as HTMLButtonElement).disabled) sfx.hover();
   };
   document.addEventListener("pointerdown", onPointerDown, { passive: true });
-  document.addEventListener("pointerover", onPointerOver, { passive: true });
+  document.addEventListener("pointerenter", onPointerEnter, { passive: true, capture: true });
 }

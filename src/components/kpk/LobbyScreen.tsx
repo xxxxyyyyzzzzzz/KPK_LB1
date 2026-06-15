@@ -1,0 +1,233 @@
+import { useMemo, useState } from "react";
+import { useKpk } from "@/lib/kpkStore";
+import { FACTIONS } from "@/lib/kpkData";
+import { sfx } from "@/lib/sounds";
+
+const ORDINALS = ["Ходить першим", "Ходить другим", "Ходить третім", "Ходить четвертим"];
+
+function qrUrl(text: string, size = 360) {
+  const params = new URLSearchParams({
+    data: text,
+    size: `${size}x${size}`,
+    bgcolor: "141a22",
+    color: "f5b840",
+    margin: "2",
+    qzone: "2",
+    ecc: "M",
+    format: "png",
+  });
+  return `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`;
+}
+
+export function LobbyScreen() {
+  const { roomCode, players, playerId, isHost, startGame, reorderPlayers, leaveSession } = useKpk();
+  const [showQR, setShowQR] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [starting, setStarting] = useState(false);
+
+  const joinLink = useMemo(() => {
+    if (!roomCode) return "";
+    try {
+      return `${window.location.origin}/?room=${roomCode}`;
+    } catch { return roomCode; }
+  }, [roomCode]);
+
+  if (!roomCode) return null;
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(roomCode!);
+      setCopied(true); sfx.confirm();
+      setTimeout(() => setCopied(false), 1500);
+    } catch { sfx.deny(); }
+  }
+
+  function move(idx: number, dir: -1 | 1) {
+    const order = players.map((p) => p.id);
+    const j = idx + dir;
+    if (j < 0 || j >= order.length) return;
+    [order[idx], order[j]] = [order[j], order[idx]];
+    sfx.click();
+    reorderPlayers(order);
+  }
+
+  async function onStart() {
+    if (players.length < 2) { sfx.deny(); return; }
+    setStarting(true);
+    await startGame();
+    setStarting(false);
+  }
+
+  return (
+    <div className="hud-screen-enter safe-pt safe-pb flex h-full w-full flex-col items-center px-4 sm:px-6">
+      <div className="hud-scroll w-full max-w-md sm:max-w-[600px] lg:max-w-[640px] flex-1 overflow-y-auto py-4 sm:py-6">
+        <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md">
+          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+
+          <div className="mb-5 flex items-start justify-between gap-3 border-b border-[color:var(--hud-amber)]/30 pb-3">
+            <div>
+              <div className="hud-label">// ЛОБІ СЕСІЇ</div>
+              <div className="hud-title text-2xl sm:text-3xl text-[color:var(--hud-amber)] hud-flicker">ОЧІКУВАННЯ ГРАВЦІВ</div>
+            </div>
+            <div className="hud-mono text-[0.65rem] sm:text-xs text-[color:var(--hud-cyan)] hud-blink">● WAITING</div>
+          </div>
+
+          {/* Room code + actions */}
+          <div className="mb-5">
+            <div className="hud-label mb-1.5">Код сесії</div>
+            <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 bg-black/30 p-4">
+              <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+              <div className="hud-title text-center text-4xl sm:text-5xl tracking-[0.4em] text-[color:var(--hud-cyan)] tabular-nums">
+                {roomCode}
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button onClick={copyCode} className="hud-btn min-h-12" aria-label="Скопіювати код сесії">
+                {copied ? "✓ СКОПІЙОВАНО" : "⧉ СКОПІЮВАТИ КОД"}
+              </button>
+              <button
+                onClick={() => { sfx.click(); setShowQR(true); }}
+                className="hud-btn min-h-12"
+                aria-label="Показати QR-код"
+              >▦ QR-КОД</button>
+            </div>
+            <p className="hud-mono mt-2 text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
+              Передайте код або QR-код іншим гравцям
+            </p>
+          </div>
+
+          {/* Players */}
+          <div className="mb-5">
+            <div className="mb-1.5 flex items-center justify-between">
+              <div className="hud-label">Гравці у сесії · {players.length}/4</div>
+              <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
+                {isHost ? "Перетягуйте порядок ходів" : "Чекайте на хоста"}
+              </div>
+            </div>
+            <ul className="space-y-2" aria-label="Список гравців у лобі">
+              {players.map((p, i) => {
+                const color = FACTIONS[p.faction] ?? "#fff";
+                const isMe = p.id === playerId;
+                const isHostPlayer = i === 0; // host is always first in player_order
+                return (
+                  <li
+                    key={p.id}
+                    className={`hud-panel-corners-4 relative flex items-center gap-3 border px-3 py-2.5 ${
+                      isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"
+                    }`}
+                  >
+                    <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+                    <span className="hud-mono w-6 shrink-0 text-center text-[color:var(--hud-amber)]">{i + 1}</span>
+                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate hud-title text-base text-[color:var(--foreground)]">
+                        {p.nickname}{isMe ? " · ви" : ""}
+                      </div>
+                      <div className="hud-mono text-[0.7rem] text-[color:var(--muted-foreground)]">
+                        {p.faction}
+                        <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-amber)]/70">
+                          {ORDINALS[i] ?? `Ходить ${i + 1}-м`}
+                        </span>
+                      </div>
+                    </div>
+                    {isHostPlayer && (
+                      <span className="hud-mono shrink-0 rounded border border-[color:var(--hud-cyan)]/50 px-2 py-0.5 text-[0.6rem] text-[color:var(--hud-cyan)]">
+                        HOST
+                      </span>
+                    )}
+                    {isHost && players.length > 1 && (
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button
+                          onClick={() => move(i, -1)}
+                          disabled={i === 0}
+                          className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
+                          aria-label={`Підняти ${p.nickname} вище у порядку ходів`}
+                        >▲</button>
+                        <button
+                          onClick={() => move(i, 1)}
+                          disabled={i === players.length - 1}
+                          className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
+                          aria-label={`Опустити ${p.nickname} нижче у порядку ходів`}
+                        >▼</button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+              {Array.from({ length: Math.max(0, 4 - players.length) }).map((_, i) => (
+                <li
+                  key={`empty-${i}`}
+                  className="hud-mono flex items-center gap-3 border border-dashed border-[color:var(--hud-amber)]/15 px-3 py-2.5 text-[0.75rem] text-[color:var(--muted-foreground)]/60"
+                >
+                  <span className="w-6 text-center">{players.length + i + 1}</span>
+                  <span className="opacity-60">очікування підключення...</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Start / leave */}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              onClick={leaveSession}
+              className="hud-btn hud-btn-ghost min-h-11"
+              aria-label="Покинути лобі"
+            >↶ Покинути лобі</button>
+            {isHost ? (
+              <button
+                onClick={onStart}
+                disabled={players.length < 2 || starting}
+                className="hud-btn hud-btn-lg flex-1 sm:flex-none sm:px-8"
+                aria-label="Розпочати гру"
+              >
+                {starting ? "..." : players.length < 2 ? "⏳ ПОТРІБНО ≥2 ГРАВЦІВ" : "▶ РОЗПОЧАТИ ГРУ"}
+              </button>
+            ) : (
+              <span className="hud-mono text-center text-xs text-[color:var(--hud-cyan)] sm:text-right">
+                ◌ Очікуємо, поки хост розпочне сесію...
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showQR && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="QR-код для приєднання"
+          onClick={() => setShowQR(false)}
+        >
+          <div
+            className="hud-panel-corners-4 relative w-full max-w-sm border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-5 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <div className="mb-3 flex items-center justify-between border-b border-[color:var(--hud-amber)]/30 pb-2">
+              <div className="hud-title text-base text-[color:var(--hud-amber)]">// QR · {roomCode}</div>
+              <button
+                onClick={() => { sfx.back(); setShowQR(false); }}
+                className="hud-btn hud-btn-ghost min-h-0 !py-1 !px-2 !text-xs"
+                aria-label="Закрити QR-код"
+              >✕</button>
+            </div>
+            <div className="flex items-center justify-center rounded border border-[color:var(--hud-amber)]/30 bg-black/50 p-3">
+              <img
+                src={qrUrl(joinLink, 360)}
+                alt={`QR-код для приєднання до сесії ${roomCode}`}
+                width={300}
+                height={300}
+                className="block h-auto w-full max-w-[300px]"
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+            <p className="hud-mono mt-3 break-all text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
+              {joinLink}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

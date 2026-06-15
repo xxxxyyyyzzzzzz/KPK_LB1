@@ -161,7 +161,7 @@
   inset: 0;
   pointer-events: none;
   background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.65) 100%);
-  z-index: 49;
+  z-index: 1;
 }
 
 /* ============ Corner brackets — military panel ============ */
@@ -308,18 +308,48 @@
 .hud-flicker { animation: hud-flicker 3s infinite; }
 
 @keyframes hud-scan {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+  0%   { transform: translateY(-20%); opacity: 0; }
+  8%   { opacity: 1; }
+  45%  { transform: translateY(60vh); opacity: 1; }
+  60%  { transform: translateY(110vh); opacity: 0; }
+  100% { transform: translateY(110vh); opacity: 0; }
 }
 .hud-scanbar {
   position: fixed;
   left: 0; right: 0;
-  height: 80px;
-  background: linear-gradient(180deg, transparent, rgba(108,240,255,0.06), transparent);
+  height: 64px;
+  background: linear-gradient(180deg, transparent, rgba(108,240,255,0.035), transparent);
   pointer-events: none;
   z-index: 51;
-  animation: hud-scan 6s linear infinite;
+  animation: hud-scan 14s cubic-bezier(.45,.05,.55,.95) infinite;
+  will-change: transform, opacity;
 }
+@media (prefers-reduced-motion: reduce) {
+  .hud-scanbar { animation: none; opacity: 0; }
+  .hud-flicker, .hud-blink { animation: none; }
+}
+
+/* ============ Safe-area helpers (iOS notch / Dynamic Island) ============ */
+.safe-pt { padding-top: max(0.25rem, env(safe-area-inset-top)); }
+.safe-pb { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+.safe-px { padding-left: max(0.75rem, env(safe-area-inset-left)); padding-right: max(0.75rem, env(safe-area-inset-right)); }
+.safe-top { top: max(0.25rem, env(safe-area-inset-top)); }
+.safe-bottom { bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+
+/* ============ Focus-visible ring (keyboard a11y) ============ */
+.hud-btn:focus-visible,
+.hud-input:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--hud-amber);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(245,184,64,0.18);
+}
+
+/* Ensure comfortable tap-targets for primary controls */
+.hud-btn { min-height: 44px; }
+.hud-btn-lg { min-height: 52px; font-size: 1rem; padding: 0.85rem 1.4rem; }
 
 @keyframes hud-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255,90,74,0.4); }
