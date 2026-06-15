@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import factionsJson from "@/data/factions.json";
 import { useKpk } from "@/lib/kpkStore";
-import { useSession } from "@/hooks/useSession";
+import { useSession, readSession } from "@/hooks/useSession";
 import { sfx } from "@/lib/sounds";
 
 const FACTIONS: Record<string, string> = factionsJson as Record<string, string>;
