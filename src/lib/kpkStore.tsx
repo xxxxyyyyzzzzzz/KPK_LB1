@@ -78,6 +78,7 @@ type KpkState = {
   login: (u: User) => void;
   createGame: (u: User) => Promise<RoomResult>;
   joinGame: (code: string, u: User) => Promise<RoomResult>;
+  rejoinAs: (code: string, existingPid: string) => Promise<RoomResult>;
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
