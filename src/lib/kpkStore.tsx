@@ -503,6 +503,18 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     return { ok: true, code: c };
   }, []);
 
+  const rejoinAs = useCallback(async (code: string, existingPid: string): Promise<RoomResult> => {
+    const c = code.trim().toUpperCase();
+    const s = await readSession(c);
+    if (!s) return { ok: false, reason: "Сесію не знайдено" };
+    if (!s.players?.[existingPid]) return { ok: false, reason: "Гравця не знайдено" };
+    setRoomCode(c);
+    setPlayerId(existingPid);
+    setScreen(s.status === "active" ? "main" : "lobby");
+    sfx.confirm();
+    return { ok: true, code: c };
+  }, []);
+
   const startGame = useCallback(async () => {
     if (!roomCode) return;
     await txSession(roomCode, (cur) => {
