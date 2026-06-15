@@ -62,10 +62,7 @@ export function LoginScreen() {
     const c = code.trim().toUpperCase();
     if (c.length !== 4) { setErr(humanError("4 символи")); sfx.deny(); return; }
     setErr(""); setBusy(true);
-    // Use rejoinAs(pid=invalid) as a cheap "session exists" probe — but it returns
-    // "Гравця не знайдено" when the session DOES exist. Use a direct readSession instead.
     try {
-      const { readSession } = await import("@/hooks/useSession");
       const s = await readSession(c);
       if (!s) { setErr(humanError("Сесію не знайдено")); sfx.deny(); setBusy(false); return; }
       setConnectedCode(c);
