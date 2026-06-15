@@ -546,7 +546,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
     news, history,
     login: (u) => { createGame(u); },
-    createGame, joinGame, roomCode, playerId, isHost, players, takenFactions,
+    createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players, takenFactions,
     status: (session?.status ?? "waiting") as "waiting" | "active" | "finished",
     startGame, reorderPlayers,
     leaveSession: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
