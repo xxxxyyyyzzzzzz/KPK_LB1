@@ -35,6 +35,15 @@ export function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
 
+  useEffect(() => {
+    const savedCode = sessionStorage.getItem("kpk_join_code");
+    if (savedCode) {
+      sessionStorage.removeItem("kpk_join_code");
+      setCode(savedCode);
+      setMode("join_code");
+    }
+  }, []);
+
   // Live snapshot of the session once code is verified (re-renders on Firebase onValue)
   const peeked = useSession(connectedCode);
 
