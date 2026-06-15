@@ -578,7 +578,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, replacements,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, news, history,
-    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame,
+    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, replaceSlot,
   ]);
