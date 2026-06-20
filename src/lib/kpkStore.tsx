@@ -15,7 +15,7 @@ import {
 } from "./kpkData";
 import { sfx } from "./sounds";
 import { generatePlayerId, generateRoomCode } from "./firebase";
-import { makePlayer, makeSession, type PlayerState } from "./sessionSchema";
+import { makePlayer, makeSession, type PlayerState, type SessionState } from "./sessionSchema";
 import { readSession, txSession, useSession, writeSession } from "@/hooks/useSession";
 
 type User = { nickname: string; faction: string };
