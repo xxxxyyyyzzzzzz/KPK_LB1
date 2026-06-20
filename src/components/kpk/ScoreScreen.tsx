@@ -3,14 +3,8 @@ import { FACTIONS } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
 
 export function ScoreScreen() {
-  const { user, totalScore, level1, level2, level3, currency, history } = useKpk();
-  const me = {
-    nickname: user?.nickname ?? "—",
-    faction: user?.faction ?? "",
-    total: totalScore,
-    l1: level1, l2: level2, l3: level3,
-  };
-  const top = [me];
+  const { sessionPlayers, currency, history, playerId } = useKpk();
+
   return (
     <ScreenShell title="ЄБали">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -22,26 +16,39 @@ export function ScoreScreen() {
         </div>
 
         <section>
-          <h3 className="hud-label mb-2">// Поточний оперативник</h3>
+          <h3 className="hud-label mb-2">// Оперативники сесії · {sessionPlayers.length}</h3>
           <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-3">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            {sessionPlayers.length === 0 && (
+              <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">// Немає даних про гравців.</div>
+            )}
             <div className="divide-y divide-[color:var(--hud-amber)]/15">
-              {top.map((p, i) => {
+              {sessionPlayers.map((p, i) => {
                 const fc = FACTIONS[p.faction] ?? "#fff";
+                const isMe = p.id === playerId;
                 return (
-                  <div key={p.nickname} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5">
-                    <span className="hud-mono w-6 text-[color:var(--hud-amber)] text-sm">{String(i+1).padStart(2,"0")}</span>
+                  <div
+                    key={p.id}
+                    className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 py-3 ${isMe ? "bg-[color:var(--hud-amber)]/5 px-2 -mx-2" : ""}`}
+                  >
+                    <span className="hud-mono w-7 text-[color:var(--hud-amber)] text-sm tabular-nums">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="hud-title text-sm truncate text-[color:var(--hud-green)]">{p.nickname}</span>
+                        <span className="hud-title text-base truncate text-[color:var(--hud-green)]">
+                          {p.nickname}{isMe ? " · ви" : ""}
+                        </span>
                         <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: fc, boxShadow: `0 0 6px ${fc}` }} />
                         <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] truncate">{p.faction}</span>
                       </div>
-                      <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] tabular-nums">
-                        I {p.l1} · II {p.l2} · III {p.l3}
+                      <div className="hud-mono mt-0.5 text-[0.62rem] text-[color:var(--muted-foreground)]/70 tabular-nums tracking-wide">
+                        I {p.level1} · II {p.level2} · III {p.level3} · ⛁ {p.currency}
                       </div>
                     </div>
-                    <span className="hud-title text-xl tabular-nums text-[color:var(--hud-amber)]">{p.total}</span>
+                    <span className="hud-title text-3xl sm:text-4xl tabular-nums text-[color:var(--hud-amber-glow)]">
+                      {p.score}
+                    </span>
                   </div>
                 );
               })}
