@@ -235,6 +235,30 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     }));
   }, [session]);
 
+  const sessionPlayers = useMemo(() => {
+    if (!session) return [];
+    const ids = Object.keys(session.players ?? {});
+    const rows = ids.map((id) => {
+      const p = session.players[id]!;
+      return {
+        id,
+        nickname: p.nickname,
+        faction: p.faction,
+        score: p.score ?? 0,
+        level1: p.level1_score ?? 0,
+        level2: p.level2_score ?? 0,
+        level3: p.level3_score ?? 0,
+        currency: p.currency ?? 0,
+      };
+    });
+    rows.sort((a, b) => b.score - a.score);
+    return rows;
+  }, [session]);
+
+  const activePlayerId = session?.active_player_id ?? null;
+  const isMyTurn = !!playerId && !!activePlayerId && activePlayerId === playerId;
+  const awaitingNewsAck = !!session?.awaiting_news_ack;
+
   // ── Upgrades: pure validation helpers (used both for UI and inside tx) ──
   const upgradePoints = level1 + level2 + level3;
 
