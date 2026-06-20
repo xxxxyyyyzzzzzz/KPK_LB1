@@ -100,12 +100,13 @@ export function makePlayer(nickname: string, faction: string): PlayerState {
   };
 }
 
-export function makeSession(code: string, hostId: string): SessionState {
+export function makeSession(code: string, hostId: string, opts?: { isTest?: boolean }): SessionState {
   return {
     code,
     status: "waiting",
     host_id: hostId,
     created_at: Date.now(),
+    is_test: !!opts?.isTest,
     round: 1,
     turn: 1,
     turn_seconds: TURN_DURATION_SECONDS,
@@ -114,6 +115,8 @@ export function makeSession(code: string, hostId: string): SessionState {
     player_order: [],
     players: {},
     news: [],
+    news_signal_ts: 0,
+    awaiting_news_ack: false,
     events: {},
   };
 }
