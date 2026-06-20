@@ -76,13 +76,21 @@ type KpkState = {
 
   // actions
   login: (u: User) => void;
-  createGame: (u: User) => Promise<RoomResult>;
+  createGame: (u: User, opts?: { isTest?: boolean }) => Promise<RoomResult>;
   joinGame: (code: string, u: User) => Promise<RoomResult>;
   rejoinAs: (code: string, existingPid: string) => Promise<RoomResult>;
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
   players: { id: string; nickname: string; faction: string }[];
+  sessionPlayers: {
+    id: string; nickname: string; faction: string;
+    score: number; level1: number; level2: number; level3: number; currency: number;
+  }[];
+  activePlayerId: string | null;
+  isMyTurn: boolean;
+  awaitingNewsAck: boolean;
+  ackNews: () => void;
   takenFactions: (code: string) => Promise<string[]>;
   status: "waiting" | "active" | "finished";
   startGame: () => Promise<void>;
