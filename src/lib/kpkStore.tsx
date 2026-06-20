@@ -510,7 +510,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     return Object.values(s.players ?? {}).map((p) => p.faction);
   }, []);
 
-  const createGame = useCallback(async (u: User): Promise<RoomResult> => {
+  const createGame = useCallback(async (u: User, opts?: { isTest?: boolean }): Promise<RoomResult> => {
     let code = generateRoomCode();
     for (let i = 0; i < 5; i++) {
       const existing = await readSession(code);
@@ -518,7 +518,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       code = generateRoomCode();
     }
     const pid = generatePlayerId();
-    const sess = makeSession(code, pid);
+    const sess = makeSession(code, pid, { isTest: !!opts?.isTest });
     const player = makePlayer(u.nickname, u.faction);
     sess.players[pid] = player;
     sess.player_order = [pid];
