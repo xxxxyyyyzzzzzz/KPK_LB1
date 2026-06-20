@@ -46,6 +46,7 @@ export type SessionState = {
   status: "waiting" | "active" | "finished";
   host_id: string;
   created_at: number;
+  is_test?: boolean;
   round: 1 | 2 | 3 | 4;
   turn: number; // 1..N (індекс активного гравця у поточному ході)
   turn_seconds: number;
@@ -54,6 +55,10 @@ export type SessionState = {
   player_order: string[];
   players: Record<string, PlayerState>;
   news: NewsEntry[];
+  /** Bumped on every news generation; clients use to auto-navigate to NewsScreen. */
+  news_signal_ts?: number;
+  /** Set true after the last mutant turn of round 4: blocks UI until user opens news. */
+  awaiting_news_ack?: boolean;
   events: Record<string, EventEntry>;
 };
 
