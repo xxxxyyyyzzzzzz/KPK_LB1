@@ -15,7 +15,7 @@ import {
 } from "./kpkData";
 import { sfx } from "./sounds";
 import { generatePlayerId, generateRoomCode } from "./firebase";
-import { makePlayer, makeSession, type PlayerState } from "./sessionSchema";
+import { makePlayer, makeSession, type PlayerState, type SessionState } from "./sessionSchema";
 import { readSession, txSession, useSession, writeSession } from "@/hooks/useSession";
 
 type User = { nickname: string; faction: string };
@@ -76,13 +76,21 @@ type KpkState = {
 
   // actions
   login: (u: User) => void;
-  createGame: (u: User) => Promise<RoomResult>;
+  createGame: (u: User, opts?: { isTest?: boolean }) => Promise<RoomResult>;
   joinGame: (code: string, u: User) => Promise<RoomResult>;
   rejoinAs: (code: string, existingPid: string) => Promise<RoomResult>;
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
   players: { id: string; nickname: string; faction: string }[];
+  sessionPlayers: {
+    id: string; nickname: string; faction: string;
+    score: number; level1: number; level2: number; level3: number; currency: number;
+  }[];
+  activePlayerId: string | null;
+  isMyTurn: boolean;
+  awaitingNewsAck: boolean;
+  ackNews: () => void;
   takenFactions: (code: string) => Promise<string[]>;
   status: "waiting" | "active" | "finished";
   startGame: () => Promise<void>;
@@ -226,6 +234,30 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       faction: session.players[id]?.faction ?? "",
     }));
   }, [session]);
+
+  const sessionPlayers = useMemo(() => {
+    if (!session) return [];
+    const ids = Object.keys(session.players ?? {});
+    const rows = ids.map((id) => {
+      const p = session.players[id]!;
+      return {
+        id,
+        nickname: p.nickname,
+        faction: p.faction,
+        score: p.score ?? 0,
+        level1: p.level1_score ?? 0,
+        level2: p.level2_score ?? 0,
+        level3: p.level3_score ?? 0,
+        currency: p.currency ?? 0,
+      };
+    });
+    rows.sort((a, b) => b.score - a.score);
+    return rows;
+  }, [session]);
+
+  const activePlayerId = session?.active_player_id ?? null;
+  const isMyTurn = !!playerId && !!activePlayerId && activePlayerId === playerId;
+  const awaitingNewsAck = !!session?.awaiting_news_ack;
 
   // ── Upgrades: pure validation helpers (used both for UI and inside tx) ──
   const upgradePoints = level1 + level2 + level3;
@@ -394,11 +426,18 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   }, [roomCode, playerId, allMissions]);
 
   // ── Turn rotation / News round (host engine triggers news on round boundary) ──
+  // Сценарій: гравці ходять по черзі за player_order; коли всі N гравців відіграли
+  // TURNS_PER_NEWS_ROUND ходів — миттєво виконується «хід ботів/мутантів» (без UI)
+  // і генерується наступна порція новин. Після ходу мутантів 4-го раунду —
+  // блокуємо UI прапором awaiting_news_ack.
   const nextPlayer = useCallback(() => {
     if (!roomCode) return;
     warnRef.current = false;
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
+      // Дозволено лише активному гравцю або хосту
+      const allowed = !cur.active_player_id || cur.active_player_id === playerId || cur.host_id === playerId;
+      if (!allowed) return undefined;
       const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
       const playersCount = Math.max(1, order.length);
       const totalTurns = TURNS_PER_NEWS_ROUND * playersCount;
@@ -409,11 +448,24 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       let nextRound = cur.round;
       let news = cur.news;
       let resetTurn = nextTurnNumber;
-      if (nextTurnNumber > totalTurns) {
-        nextRound = Math.min(TOTAL_NEWS_ROUNDS, cur.round + 1) as 1 | 2 | 3 | 4;
-        resetTurn = 1;
-        // News Round generation (host engine) — overwrite /sessions/{code}/news
-        news = generateNews(nextRound);
+      let newsSignalTs = cur.news_signal_ts ?? 0;
+      let awaitingAck = cur.awaiting_news_ack ?? false;
+      let nextStatus: SessionState["status"] = cur.status;
+
+      const boundary = nextTurnNumber > totalTurns;
+      if (boundary) {
+        // Кінець ходу всіх гравців → «хід ботів/мутантів» (миттєвий).
+        if (cur.round >= TOTAL_NEWS_ROUNDS) {
+          // Це був хід мутантів 4-го раунду → кінець гри, чекаємо акноледж новин.
+          resetTurn = cur.turn;
+          awaitingAck = true;
+          nextStatus = "finished";
+        } else {
+          nextRound = (cur.round + 1) as 1 | 2 | 3 | 4;
+          resetTurn = 1;
+          news = generateNews(nextRound);
+          newsSignalTs = Date.now();
+        }
       }
       // Reset AP, replacements, currency-earned-this-turn for ALL players
       const players = { ...cur.players };
@@ -432,17 +484,20 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       const ts = Date.now();
       return {
         ...cur,
+        status: nextStatus,
         round: nextRound,
         turn: resetTurn,
-        active_player_id: nextActive,
+        active_player_id: awaitingAck ? cur.active_player_id : nextActive,
         turn_seconds: TURN_DURATION_SECONDS,
         turn_running: false,
         news,
+        news_signal_ts: newsSignalTs,
+        awaiting_news_ack: awaitingAck,
         players,
         events: { ...cur.events, [`e_${ts}_turn`]: {
           ts, player_id: cur.active_player_id ?? "", nickname: players[cur.active_player_id ?? ""]?.nickname ?? "—",
-          type: nextTurnNumber > totalTurns ? "news_round" : "turn_end",
-          payload: { reason: nextTurnNumber > totalTurns ? `Раунд ${nextRound}: новини зони` : "Кінець ходу", reward: 0 },
+          type: boundary ? "news_round" : "turn_end",
+          payload: { reason: boundary ? (awaitingAck ? "Кінець перших новин" : `Раунд ${nextRound}: новини зони`) : "Кінець ходу", reward: 0 },
         }},
       };
     }).then(() => sfx.confirm());
@@ -455,7 +510,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     return Object.values(s.players ?? {}).map((p) => p.faction);
   }, []);
 
-  const createGame = useCallback(async (u: User): Promise<RoomResult> => {
+  const createGame = useCallback(async (u: User, opts?: { isTest?: boolean }): Promise<RoomResult> => {
     let code = generateRoomCode();
     for (let i = 0; i < 5; i++) {
       const existing = await readSession(code);
@@ -463,7 +518,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       code = generateRoomCode();
     }
     const pid = generatePlayerId();
-    const sess = makeSession(code, pid);
+    const sess = makeSession(code, pid, { isTest: !!opts?.isTest });
     const player = makePlayer(u.nickname, u.faction);
     sess.players[pid] = player;
     sess.player_order = [pid];
@@ -521,7 +576,16 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       if (!cur) return undefined;
       const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
       if (order.length < 2) return undefined;
-      return { ...cur, status: "active", active_player_id: order[0], turn: 1, round: 1 };
+      return {
+        ...cur,
+        status: "active",
+        active_player_id: order[0],
+        turn: 1,
+        round: 1,
+        news: generateNews(1),
+        news_signal_ts: Date.now(),
+        awaiting_news_ack: false,
+      };
     });
     sfx.confirm();
   }, [roomCode]);
@@ -531,11 +595,36 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     await txSession(roomCode, (cur) => cur ? ({ ...cur, player_order: order, active_player_id: order[0] ?? cur.active_player_id }) : undefined);
   }, [roomCode]);
 
+  const ackNews = useCallback(() => {
+    if (!roomCode) return;
+    setScreen("news");
+    // Скидаємо глобальний прапор лише за хостом, щоб не «гасити» модал у інших до їх кліку.
+    if (isHost) {
+      txSession(roomCode, (cur) => cur ? ({ ...cur, awaiting_news_ack: false }) : undefined);
+    }
+  }, [roomCode, isHost]);
+
   // Auto-navigate lobby → main when host starts the game
   useEffect(() => {
     if (!session) return;
     if (session.status === "active" && screen === "lobby") setScreen("main");
   }, [session?.status, screen]);
+
+  // Auto-navigate every player to NewsScreen on each news round bump.
+  const lastNewsSignalRef = useRef<number>(0);
+  useEffect(() => {
+    const ts = session?.news_signal_ts ?? 0;
+    if (!ts) return;
+    if (ts > lastNewsSignalRef.current) {
+      lastNewsSignalRef.current = ts;
+      // Уникаємо переходу з логіну/лобі: переходимо лише коли вже в грі.
+      if (screen !== "login" && screen !== "lobby") {
+        setScreen("news");
+      } else if (session?.status === "active") {
+        setScreen("news");
+      }
+    }
+  }, [session?.news_signal_ts, session?.status, screen]);
 
   const value: KpkState = useMemo(() => ({
     screen, prevScreen, user,
@@ -546,7 +635,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
     news, history,
     login: (u) => { createGame(u); },
-    createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players, takenFactions,
+    createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players,
+    sessionPlayers, activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
+    takenFactions,
     status: (session?.status ?? "waiting") as "waiting" | "active" | "finished",
     startGame, reorderPlayers,
     leaveSession: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
@@ -567,7 +658,12 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     toggleTurn: () => {
       if (!roomCode) return;
       warnRef.current = false;
-      txSession(roomCode, (cur) => cur ? ({ ...cur, turn_running: !cur.turn_running }) : undefined);
+      txSession(roomCode, (cur) => {
+        if (!cur) return undefined;
+        // Лише активний гравець може стартувати/паузити свій таймер.
+        if (cur.active_player_id && cur.active_player_id !== playerId) return undefined;
+        return { ...cur, turn_running: !cur.turn_running };
+      });
     },
     nextPlayer,
     updateSlotProgress,
@@ -578,7 +674,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, replacements,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, news, history,
-    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame, rejoinAs,
+    roomCode, playerId, isHost, players, sessionPlayers,
+    activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
+    takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, replaceSlot,
   ]);

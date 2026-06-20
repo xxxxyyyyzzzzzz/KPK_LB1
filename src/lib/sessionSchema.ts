@@ -46,6 +46,7 @@ export type SessionState = {
   status: "waiting" | "active" | "finished";
   host_id: string;
   created_at: number;
+  is_test?: boolean;
   round: 1 | 2 | 3 | 4;
   turn: number; // 1..N (індекс активного гравця у поточному ході)
   turn_seconds: number;
@@ -54,6 +55,10 @@ export type SessionState = {
   player_order: string[];
   players: Record<string, PlayerState>;
   news: NewsEntry[];
+  /** Bumped on every news generation; clients use to auto-navigate to NewsScreen. */
+  news_signal_ts?: number;
+  /** Set true after the last mutant turn of round 4: blocks UI until user opens news. */
+  awaiting_news_ack?: boolean;
   events: Record<string, EventEntry>;
 };
 
@@ -95,12 +100,13 @@ export function makePlayer(nickname: string, faction: string): PlayerState {
   };
 }
 
-export function makeSession(code: string, hostId: string): SessionState {
+export function makeSession(code: string, hostId: string, opts?: { isTest?: boolean }): SessionState {
   return {
     code,
     status: "waiting",
     host_id: hostId,
     created_at: Date.now(),
+    is_test: !!opts?.isTest,
     round: 1,
     turn: 1,
     turn_seconds: TURN_DURATION_SECONDS,
@@ -109,6 +115,8 @@ export function makeSession(code: string, hostId: string): SessionState {
     player_order: [],
     players: {},
     news: [],
+    news_signal_ts: 0,
+    awaiting_news_ack: false,
     events: {},
   };
 }

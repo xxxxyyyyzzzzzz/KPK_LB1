@@ -204,6 +204,23 @@ export function LoginScreen() {
                 }}
                 aria-label="Приєднатися до існуючої сесії"
               >⇆ ПРИЄДНАТИСЯ ДО ГРИ</button>
+              <button
+                onClick={async () => {
+                  sfx.click();
+                  setErr(""); setBusy(true);
+                  // Тестова сесія: випадкові ім'я та угрупування з вільних
+                  const factionsList = Object.keys(FACTIONS);
+                  const testNick = "TEST_" + Math.random().toString(36).slice(2, 6).toUpperCase();
+                  const testFaction = factionsList[Math.floor(Math.random() * factionsList.length)];
+                  const r = await createGame({ nickname: testNick, faction: testFaction }, { isTest: true });
+                  setBusy(false);
+                  if (!r.ok) setErr(humanError(r.reason));
+                }}
+                disabled={busy}
+                className="hud-btn hud-btn-ghost w-full text-sm"
+                aria-label="Створити тестову гру (не зберігається в історії)"
+                title="Окрема сесія з прапором isTest — не показуватиметься в історії"
+              >🧪 ТЕСТОВА ГРА</button>
               <p className="hud-mono pt-2 text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
                 До 4 гравців · унікальне угрупування для кожного
               </p>

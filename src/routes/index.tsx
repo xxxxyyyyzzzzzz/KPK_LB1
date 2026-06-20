@@ -33,10 +33,13 @@ export const Route = createFileRoute("/")({
 });
 
 function KpkApp() {
-  const { screen } = useKpk();
+  const { screen, awaitingNewsAck, ackNews } = useKpk();
   const [muted, setMuted] = useState(false);
 
   useEffect(() => { installGlobalSfx(); }, []);
+
+  // Блокувальне модальне вікно після ходу мутантів на 4-му раунді.
+  const showEndNewsModal = awaitingNewsAck && screen !== "news";
 
   return (
     <div className="hud-grid-bg hud-scanlines hud-vignette relative h-screen w-screen overflow-hidden">
@@ -69,6 +72,38 @@ function KpkApp() {
         {screen === "upgrades" && <UpgradesScreen />}
         {screen === "timer" && <TimerScreen />}
       </div>
+
+      {showEndNewsModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 px-4 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="end-news-title"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.preventDefault()}
+        >
+          <div className="hud-panel-corners-4 relative w-full max-w-md border border-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)] p-6 text-center shadow-[0_0_40px_rgba(245,184,64,0.35)]">
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <div className="hud-label mb-1 text-[0.65rem]">// ФІНАЛ СЕСІЇ</div>
+            <div id="end-news-title" className="hud-title text-2xl text-[color:var(--hud-amber)] hud-flicker">
+              КІНЕЦЬ ПЕРШИХ НОВИН
+            </div>
+            <p className="hud-mono mt-3 text-sm text-[color:var(--foreground)]">
+              Усі 4 раунди новин відіграно. Хід мутантів завершено.
+              Перейдіть до фінального брифінгу зони.
+            </p>
+            <button
+              onClick={() => { sfx.notify(); ackNews(); }}
+              className="hud-btn hud-btn-lg mt-5 w-full"
+              autoFocus
+              aria-label="Переглянути новини"
+            >▸ ПЕРЕГЛЯНУТИ НОВИНИ</button>
+            <p className="hud-mono mt-3 text-[0.65rem] text-[color:var(--muted-foreground)]">
+              Інші дії заблоковано до перегляду.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
