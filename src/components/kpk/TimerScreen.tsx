@@ -13,9 +13,16 @@ const BOTS = [
 ];
 
 export function TimerScreen() {
-  const { user, round, turn, sessionSeconds, turnSeconds, turnRunning, toggleTurn, nextPlayer, ap, setAP } = useKpk();
+  const {
+    user, round, turn, sessionSeconds, turnSeconds, turnRunning,
+    toggleTurn, nextPlayer, ap, setAP,
+    isMyTurn, isHost, activePlayerId, sessionPlayers,
+  } = useKpk();
   const [openBot, setOpenBot] = useState<string | null>(null);
   const ending = turnSeconds <= 30;
+  const canAdvance = isMyTurn || isHost;
+  const activePlayer = sessionPlayers.find((p) => p.id === activePlayerId);
+  const activeName = activePlayer?.nickname ?? user?.nickname ?? "—";
 
   return (
     <ScreenShell title="Таймер">
@@ -32,16 +39,36 @@ export function TimerScreen() {
 
         <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-6 text-center">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-          <h3 className="hud-title text-base text-[color:var(--muted-foreground)] mb-2">Хід гравця / <span className="text-[color:var(--hud-amber-glow)]">{user?.nickname}</span></h3>
+          <h3 className="hud-title text-base text-[color:var(--muted-foreground)] mb-2">
+            Хід гравця / <span className="text-[color:var(--hud-amber-glow)]">{activeName}</span>
+            {isMyTurn && <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-green)]">● ВАШ ХІД</span>}
+          </h3>
           <div className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${ending ? "text-[color:var(--hud-red)] hud-pulse-red" : "text-[color:var(--hud-amber-glow)]"}`}>
             {fmtClock(turnSeconds)}
           </div>
           <div className="flex justify-center gap-3 flex-wrap">
-            <button className="hud-btn min-w-[140px]" onClick={() => { sfx.click(); toggleTurn(); }}>
+            <button
+              className="hud-btn min-w-[140px]"
+              disabled={!isMyTurn}
+              title={isMyTurn ? "" : "Лише активний гравець може керувати таймером"}
+              aria-label={turnRunning ? "Пауза" : "Старт"}
+              onClick={() => { sfx.click(); toggleTurn(); }}
+            >
               {turnRunning ? "❚❚ Пауза" : "▸ Старт"}
             </button>
-            <button className="hud-btn hud-btn-ghost min-w-[180px]" onClick={nextPlayer}>↦ Наступний гравець</button>
+            {canAdvance && (
+              <button
+                className="hud-btn hud-btn-ghost min-w-[180px]"
+                onClick={nextPlayer}
+                aria-label="Передати хід наступному гравцю"
+              >↦ Наступний гравець{isHost && !isMyTurn ? " (хост)" : ""}</button>
+            )}
           </div>
+          {!canAdvance && (
+            <p className="hud-mono mt-3 text-[0.7rem] text-[color:var(--muted-foreground)]">
+              Очікуйте на свій хід або на дію хоста.
+            </p>
+          )}
         </div>
 
         {/* Action points */}
