@@ -3,7 +3,8 @@ import { useKpk } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 
 export function NewsScreen() {
-  const { round, news, nextPlayer } = useKpk();
+  const { round, news, nextPlayer, isMyTurn, isHost } = useKpk();
+  const canAdvance = isMyTurn || isHost;
   return (
     <ScreenShell title="Новини">
       <div className="mx-auto max-w-3xl">
@@ -27,10 +28,17 @@ export function NewsScreen() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            className="hud-btn flex-1 min-w-[200px]"
-            onClick={() => { sfx.notify(); nextPlayer(); }}
-          >▸ Завершити хід / Наступний</button>
+          {canAdvance ? (
+            <button
+              className="hud-btn flex-1 min-w-[200px]"
+              onClick={() => { sfx.notify(); nextPlayer(); }}
+              aria-label="Завершити хід"
+            >▸ Завершити хід / Наступний</button>
+          ) : (
+            <p className="hud-mono flex-1 text-center text-xs text-[color:var(--muted-foreground)]">
+              Очікуйте — лише активний гравець або хост можуть передати хід.
+            </p>
+          )}
         </div>
       </div>
     </ScreenShell>
