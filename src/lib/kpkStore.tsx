@@ -576,7 +576,16 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       if (!cur) return undefined;
       const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
       if (order.length < 2) return undefined;
-      return { ...cur, status: "active", active_player_id: order[0], turn: 1, round: 1 };
+      return {
+        ...cur,
+        status: "active",
+        active_player_id: order[0],
+        turn: 1,
+        round: 1,
+        news: generateNews(1),
+        news_signal_ts: Date.now(),
+        awaiting_news_ack: false,
+      };
     });
     sfx.confirm();
   }, [roomCode]);
@@ -586,11 +595,36 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     await txSession(roomCode, (cur) => cur ? ({ ...cur, player_order: order, active_player_id: order[0] ?? cur.active_player_id }) : undefined);
   }, [roomCode]);
 
+  const ackNews = useCallback(() => {
+    if (!roomCode) return;
+    setScreen("news");
+    // Скидаємо глобальний прапор лише за хостом, щоб не «гасити» модал у інших до їх кліку.
+    if (isHost) {
+      txSession(roomCode, (cur) => cur ? ({ ...cur, awaiting_news_ack: false }) : undefined);
+    }
+  }, [roomCode, isHost]);
+
   // Auto-navigate lobby → main when host starts the game
   useEffect(() => {
     if (!session) return;
     if (session.status === "active" && screen === "lobby") setScreen("main");
   }, [session?.status, screen]);
+
+  // Auto-navigate every player to NewsScreen on each news round bump.
+  const lastNewsSignalRef = useRef<number>(0);
+  useEffect(() => {
+    const ts = session?.news_signal_ts ?? 0;
+    if (!ts) return;
+    if (ts > lastNewsSignalRef.current) {
+      lastNewsSignalRef.current = ts;
+      // Уникаємо переходу з логіну/лобі: переходимо лише коли вже в грі.
+      if (screen !== "login" && screen !== "lobby") {
+        setScreen("news");
+      } else if (session?.status === "active") {
+        setScreen("news");
+      }
+    }
+  }, [session?.news_signal_ts, session?.status, screen]);
 
   const value: KpkState = useMemo(() => ({
     screen, prevScreen, user,
