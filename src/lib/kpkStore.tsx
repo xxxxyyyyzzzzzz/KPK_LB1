@@ -426,11 +426,18 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   }, [roomCode, playerId, allMissions]);
 
   // ── Turn rotation / News round (host engine triggers news on round boundary) ──
+  // Сценарій: гравці ходять по черзі за player_order; коли всі N гравців відіграли
+  // TURNS_PER_NEWS_ROUND ходів — миттєво виконується «хід ботів/мутантів» (без UI)
+  // і генерується наступна порція новин. Після ходу мутантів 4-го раунду —
+  // блокуємо UI прапором awaiting_news_ack.
   const nextPlayer = useCallback(() => {
     if (!roomCode) return;
     warnRef.current = false;
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
+      // Дозволено лише активному гравцю або хосту
+      const allowed = !cur.active_player_id || cur.active_player_id === playerId || cur.host_id === playerId;
+      if (!allowed) return undefined;
       const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
       const playersCount = Math.max(1, order.length);
       const totalTurns = TURNS_PER_NEWS_ROUND * playersCount;
@@ -441,11 +448,24 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       let nextRound = cur.round;
       let news = cur.news;
       let resetTurn = nextTurnNumber;
-      if (nextTurnNumber > totalTurns) {
-        nextRound = Math.min(TOTAL_NEWS_ROUNDS, cur.round + 1) as 1 | 2 | 3 | 4;
-        resetTurn = 1;
-        // News Round generation (host engine) — overwrite /sessions/{code}/news
-        news = generateNews(nextRound);
+      let newsSignalTs = cur.news_signal_ts ?? 0;
+      let awaitingAck = cur.awaiting_news_ack ?? false;
+      let nextStatus: SessionState["status"] = cur.status;
+
+      const boundary = nextTurnNumber > totalTurns;
+      if (boundary) {
+        // Кінець ходу всіх гравців → «хід ботів/мутантів» (миттєвий).
+        if (cur.round >= TOTAL_NEWS_ROUNDS) {
+          // Це був хід мутантів 4-го раунду → кінець гри, чекаємо акноледж новин.
+          resetTurn = cur.turn;
+          awaitingAck = true;
+          nextStatus = "finished";
+        } else {
+          nextRound = (cur.round + 1) as 1 | 2 | 3 | 4;
+          resetTurn = 1;
+          news = generateNews(nextRound);
+          newsSignalTs = Date.now();
+        }
       }
       // Reset AP, replacements, currency-earned-this-turn for ALL players
       const players = { ...cur.players };
@@ -464,17 +484,20 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       const ts = Date.now();
       return {
         ...cur,
+        status: nextStatus,
         round: nextRound,
         turn: resetTurn,
-        active_player_id: nextActive,
+        active_player_id: awaitingAck ? cur.active_player_id : nextActive,
         turn_seconds: TURN_DURATION_SECONDS,
         turn_running: false,
         news,
+        news_signal_ts: newsSignalTs,
+        awaiting_news_ack: awaitingAck,
         players,
         events: { ...cur.events, [`e_${ts}_turn`]: {
           ts, player_id: cur.active_player_id ?? "", nickname: players[cur.active_player_id ?? ""]?.nickname ?? "—",
-          type: nextTurnNumber > totalTurns ? "news_round" : "turn_end",
-          payload: { reason: nextTurnNumber > totalTurns ? `Раунд ${nextRound}: новини зони` : "Кінець ходу", reward: 0 },
+          type: boundary ? "news_round" : "turn_end",
+          payload: { reason: boundary ? (awaitingAck ? "Кінець перших новин" : `Раунд ${nextRound}: новини зони`) : "Кінець ходу", reward: 0 },
         }},
       };
     }).then(() => sfx.confirm());
