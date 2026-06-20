@@ -635,7 +635,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
     news, history,
     login: (u) => { createGame(u); },
-    createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players, takenFactions,
+    createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players,
+    sessionPlayers, activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
+    takenFactions,
     status: (session?.status ?? "waiting") as "waiting" | "active" | "finished",
     startGame, reorderPlayers,
     leaveSession: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
@@ -656,7 +658,12 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     toggleTurn: () => {
       if (!roomCode) return;
       warnRef.current = false;
-      txSession(roomCode, (cur) => cur ? ({ ...cur, turn_running: !cur.turn_running }) : undefined);
+      txSession(roomCode, (cur) => {
+        if (!cur) return undefined;
+        // Лише активний гравець може стартувати/паузити свій таймер.
+        if (cur.active_player_id && cur.active_player_id !== playerId) return undefined;
+        return { ...cur, turn_running: !cur.turn_running };
+      });
     },
     nextPlayer,
     updateSlotProgress,
@@ -667,7 +674,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, replacements,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, news, history,
-    roomCode, playerId, isHost, players, takenFactions, createGame, joinGame, rejoinAs,
+    roomCode, playerId, isHost, players, sessionPlayers,
+    activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
+    takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, replaceSlot,
   ]);
