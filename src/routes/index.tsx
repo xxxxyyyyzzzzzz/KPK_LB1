@@ -9,7 +9,7 @@ import { MissionsScreen } from "@/components/kpk/MissionsScreen";
 import { ScoreScreen } from "@/components/kpk/ScoreScreen";
 import { NewsScreen } from "@/components/kpk/NewsScreen";
 import { UpgradesScreen } from "@/components/kpk/UpgradesScreen";
-import { TimerScreen } from "@/components/kpk/TimerScreen";
+import { SessionLoadingScreen } from "@/components/kpk/SessionLoadingScreen";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -71,6 +71,7 @@ function KpkApp() {
         {screen === "news" && <NewsScreen />}
         {screen === "upgrades" && <UpgradesScreen />}
         {screen === "timer" && <TimerScreen />}
+        {screen === "session-loading" && <SessionLoadingScreen />}
       </div>
 
       {showEndNewsModal && (

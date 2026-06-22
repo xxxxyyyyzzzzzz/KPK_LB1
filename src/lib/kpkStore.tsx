@@ -604,10 +604,12 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     }
   }, [roomCode, isHost]);
 
-  // Auto-navigate lobby → main when host starts the game
+  // Auto-navigate lobby → loading → main when host starts the game
   useEffect(() => {
     if (!session) return;
-    if (session.status === "active" && screen === "lobby") setScreen("main");
+    if (session.status === "active" && screen === "lobby") {
+      setScreen("session-loading");
+    }
   }, [session?.status, screen]);
 
   // Auto-navigate every player to NewsScreen on each news round bump.
@@ -617,10 +619,10 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     if (!ts) return;
     if (ts > lastNewsSignalRef.current) {
       lastNewsSignalRef.current = ts;
-      // Уникаємо переходу з логіну/лобі: переходимо лише коли вже в грі.
-      if (screen !== "login" && screen !== "lobby") {
+      // Уникаємо переходу з логіну/лобі/завантаження: переходимо лише коли вже в грі.
+      if (screen !== "login" && screen !== "lobby" && screen !== "session-loading") {
         setScreen("news");
-      } else if (session?.status === "active") {
+      } else if (session?.status === "active" && screen !== "session-loading") {
         setScreen("news");
       }
     }
