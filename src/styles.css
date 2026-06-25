@@ -1,8 +1,5 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
 
 /* =====================================================
    КПК — Tactical HUD design system
@@ -10,7 +7,8 @@
    All colors in oklch / hex tokens, used via Tailwind.
    ===================================================== */
 
-@theme inline {
+/* Theme tokens applied globally */
+:root {
   --radius-sm: 2px;
   --radius-md: 3px;
   --radius-lg: 4px;
@@ -114,44 +112,31 @@
     border-color: var(--color-border);
   }
 
-  /* 
-    dvh = dynamic viewport height.
-    На iOS Safari враховує появу/зникнення панелі браузера.
-    Fallback: 100% від батька (який має 100dvh).
-  */
-  html {
-    height: 100dvh;
-    margin: 0;
-    padding: 0;
-    /* Фон під Dynamic Island — наш колір замість сірого Safari */
-    background-color: #0d1117;
-  }
-
+  html,
   body {
     height: 100dvh;
     margin: 0;
     padding: 0;
+    overflow: hidden;
+  }
+
+  body {
     background: var(--surface-1);
     color: var(--color-foreground);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
-    /* overflow hidden + overscroll none — прибирає bounce і зовнішній скрол */
-    overflow: hidden;
     overscroll-behavior: none;
-    /* Одним пальцем скролити в Safari */
     -webkit-overflow-scrolling: touch;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 
   #root {
-    /* Точна висота екрану без браузерних відступів */
-    height: 100dvh;
+    height: 100%;
     width: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Safe area по боках — landscape iPhone */
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }

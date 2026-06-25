@@ -42,25 +42,28 @@ function KpkApp() {
   const showEndNewsModal = awaitingNewsAck && screen !== "news";
 
   return (
-    /*
-      flex-col + height 100dvh — застосунок рівно по висоті екрану.
-      w-full замість w-screen — не виходить за межі на iOS landscape.
-      overflow-hidden — забороняємо будь-який зовнішній скрол.
-    */
-    <div
-      className="hud-grid-bg hud-scanlines hud-vignette relative flex flex-col w-full overflow-hidden"
-      style={{ height: "100dvh" }}
-    >
+    <div className="hud-grid-bg hud-scanlines hud-vignette relative overflow-hidden" style={{ width: "100dvw", height: "100dvh" }}>
       <div className="hud-scanbar" />
 
-      {/* Кнопка звуку — над нижнім меню */}
+      {/* Status strip — фон покриває Dynamic Island / notch */}
+      <div
+        className="pointer-events-none absolute top-0 left-0 right-0 z-50 flex justify-between hud-mono text-[0.6rem] uppercase text-[color:var(--hud-amber)]/60 tracking-widest bg-[color:var(--surface-2)]"
+        style={{
+          paddingTop: "max(0.25rem, env(safe-area-inset-top))",
+          paddingBottom: "0.25rem",
+          paddingLeft: "max(0.75rem, env(safe-area-inset-left))",
+          paddingRight: "max(0.75rem, env(safe-area-inset-right))",
+        }}
+      >
+        <span>● REC · ZONE-7</span>
+        <span className="hud-blink">SIGNAL OK</span>
+        <span>v1.0 · 2026.06.10</span>
+      </div>
+
       <button
         onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
-        className="hud-btn hud-btn-ghost pointer-events-auto absolute z-50 !py-1 !px-2 !text-[0.6rem]"
-        style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 56px + 0.5rem)",
-          right: "max(0.5rem, env(safe-area-inset-right))",
-        }}
+        className="hud-btn hud-btn-ghost pointer-events-auto absolute right-3 z-50 !py-1.5 !px-3 !text-[0.65rem]"
+        style={{ bottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         aria-label={muted ? "Увімкнути звук" : "Вимкнути звук"}
       >
         {muted ? "🔇" : "🔊"}
