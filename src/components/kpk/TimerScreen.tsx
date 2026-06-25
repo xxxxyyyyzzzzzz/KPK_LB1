@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScreenShell } from "./ScreenShell";
+import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 
@@ -26,70 +26,77 @@ export function TimerScreen() {
 
   return (
     <ScreenShell title="Таймер">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-2xl space-y-5">
 
-        <div className="text-center hud-mono text-xs text-[color:var(--muted-foreground)]">
-          Новина {round} / Хід {turn} з 4
-        </div>
+        <AnimatedItem index={0}>
+          <div className="text-center hud-mono text-xs text-[color:var(--muted-foreground)]">
+            Новина {round} / Хід {turn} з 4
+          </div>
+        </AnimatedItem>
 
         {/* Загальний час сесії */}
-        <div className="hud-panel-corners-4 relative flex items-center justify-between border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] px-4 py-3">
-          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-          <span className="hud-label">Загальний час сесії</span>
-          <span className="hud-mono text-lg tabular-nums text-[color:var(--hud-cyan)]">{fmtSession(sessionSeconds)}</span>
-        </div>
+        <AnimatedItem index={1}>
+          <div className="hud-panel-corners-4 relative flex items-center justify-between border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] px-4 py-3">
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <span className="hud-label">Загальний час сесії</span>
+            <span className="hud-mono text-lg tabular-nums text-[color:var(--hud-cyan)]">{fmtSession(sessionSeconds)}</span>
+          </div>
+        </AnimatedItem>
 
         {/* Таймер ходу */}
-        <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-6 text-center">
-          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-          <h3 className="hud-title text-base text-[color:var(--muted-foreground)] mb-2">
-            Хід гравця / <span className="text-[color:var(--hud-amber-glow)]">{activeName}</span>
-            {isMyTurn && (
-              <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-green)]">● ВАШ ХІД</span>
-            )}
-          </h3>
-          <div
-            className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${
-              ending
-                ? "text-[color:var(--hud-red)] hud-pulse-red"
-                : "text-[color:var(--hud-amber-glow)]"
-            }`}
-          >
-            {fmtClock(turnSeconds)}
-          </div>
-          <div className="flex justify-center gap-3 flex-wrap">
-            <button
-              className="hud-btn min-w-[140px]"
-              disabled={!isMyTurn}
-              title={isMyTurn ? "" : "Лише активний гравець може керувати таймером"}
-              aria-label={turnRunning ? "Пауза" : "Старт"}
-              onClick={() => { sfx.click(); toggleTurn(); }}
-            >
-              {turnRunning ? "❚❚ Пауза" : "▸ Старт"}
-            </button>
-            {canAdvance && (
+        <AnimatedItem index={2}>
+          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-6 text-center">
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <h3 className="hud-title text-base text-[color:var(--muted-foreground)] mb-2">
+              Хід гравця / <span className="text-[color:var(--hud-amber-glow)]">{activeName}</span>
+              {isMyTurn && (
+                <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-green)]">● ВАШ ХІД</span>
+              )}
+            </h3>
+            <div className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${ending ? "text-[color:var(--hud-red)] hud-pulse-red" : "text-[color:var(--hud-amber-glow)]"}`}>
+              {fmtClock(turnSeconds)}
+            </div>
+            <div className="flex justify-center gap-3 flex-wrap">
               <button
-                className="hud-btn hud-btn-ghost min-w-[180px]"
-                onClick={nextPlayer}
-                aria-label="Передати хід наступному гравцю"
+                className="hud-btn min-w-[140px]"
+                disabled={!isMyTurn}
+                title={isMyTurn ? "" : "Лише активний гравець може керувати таймером"}
+                aria-label={turnRunning ? "Пауза" : "Старт"}
+                onClick={() => { sfx.click(); toggleTurn(); }}
               >
-                ↦ Наступний гравець{isHost && !isMyTurn ? " (хост)" : ""}
+                {turnRunning ? "❚❚ Пауза" : "▸ Старт"}
               </button>
+              {canAdvance && (
+                <button
+                  className="hud-btn hud-btn-ghost min-w-[180px]"
+                  onClick={nextPlayer}
+                  aria-label="Передати хід наступному гравцю"
+                >
+                  ↦ Наступний гравець{isHost && !isMyTurn ? " (хост)" : ""}
+                </button>
+              )}
+            </div>
+            {!canAdvance && (
+              <p className="hud-mono mt-3 text-[0.7rem] text-[color:var(--muted-foreground)]">
+                Очікуйте на свій хід або на дію хоста.
+              </p>
             )}
           </div>
-          {!canAdvance && (
-            <p className="hud-mono mt-3 text-[0.7rem] text-[color:var(--muted-foreground)]">
-              Очікуйте на свій хід або на дію хоста.
-            </p>
-          )}
-        </div>
+        </AnimatedItem>
 
         {/* Хід ботів */}
-        <div>
+        <AnimatedItem index={3}>
           <div className="hud-label mb-2">// Хід ботів</div>
           <div className="space-y-2">
-            {BOTS.map((b) => (
-              <div key={b.name} className="border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]">
+            {BOTS.map((b, i) => (
+              <div
+                key={b.name}
+                className="border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]"
+                style={{
+                  opacity: 0,
+                  animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${0.35 + i * 0.07}s both`,
+                }}
+              >
                 {b.info ? (
                   <>
                     <button
@@ -111,7 +118,7 @@ export function TimerScreen() {
               </div>
             ))}
           </div>
-        </div>
+        </AnimatedItem>
 
       </div>
     </ScreenShell>

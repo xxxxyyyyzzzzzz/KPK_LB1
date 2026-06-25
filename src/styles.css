@@ -391,3 +391,17 @@ a:focus-visible {
   box-shadow: 0 0 0 1px var(--hud-green), 0 0 18px rgba(108,255,156,0.25);
   border-color: var(--hud-green) !important;
 }
+
+/* ============ Burger drawer slide-in ============ */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ============ iOS safe area — повний фон під острівцем ============ */
+.hud-safe-header {
+  background-color: var(--surface-2);
+  /* Тягнемо фон угору щоб покрити Dynamic Island / notch */
+  padding-top: env(safe-area-inset-top);
+  margin-top: 0;
+}
