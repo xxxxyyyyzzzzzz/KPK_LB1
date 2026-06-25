@@ -1,153 +1,88 @@
-import { useState } from "react";
 import { useKpk, fmtSession } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
-import { sfx } from "@/lib/sounds";
-
-const MENU = [
-  { id: "missions", label: "Місії", desc: "Завдання для оперативника", icon: "▤" },
-  { id: "score", label: "ЄБали", desc: "Топ та історія балів", icon: "✦" },
-  { id: "news", label: "Новини", desc: "Події зони · ініціатива", icon: "◈" },
-  { id: "upgrades", label: "Прокачки", desc: "Дерево покращень", icon: "❖" },
-  { id: "timer", label: "Таймер", desc: "Хід / сесія / бали дій", icon: "⏱" },
-] as const;
+import { HudHeader, BottomNav } from "./ScreenShell";
 
 export function MainMenu() {
-  const { user, logout, go, sessionSeconds, totalScore, level1, level2, level3, round, turn,
-    roomCode, players, isHost, playerId } = useKpk();
+  const {
+    user,
+    sessionSeconds,
+    totalScore,
+    level1,
+    level2,
+    level3,
+    round,
+    turn,
+  } = useKpk();
   const factionColor = user ? FACTIONS[user.faction] : "#fff";
-  const [confirmExit, setConfirmExit] = useState(false);
 
   return (
     <div className="hud-screen-enter safe-pt safe-pb flex h-full w-full flex-col">
-      {/* Status bar */}
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]/80 px-3 py-2 sm:flex sm:px-6 sm:py-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center border border-[color:var(--hud-amber)]/50 hud-mono text-[color:var(--hud-amber)]">КПК</div>
-          <div className="min-w-0">
-            <div className="hud-label text-[0.6rem]">Оперативник</div>
-            <div className="truncate hud-title text-base sm:text-lg text-[color:var(--hud-amber-glow)]">{user?.nickname}</div>
-          </div>
-          <div className="ml-2 shrink-0 hud-mono text-xs" style={{ color: factionColor }}>
-            ▮ {user?.faction}
-          </div>
-        </div>
-        <div className="hidden sm:flex items-center gap-3 hud-mono text-xs">
-          <span className="text-[color:var(--muted-foreground)]">SESSION</span>
-          <span className="text-[color:var(--hud-cyan)] tabular-nums">{fmtSession(sessionSeconds)}</span>
-          <span className="text-[color:var(--muted-foreground)]">| RND</span>
-          <span className="text-[color:var(--hud-amber)] tabular-nums">{round}.{turn}</span>
-        </div>
-      </header>
+      <HudHeader title="КПК" />
 
       <div className="hud-scroll flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
-        <div className="mx-auto max-w-5xl">
-          {/* Room info */}
-          {roomCode && (
-            <div className="hud-panel-corners-4 relative mb-5 border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] p-3">
-              <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="hud-label text-[0.6rem] text-[color:var(--hud-cyan)]">// КОД КІМНАТИ {isHost ? "· HOST" : ""}</div>
-                  <div className="hud-title text-3xl tracking-[0.4em] text-[color:var(--hud-cyan)]">{roomCode}</div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {players.map((p) => (
-                    <span key={p.id} className={`hud-mono text-[0.7rem] border px-2 py-1 ${p.id === playerId ? "border-[color:var(--hud-amber)] text-[color:var(--hud-amber)]" : "border-[color:var(--hud-amber)]/30 text-[color:var(--muted-foreground)]"}`}>
-                      <span className="inline-block h-1.5 w-1.5 rounded-full mr-1.5" style={{ background: FACTIONS[p.faction] ?? "#fff" }} />
-                      {p.nickname}
-                    </span>
-                  ))}
-                </div>
+        <div className="mx-auto max-w-lg space-y-6">
+
+          {/* Оперативник */}
+          <div className="flex items-center gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center border border-[color:var(--hud-amber)]/50 hud-mono text-[color:var(--hud-amber)] text-sm">
+              КПК
+            </div>
+            <div className="min-w-0">
+              <div className="hud-label text-[0.6rem]">Оперативник</div>
+              <div className="truncate hud-title text-lg text-[color:var(--hud-amber-glow)]">
+                {user?.nickname}
+              </div>
+              <div className="hud-mono text-xs mt-0.5" style={{ color: factionColor }}>
+                ▮ {user?.faction}
               </div>
             </div>
-          )}
-
-          {/* KPI row */}
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Kpi label="Загальні бали" value={totalScore} accent="var(--hud-amber)" />
-            <Kpi label="Рівень I" value={level1} accent="var(--mission-defense)" />
-            <Kpi label="Рівень II" value={level2} accent="var(--mission-loot)" />
-            <Kpi label="Рівень III" value={level3} accent="var(--mission-economy)" />
+            <div className="ml-auto text-right hud-mono text-xs shrink-0">
+              <div className="text-[color:var(--muted-foreground)]">SESSION</div>
+              <div className="text-[color:var(--hud-cyan)] tabular-nums">{fmtSession(sessionSeconds)}</div>
+              <div className="text-[color:var(--muted-foreground)] mt-1">RND {round}.{turn}</div>
+            </div>
           </div>
 
-          {/* Menu */}
-          <div className="hud-label mb-3">// Модулі КПК</div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {MENU.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => { sfx.click(); go(m.id as never); }}
-                className="hud-panel-corners-4 group relative overflow-hidden border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-5 text-left transition-all hover:border-[color:var(--hud-amber)] hover:shadow-[0_0_20px_rgba(245,184,64,0.25)]"
-                data-hud-sound="hover"
-              >
-                <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-                <div className="flex items-start justify-between">
-                  <span className="hud-title text-xl text-[color:var(--foreground)] group-hover:text-[color:var(--hud-amber)] transition-colors">{m.label}</span>
-                  <span className="hud-mono text-2xl text-[color:var(--hud-amber)]/60 group-hover:text-[color:var(--hud-amber)] transition-all group-hover:translate-x-1">{m.icon}</span>
-                </div>
-                <div className="mt-1 hud-mono text-xs text-[color:var(--muted-foreground)]">{m.desc}</div>
-                <div className="mt-3 h-px w-full bg-gradient-to-r from-[color:var(--hud-amber)]/40 via-transparent to-transparent" />
-              </button>
-            ))}
+          {/* KPI */}
+          <div>
+            <div className="hud-label mb-3">// Статистика</div>
+            <div className="grid grid-cols-2 gap-3">
+              <Kpi label="Загальні бали" value={totalScore} accent="var(--hud-amber)" />
+              <Kpi label="Рівень I"       value={level1}     accent="var(--mission-defense)" />
+              <Kpi label="Рівень II"      value={level2}     accent="var(--mission-loot)" />
+              <Kpi label="Рівень III"     value={level3}     accent="var(--mission-economy)" />
+            </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--hud-amber)]/20 pt-4">
-            <button
-              onClick={() => { sfx.click(); setConfirmExit(true); }}
-              className="hud-btn hud-btn-ghost"
-              aria-label="Вийти з сесії"
-            >↶ Вийти</button>
-            <button
-              onClick={() => { sfx.deny(); }}
-              className="hud-btn hud-btn-danger"
-              aria-label="Скинути гру"
-            >⚠ Скинути гру</button>
-          </div>
+          <p className="hud-mono text-[0.65rem] text-center text-[color:var(--muted-foreground)]">
+            // Використовуйте нижнє меню для навігації
+          </p>
         </div>
       </div>
 
-      {confirmExit && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="exit-confirm-title"
-          onClick={() => setConfirmExit(false)}
-        >
-          <div
-            className="hud-panel-corners-4 relative w-full max-w-sm border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-            <div id="exit-confirm-title" className="hud-title text-lg text-[color:var(--hud-amber)]">// ВИХІД?</div>
-            <p className="hud-mono mt-2 text-sm text-[color:var(--foreground)]">
-              Ви впевнені? Ваш обліковий запис залишиться в сесії і ви зможете повернутись.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => { sfx.back(); setConfirmExit(false); }}
-                className="hud-btn hud-btn-ghost flex-1"
-                aria-label="Скасувати вихід"
-              >Скасувати</button>
-              <button
-                onClick={() => { setConfirmExit(false); logout(); }}
-                className="hud-btn hud-btn-danger flex-1"
-                aria-label="Підтвердити вихід"
-              >Вийти</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BottomNav />
     </div>
   );
 }
 
-function Kpi({ label, value, accent }: { label: string; value: number; accent: string }) {
+function Kpi({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent: string;
+}) {
   return (
     <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/25 bg-[color:var(--surface-2)] px-3 py-3">
       <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-      <div className="hud-label text-[0.6rem]" style={{ color: accent }}>{label}</div>
-      <div className="hud-title mt-1 text-2xl tabular-nums" style={{ color: accent }}>{value}</div>
+      <div className="hud-label text-[0.6rem]" style={{ color: accent }}>
+        {label}
+      </div>
+      <div className="hud-title mt-1 text-2xl tabular-nums" style={{ color: accent }}>
+        {value}
+      </div>
     </div>
   );
 }

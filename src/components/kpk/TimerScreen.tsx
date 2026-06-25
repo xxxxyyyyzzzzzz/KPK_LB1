@@ -15,7 +15,7 @@ const BOTS = [
 export function TimerScreen() {
   const {
     user, round, turn, sessionSeconds, turnSeconds, turnRunning,
-    toggleTurn, nextPlayer, ap, setAP,
+    toggleTurn, nextPlayer,
     isMyTurn, isHost, activePlayerId, sessionPlayers,
   } = useKpk();
   const [openBot, setOpenBot] = useState<string | null>(null);
@@ -27,23 +27,34 @@ export function TimerScreen() {
   return (
     <ScreenShell title="Таймер">
       <div className="mx-auto max-w-2xl space-y-6">
+
         <div className="text-center hud-mono text-xs text-[color:var(--muted-foreground)]">
           Новина {round} / Хід {turn} з 4
         </div>
 
+        {/* Загальний час сесії */}
         <div className="hud-panel-corners-4 relative flex items-center justify-between border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] px-4 py-3">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           <span className="hud-label">Загальний час сесії</span>
           <span className="hud-mono text-lg tabular-nums text-[color:var(--hud-cyan)]">{fmtSession(sessionSeconds)}</span>
         </div>
 
+        {/* Таймер ходу */}
         <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-6 text-center">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           <h3 className="hud-title text-base text-[color:var(--muted-foreground)] mb-2">
             Хід гравця / <span className="text-[color:var(--hud-amber-glow)]">{activeName}</span>
-            {isMyTurn && <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-green)]">● ВАШ ХІД</span>}
+            {isMyTurn && (
+              <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-green)]">● ВАШ ХІД</span>
+            )}
           </h3>
-          <div className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${ending ? "text-[color:var(--hud-red)] hud-pulse-red" : "text-[color:var(--hud-amber-glow)]"}`}>
+          <div
+            className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${
+              ending
+                ? "text-[color:var(--hud-red)] hud-pulse-red"
+                : "text-[color:var(--hud-amber-glow)]"
+            }`}
+          >
             {fmtClock(turnSeconds)}
           </div>
           <div className="flex justify-center gap-3 flex-wrap">
@@ -61,7 +72,9 @@ export function TimerScreen() {
                 className="hud-btn hud-btn-ghost min-w-[180px]"
                 onClick={nextPlayer}
                 aria-label="Передати хід наступному гравцю"
-              >↦ Наступний гравець{isHost && !isMyTurn ? " (хост)" : ""}</button>
+              >
+                ↦ Наступний гравець{isHost && !isMyTurn ? " (хост)" : ""}
+              </button>
             )}
           </div>
           {!canAdvance && (
@@ -71,17 +84,7 @@ export function TimerScreen() {
           )}
         </div>
 
-        {/* Action points */}
-        <div className="space-y-3">
-          <ApRow label="Активні дії" color="var(--action-active)" cur={ap.active} max={ap.activeMax}
-            onMinus={() => setAP("active", ap.active - 1)} onPlus={() => setAP("active", ap.active + 1)} />
-          <ApRow label="Атакуючі дії" color="var(--action-attack)" cur={ap.attack} max={ap.attackMax}
-            onMinus={() => setAP("attack", ap.attack - 1)} onPlus={() => setAP("attack", ap.attack + 1)} />
-          <ApRow label="Будівельні дії" color="var(--action-build)" cur={ap.build} max={ap.buildMax}
-            onMinus={() => setAP("build", ap.build - 1)} onPlus={() => setAP("build", ap.build + 1)} />
-        </div>
-
-        {/* Bot turn details */}
+        {/* Хід ботів */}
         <div>
           <div className="hud-label mb-2">// Хід ботів</div>
           <div className="space-y-2">
@@ -109,33 +112,8 @@ export function TimerScreen() {
             ))}
           </div>
         </div>
+
       </div>
     </ScreenShell>
-  );
-}
-
-function ApRow({ label, color, cur, max, onMinus, onPlus }: { label: string; color: string; cur: number; max: number; onMinus: () => void; onPlus: () => void }) {
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-1.5">
-        <span className="hud-title text-sm" style={{ color }}>{label}</span>
-        <span className="hud-mono text-sm tabular-nums">{cur} / {max}</span>
-      </div>
-      <div className="flex flex-wrap gap-1.5 p-2 border" style={{ borderColor: `${color}55` }}>
-        {Array.from({ length: max }).map((_, i) => (
-          <button
-            key={i}
-            onClick={() => { sfx.click(); i < cur ? onMinus() : onPlus(); }}
-            className="h-6 w-6 border transition-all"
-            style={{
-              borderColor: i < cur ? color : `${color}55`,
-              background: i < cur ? color : "transparent",
-              boxShadow: i < cur ? `0 0 6px ${color}` : "none",
-            }}
-            data-hud-sound="hover"
-          />
-        ))}
-      </div>
-    </div>
   );
 }
