@@ -166,8 +166,8 @@ export function LoginScreen() {
   const topMode = mode === "create" || mode === "join_code" || mode === "join_player";
 
   return (
-    <div className="hud-screen-enter safe-pb safe-px flex h-full w-full justify-center sm:items-center" style={{ alignItems: topMode ? 'flex-start' : undefined, paddingTop: topMode ? '12px' : undefined, overflowY: topMode ? 'auto' : undefined }}>
-      <div className="hud-scroll w-full max-w-md sm:max-w-[560px] lg:max-w-[620px] max-h-full overflow-y-auto py-4 sm:py-6">
+    <div className="hud-screen-enter safe-pb safe-px flex h-full w-full justify-center items-center" style={{ paddingTop: topMode ? '12px' : undefined, overflowY: topMode ? 'auto' : undefined, minHeight: 0 }}>
+      <div className="hud-scroll w-full max-w-md sm:max-w-[560px] lg:max-w-[620px] max-h-full overflow-y-auto py-4 sm:py-6" style={{ minHeight: 0 }}>
         <div
           className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-8 backdrop-blur-md"
           role="dialog"
