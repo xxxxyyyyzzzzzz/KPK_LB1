@@ -1,4 +1,4 @@
-import { ScreenShell } from "./ScreenShell";
+import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { MISSION_CLASS_COLOR } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
@@ -8,40 +8,47 @@ export function MissionsScreen() {
   return (
     <ScreenShell title="Місії">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <AnimatedItem index={0} className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1">МІСІЇ</h2>
           </div>
           <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">
             /<span className="text-[color:var(--hud-amber-glow)]">{user?.nickname}</span> · Бали: <span className="text-[color:var(--hud-amber)]">{totalScore}</span>
           </div>
-        </div>
+        </AnimatedItem>
 
-        {([1, 2, 3] as const).map((tier) => (
-          <div key={tier} className="mb-6">
+        {([1, 2, 3] as const).map((tier, tierIdx) => (
+          <AnimatedItem key={tier} index={tierIdx + 1} className="mb-6">
             <div className="mb-2 flex items-center gap-3 border-b border-[color:var(--hud-amber)]/20 pb-1">
               <span className="hud-label text-[color:var(--hud-amber)]">Рівень {tier === 1 ? "I" : tier === 2 ? "II" : "III"}</span>
               <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">[заміни: {replacements[tier]}]</span>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {slots.filter((s) => (s.slot_index % 3) + 1 === tier).map((s) => {
+              {slots.filter((s) => (s.slot_index % 3) + 1 === tier).map((s, cardIdx) => {
                 const m = getMission(s.mission_id);
                 return (
-                  <MissionCard
+                  <div
                     key={s.slot_index}
-                    slotIndex={s.slot_index}
-                    progress={s.current_progress}
-                    mission={m}
-                    canReplace={replacements[tier] > 0}
-                    onMinus={() => { sfx.click(); updateSlotProgress(s.slot_index, -1); }}
-                    onPlus={() => { sfx.click(); updateSlotProgress(s.slot_index, +1); }}
-                    onComplete={() => completeSlot(s.slot_index)}
-                    onReplace={() => replaceSlot(s.slot_index)}
-                  />
+                    style={{
+                      opacity: 0,
+                      animation: `hud-screen-in 0.4s cubic-bezier(0.2,0.8,0.2,1) ${(tierIdx * 0.15) + (cardIdx * 0.1) + 0.2}s both`,
+                    }}
+                  >
+                    <MissionCard
+                      slotIndex={s.slot_index}
+                      progress={s.current_progress}
+                      mission={m}
+                      canReplace={replacements[tier] > 0}
+                      onMinus={() => { sfx.click(); updateSlotProgress(s.slot_index, -1); }}
+                      onPlus={() => { sfx.click(); updateSlotProgress(s.slot_index, +1); }}
+                      onComplete={() => completeSlot(s.slot_index)}
+                      onReplace={() => replaceSlot(s.slot_index)}
+                    />
+                  </div>
                 );
               })}
             </div>
-          </div>
+          </AnimatedItem>
         ))}
       </div>
     </ScreenShell>

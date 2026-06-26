@@ -1,4 +1,4 @@
-import { ScreenShell } from "./ScreenShell";
+import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { UPGRADES, UPGRADE_CATEGORIES, type UpgradeCategory, type UpgradeDef } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
 
@@ -8,7 +8,7 @@ export function UpgradesScreen() {
   return (
     <ScreenShell title="Прокачки">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <AnimatedItem index={0} className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ДЕРЕВО ПРОКАЧОК</h2>
             <div className="mt-2 hud-mono text-xs text-[color:var(--muted-foreground)]">
@@ -24,11 +24,19 @@ export function UpgradesScreen() {
             <div className="hud-label text-[0.6rem] text-[color:var(--hud-cyan)]">// Сума балів</div>
             <div className="hud-title text-2xl text-[color:var(--hud-cyan)]">{upgradePoints}</div>
           </div>
-        </div>
+        </AnimatedItem>
 
         <div className="space-y-5">
-          {UPGRADE_CATEGORIES.map((cat) => (
-            <Branch key={cat} cat={cat} />
+          {UPGRADE_CATEGORIES.map((cat, i) => (
+            <div
+              key={cat}
+              style={{
+                opacity: 0,
+                animation: `hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) ${0.1 + i * 0.12}s both`,
+              }}
+            >
+              <Branch cat={cat} />
+            </div>
           ))}
         </div>
       </div>
