@@ -53,14 +53,7 @@ function KpkApp() {
         <span>v1.0 · 2026.06.10</span>
       </div>
 
-      <button
-        onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
-        className="hud-btn hud-btn-ghost pointer-events-auto absolute safe-bottom right-3 z-50 !py-1.5 !px-3 !text-[0.65rem]"
-        aria-label={muted ? "Увімкнути звук" : "Вимкнути звук"}
-        title="Mute / Unmute"
-      >
-        {muted ? "🔇 SFX" : "🔊 SFX"}
-      </button>
+      {/* Sound toggle moved into burger menu */}
 
       {/* Screen router */}
       <div className="relative z-10 h-full w-full">

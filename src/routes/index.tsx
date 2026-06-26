@@ -47,14 +47,7 @@ function KpkApp() {
       <div className="hud-scanbar" />
       <HudStatus />
 
-      <button
-        onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
-        className="hud-btn hud-btn-ghost pointer-events-auto absolute right-3 z-50 !py-1.5 !px-3 !text-[0.65rem]"
-        style={{ bottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
-        aria-label={muted ? "Увімкнути звук" : "Вимкнути звук"}
-      >
-        {muted ? "🔇" : "🔊"}
-      </button>
+      {/* Sound toggle moved into burger menu */}
 
       {/* Екрани — flex-1 + min-h-0 щоб не вилазили за межі */}
       <div className="relative z-10 flex flex-col flex-1 min-h-0 overflow-hidden">

@@ -69,6 +69,7 @@ function BurgerMenu() {
   const { roomCode, players, playerId, isHost, logout } = useKpk();
   const [open, setOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [muted, setMuted] = useState<boolean>(sfx.isMuted());
 
   return (
     <>
@@ -137,6 +138,16 @@ function BurgerMenu() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div style={{ opacity: 0, animation: "hud-screen-in 0.25s cubic-bezier(0.2,0.8,0.2,1) 0.05s both" }}>
+                <button
+                  onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
+                  className="hud-btn hud-btn-ghost w-full"
+                  aria-label={muted ? "Увімкнути звук" : "Вимкнути звук"}
+                >
+                  {muted ? "🔇 Звук" : "🔊 Звук"}
+                </button>
               </div>
 
               <button
