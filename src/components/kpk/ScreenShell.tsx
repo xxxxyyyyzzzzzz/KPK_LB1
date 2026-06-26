@@ -29,7 +29,7 @@ function HeaderTimer() {
       aria-label="Перейти до таймера"
       className={["hud-mono tabular-nums text-base sm:text-xl px-2 py-1 transition-all select-none shrink-0",
         ending ? "text-[color:var(--hud-red)] hud-pulse-red"
-        : blink ? "text-[color:var(--hud-amber-glow)] scale-110 drop-shadow-[0_0_8px_var(--hud-amber-glow)]"
+        : blink ? "text-[color:var(--hud-amber-glow)] scale-110"
         : "text-[color:var(--hud-amber-glow)] hud-flicker"].join(" ")}
     >{fmtClock(turnSeconds)}</button>
   );
@@ -101,18 +101,25 @@ function BurgerMenu() {
   );
 }
 
+// ─── FIXED хедер — прибитий до верху екрану через position:fixed ───
+const HEADER_CONTENT_H = 52; // висота контенту хедера в px
+
 export function HudHeader({ title }: { title: string }) {
   return (
-    // Весь блок хедера — фон тягнеться під Dynamic Island через paddingTop
     <div style={{
-      flexShrink: 0,
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 100,
       backgroundColor: "var(--surface-2)",
       borderBottom: "1px solid rgba(245,184,64,0.3)",
+      // paddingTop розсуває контент нижче Dynamic Island
       paddingTop: "env(safe-area-inset-top)",
       paddingLeft: "env(safe-area-inset-left)",
       paddingRight: "env(safe-area-inset-right)",
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", padding: "0.55rem 0.75rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.55rem 0.75rem", height: `${HEADER_CONTENT_H}px` }}>
         <BurgerMenu />
         <div className="hud-title text-[color:var(--hud-amber)] text-xs sm:text-sm tracking-[0.3em] truncate flex-1 text-center">{title}</div>
         <HeaderTimer />
@@ -121,6 +128,7 @@ export function HudHeader({ title }: { title: string }) {
   );
 }
 
+// ─── FIXED нижнє меню — прибите до низу екрану через position:fixed ───
 const NAV_ITEMS: { id: Screen; label: string; icon: string }[] = [
   { id: "missions", label: "Місії",    icon: "▤" },
   { id: "upgrades", label: "Прокачки", icon: "❖" },
@@ -131,12 +139,16 @@ const NAV_ITEMS: { id: Screen; label: string; icon: string }[] = [
 export function BottomNav() {
   const { screen, go } = useKpk();
   return (
-    // Нижнє меню — фон тягнеться під home indicator через paddingBottom
     <div style={{
-      flexShrink: 0,
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 100,
       display: "flex",
       backgroundColor: "var(--surface-2)",
       borderTop: "1px solid rgba(245,184,64,0.3)",
+      // paddingBottom розсуває контент вище home indicator
       paddingBottom: "env(safe-area-inset-bottom)",
       paddingLeft: "env(safe-area-inset-left)",
       paddingRight: "env(safe-area-inset-right)",
@@ -145,11 +157,23 @@ export function BottomNav() {
         const active = screen === item.id;
         return (
           <button key={item.id} onClick={() => { sfx.click(); go(item.id); }} aria-label={item.label}
-            style={{ flex: 1, borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent", marginTop: "-1px" }}
-            className={["flex flex-col items-center justify-center gap-0.5 py-3 min-h-[52px] transition-all",
-              active ? "text-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"].join(" ")}>
-            <span className="text-lg leading-none">{item.icon}</span>
-            <span className="hud-mono text-[0.58rem] tracking-wider">{item.label}</span>
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "2px",
+              padding: "10px 0",
+              minHeight: "52px",
+              borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
+              marginTop: "-1px",
+              background: active ? "rgba(245,184,64,0.05)" : "transparent",
+              color: active ? "var(--hud-amber)" : "var(--muted-foreground)",
+              transition: "all 0.15s",
+            }}>
+            <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>{item.icon}</span>
+            <span className="hud-mono" style={{ fontSize: "0.58rem", letterSpacing: "0.08em" }}>{item.label}</span>
           </button>
         );
       })}
@@ -157,19 +181,44 @@ export function BottomNav() {
   );
 }
 
+// ─── ScreenShell — скрол між двома fixed планками ───
 export function ScreenShell({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
+    <>
       <HudHeader title={title} />
-      {/* Скрол-зона — flex:1 + minHeight:0 щоб не вилазила за межі */}
-      <div className="hud-scroll px-3 py-4 sm:px-6 sm:py-6"
-        style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
-        <div style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.05s both" }}>
+
+      {/*
+        Скрол-контейнер.
+        paddingTop = висота хедера (safe-area-inset-top + 52px контент).
+        paddingBottom = висота нижнього меню (safe-area-inset-bottom + 52px контент).
+        Це гарантує що контент не ховається за fixed планками.
+      */}
+      <div
+        className="hud-scroll"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch",
+          // Відступи щоб контент не ховався під fixed хедером і меню
+          paddingTop: `calc(env(safe-area-inset-top) + ${HEADER_CONTENT_H}px)`,
+          paddingBottom: `calc(env(safe-area-inset-bottom) + 52px)`,
+          paddingLeft: "env(safe-area-inset-left)",
+          paddingRight: "env(safe-area-inset-right)",
+          zIndex: 10,
+        }}
+      >
+        <div style={{ padding: "1rem 0.75rem", opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.05s both" }}>
           {children}
         </div>
       </div>
+
       <BottomNav />
-    </div>
+    </>
   );
 }
 
