@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
@@ -181,7 +181,7 @@ const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HE
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
 const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 0.5rem + ${HEADER_CONTENT_H}px)`;
 
-export function HudHeader({ title }: { title: string }) {
+export function HudHeader({ title, showStickyTitle }: { title: string; showStickyTitle: boolean }) {
   return (
     <header
       className="fixed inset-x-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
@@ -194,8 +194,17 @@ export function HudHeader({ title }: { title: string }) {
     >
       <div className="flex items-center justify-between gap-2 px-3" style={{ minHeight: `${HEADER_CONTENT_H}px` }}>
         <BurgerMenu />
-        <div className="hud-title text-[color:var(--hud-amber)] text-xs sm:text-sm tracking-[0.3em] truncate flex-1 text-center">
-          {title}
+        <div className="flex-1 flex justify-center">
+          <div
+            className={[
+              "hud-title border border-[color:var(--hud-amber)]/40 px-3 py-1 text-[color:var(--hud-amber)] transition-all duration-200",
+              showStickyTitle
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 -translate-y-1 pointer-events-none",
+            ].join(" ")}
+          >
+            {title}
+          </div>
         </div>
         <HeaderTimer />
       </div>
@@ -260,11 +269,36 @@ export function BottomNav() {
 }
 
 export function ScreenShell({ children, title }: { children: ReactNode; title: string }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const titleSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [titleVisible, setTitleVisible] = useState(true);
+
+  useEffect(() => {
+    const scrollEl = scrollRef.current;
+    const sentinel = titleSentinelRef.current;
+    if (!scrollEl || !sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setTitleVisible(entry.isIntersecting);
+      },
+      {
+        root: scrollEl,
+        rootMargin: `-${HEADER_TOTAL_HEIGHT} 0px 0px 0px`,
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
-      <HudHeader title={title} />
+      <HudHeader title={title} showStickyTitle={!titleVisible} />
 
       <div
+        ref={scrollRef}
         className="hud-scroll"
         style={{
           position: "fixed",
@@ -282,6 +316,7 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
           zIndex: 10,
         }}
       >
+        <div ref={titleSentinelRef} className="h-px" />
         <div className="px-3 py-4 sm:px-6 sm:py-6" style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.05s both" }}>
           {children}
         </div>
