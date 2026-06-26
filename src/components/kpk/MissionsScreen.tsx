@@ -17,39 +17,49 @@ export function MissionsScreen() {
           </div>
         </AnimatedItem>
 
-        {([1, 2, 3] as const).map((tier, tierIdx) => (
-          <AnimatedItem key={tier} index={tierIdx + 1} className="mb-6">
-            <div className="mb-2 flex items-center gap-3 border-b border-[color:var(--hud-amber)]/20 pb-1">
-              <span className="hud-label text-[color:var(--hud-amber)]">Рівень {tier === 1 ? "I" : tier === 2 ? "II" : "III"}</span>
-              <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">[заміни: {replacements[tier]}]</span>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {slots.filter((s) => (s.slot_index % 3) + 1 === tier).map((s, cardIdx) => {
-                const m = getMission(s.mission_id);
-                return (
-                  <div
-                    key={s.slot_index}
-                    style={{
-                      opacity: 0,
-                      animation: `hud-screen-in 0.4s cubic-bezier(0.2,0.8,0.2,1) ${(tierIdx * 0.15) + (cardIdx * 0.1) + 0.2}s both`,
-                    }}
-                  >
-                    <MissionCard
-                      slotIndex={s.slot_index}
-                      progress={s.current_progress}
-                      mission={m}
-                      canReplace={replacements[tier] > 0}
-                      onMinus={() => { sfx.click(); updateSlotProgress(s.slot_index, -1); }}
-                      onPlus={() => { sfx.click(); updateSlotProgress(s.slot_index, +1); }}
-                      onComplete={() => completeSlot(s.slot_index)}
-                      onReplace={() => replaceSlot(s.slot_index)}
-                    />
+        {([1, 2, 3] as const).map((tier, tierIdx) => {
+          const tierColor = tier === 1 ? "var(--mission-defense)" : tier === 2 ? "var(--mission-loot)" : "var(--mission-economy)";
+          return (
+            <AnimatedItem key={tier} index={tierIdx + 1} className="mb-6">
+              <div
+                className="overflow-hidden rounded-2xl border border-[color:var(--hud-amber)]/20 border-l-4 bg-[color:var(--surface-3)]/80 shadow-[0_1px_0_0_rgba(245,184,64,0.08)]"
+                style={{ borderLeftColor: tierColor }}
+              >
+                <div className="border-b border-[color:var(--hud-amber)]/15 bg-[color:var(--surface-2)]/70 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="hud-label text-[color:var(--hud-amber)]">Рівень {tier === 1 ? "I" : tier === 2 ? "II" : "III"}</span>
+                    <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">[заміни: {replacements[tier]}]</span>
                   </div>
-                );
-              })}
-            </div>
-          </AnimatedItem>
-        ))}
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 p-4">
+                  {slots.filter((s) => (s.slot_index % 3) + 1 === tier).map((s, cardIdx) => {
+                    const m = getMission(s.mission_id);
+                    return (
+                      <div
+                        key={s.slot_index}
+                        style={{
+                          opacity: 0,
+                          animation: `hud-screen-in 0.4s cubic-bezier(0.2,0.8,0.2,1) ${(tierIdx * 0.15) + (cardIdx * 0.1) + 0.2}s both`,
+                        }}
+                      >
+                        <MissionCard
+                          slotIndex={s.slot_index}
+                          progress={s.current_progress}
+                          mission={m}
+                          canReplace={replacements[tier] > 0}
+                          onMinus={() => { sfx.click(); updateSlotProgress(s.slot_index, -1); }}
+                          onPlus={() => { sfx.click(); updateSlotProgress(s.slot_index, +1); }}
+                          onComplete={() => completeSlot(s.slot_index)}
+                          onReplace={() => replaceSlot(s.slot_index)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </AnimatedItem>
+          );
+        })}
       </div>
     </ScreenShell>
   );
