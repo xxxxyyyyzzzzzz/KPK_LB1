@@ -181,9 +181,10 @@ const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HE
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
 const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 0.5rem + ${HEADER_CONTENT_H}px)`;
 
-export function HudHeader({ title, showStickyTitle }: { title: string; showStickyTitle: boolean }) {
+export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement> }) {
   return (
     <header
+      ref={headerRef}
       className="fixed inset-x-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
       style={{
         top: HEADER_OFFSET,
@@ -271,20 +272,23 @@ export function BottomNav() {
 export function ScreenShell({ children, title }: { children: ReactNode; title: string }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const titleSentinelRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
   const [titleVisible, setTitleVisible] = useState(true);
 
   useEffect(() => {
     const scrollEl = scrollRef.current;
     const sentinel = titleSentinelRef.current;
-    if (!scrollEl || !sentinel) return;
+    const headerEl = headerRef.current;
+    if (!scrollEl || !sentinel || !headerEl) return;
 
+    const headerHeight = headerEl.getBoundingClientRect().height;
     const observer = new IntersectionObserver(
       ([entry]) => {
         setTitleVisible(entry.isIntersecting);
       },
       {
         root: scrollEl,
-        rootMargin: `-${HEADER_TOTAL_HEIGHT} 0px 0px 0px`,
+        rootMargin: `-${headerHeight}px 0px 0px 0px`,
         threshold: 0,
       }
     );
@@ -295,7 +299,7 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
 
   return (
     <>
-      <HudHeader title={title} showStickyTitle={!titleVisible} />
+      <HudHeader title={title} showStickyTitle={!titleVisible} headerRef={headerRef} />
 
       <div
         ref={scrollRef}
