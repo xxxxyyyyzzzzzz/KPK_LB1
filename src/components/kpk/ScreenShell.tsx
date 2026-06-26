@@ -234,10 +234,10 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
 }
 
 const NAV_ITEMS: { id: Screen; label: string; icon: string }[] = [
-  { id: "missions", label: "Місії", icon: "▤" },
-  { id: "upgrades", label: "Прокачки", icon: "❖" },
-  { id: "news", label: "Новини", icon: "◈" },
-  { id: "score", label: "Єбали", icon: "✦" },
+  { id: "missions", label: "Місії", icon: "📜" },
+  { id: "upgrades", label: "Прокачки", icon: "📈" },
+  { id: "news", label: "Новини", icon: "📰" },
+  { id: "score", label: "Єбали", icon: "📊" },
 ];
 
 export function BottomNav() {
@@ -268,9 +268,9 @@ export function BottomNav() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: "2px",
-              padding: "8px 0",
-              minHeight: "52px",
+              gap: "4px",
+              padding: "16px 0",
+              minHeight: "96px",
               borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
               marginTop: "-1px",
               background: active ? "rgba(245,184,64,0.05)" : "transparent",
@@ -280,8 +280,8 @@ export function BottomNav() {
               boxSizing: "border-box",
             }}
           >
-            <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>{item.icon}</span>
-            <span className="hud-mono" style={{ fontSize: "0.58rem", letterSpacing: "0.08em" }}>{item.label}</span>
+            <span style={{ fontSize: "1.8rem", lineHeight: 1 }}>{item.icon}</span>
+            <span className="hud-mono" style={{ fontSize: "0.95rem", letterSpacing: "0.08em" }}>{item.label}</span>
           </button>
         );
       })}
