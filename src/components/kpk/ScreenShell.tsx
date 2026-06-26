@@ -190,7 +190,7 @@ export function BottomNav() {
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
       style={{
-        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
       }}
