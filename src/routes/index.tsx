@@ -42,27 +42,32 @@ function KpkApp() {
   const showEndNewsModal = awaitingNewsAck && screen !== "news";
 
   return (
+    /*
+      flex-col + height 100dvh — застосунок рівно по висоті екрану.
+      w-full замість w-screen — не виходить за межі на iOS landscape.
+      overflow-hidden — забороняємо будь-який зовнішній скрол.
+    */
     <div
       className="hud-grid-bg hud-scanlines hud-vignette relative flex flex-col w-full overflow-hidden"
       style={{ height: "100dvh" }}
     >
       <div className="hud-scanbar" />
 
-      {/* Кнопка звуку */}
+      {/* Кнопка звуку — над нижнім меню */}
       <button
         onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
-        className="hud-btn hud-btn-ghost pointer-events-auto absolute z-50 !py-1.5 !px-3 !text-[0.65rem]"
+        className="hud-btn hud-btn-ghost pointer-events-auto absolute z-50 !py-1 !px-2 !text-[0.6rem]"
         style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 4.5rem)",
-          right: "max(0.75rem, env(safe-area-inset-right))",
+          bottom: "calc(env(safe-area-inset-bottom) + 56px + 0.5rem)",
+          right: "max(0.5rem, env(safe-area-inset-right))",
         }}
         aria-label={muted ? "Увімкнути звук" : "Вимкнути звук"}
       >
-        {muted ? "🔇 SFX" : "🔊 SFX"}
+        {muted ? "🔇" : "🔊"}
       </button>
 
-      {/* Екрани */}
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden min-h-0">
+      {/* Екрани — flex-1 + min-h-0 щоб не вилазили за межі */}
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 overflow-hidden">
         {screen === "login"           && <LoginScreen />}
         {screen === "lobby"           && <LobbyScreen />}
         {screen === "main"            && <MainMenu />}
@@ -84,14 +89,21 @@ function KpkApp() {
           <div className="hud-panel-corners-4 relative w-full max-w-md border border-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)] p-6 text-center shadow-[0_0_40px_rgba(245,184,64,0.35)]">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <div className="hud-label mb-1 text-[0.65rem]">// ФІНАЛ СЕСІЇ</div>
-            <div id="end-news-title" className="hud-title text-2xl text-[color:var(--hud-amber)] hud-flicker">КІНЕЦЬ ПЕРШИХ НОВИН</div>
+            <div id="end-news-title" className="hud-title text-2xl text-[color:var(--hud-amber)] hud-flicker">
+              КІНЕЦЬ ПЕРШИХ НОВИН
+            </div>
             <p className="hud-mono mt-3 text-sm text-[color:var(--foreground)]">
-              Усі 4 раунди новин відіграно. Хід мутантів завершено. Перейдіть до фінального брифінгу зони.
+              Усі 4 раунди новин відіграно. Хід мутантів завершено.
+              Перейдіть до фінального брифінгу зони.
             </p>
-            <button onClick={() => { sfx.notify(); ackNews(); }} className="hud-btn hud-btn-lg mt-5 w-full" autoFocus>
-              ▸ ПЕРЕГЛЯНУТИ НОВИНИ
-            </button>
-            <p className="hud-mono mt-3 text-[0.65rem] text-[color:var(--muted-foreground)]">Інші дії заблоковано до перегляду.</p>
+            <button
+              onClick={() => { sfx.notify(); ackNews(); }}
+              className="hud-btn hud-btn-lg mt-5 w-full"
+              autoFocus
+            >▸ ПЕРЕГЛЯНУТИ НОВИНИ</button>
+            <p className="hud-mono mt-3 text-[0.65rem] text-[color:var(--muted-foreground)]">
+              Інші дії заблоковано до перегляду.
+            </p>
           </div>
         </div>
       )}
