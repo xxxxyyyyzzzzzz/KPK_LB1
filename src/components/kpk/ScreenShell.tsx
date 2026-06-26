@@ -49,8 +49,11 @@ export function HudStatus() {
     <div
       className="pointer-events-none hud-status-strip fixed inset-x-0 top-0 z-50 flex items-center justify-between hud-mono text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)] border-b border-[color:var(--hud-amber)]/20"
       style={{
+        boxSizing: "border-box",
+        height: STATUS_BAR_HEIGHT,
+        minHeight: STATUS_BAR_HEIGHT,
         paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "0.25rem",
+        paddingBottom: "0.1rem",
         paddingLeft: "max(0.75rem, env(safe-area-inset-left))",
         paddingRight: "max(0.75rem, env(safe-area-inset-right))",
       }}
@@ -173,13 +176,17 @@ function BurgerMenu() {
 }
 
 const HEADER_CONTENT_H = 52; // висота контенту хедера в px
+const STATUS_BAR_INNER_HEIGHT = "1.5rem";
+const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
+const HEADER_OFFSET = STATUS_BAR_HEIGHT;
+const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 0.5rem + ${HEADER_CONTENT_H}px)`;
 
 export function HudHeader({ title }: { title: string }) {
   return (
     <header
       className="fixed inset-x-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
       style={{
-        top: "calc(env(safe-area-inset-top) + 2rem)",
+        top: HEADER_OFFSET,
         paddingTop: "0.5rem",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
@@ -208,9 +215,10 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex flex-row border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
+      className="fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch justify-between border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto"
       style={{
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
+        paddingTop: "0.2rem",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.35rem)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
       }}
@@ -223,19 +231,23 @@ export function BottomNav() {
             onClick={() => { sfx.click(); go(item.id); }}
             aria-label={item.label}
             style={{
-              flex: 1,
+              flex: "1 1 0%",
+              minWidth: "0",
+              maxWidth: "25%",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               gap: "2px",
-              padding: "10px 0",
+              padding: "8px 0",
               minHeight: "52px",
               borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
               marginTop: "-1px",
               background: active ? "rgba(245,184,64,0.05)" : "transparent",
               color: active ? "var(--hud-amber)" : "var(--muted-foreground)",
               transition: "all 0.15s",
+              whiteSpace: "nowrap",
+              boxSizing: "border-box",
             }}
           >
             <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>{item.icon}</span>
@@ -263,7 +275,7 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
           overflowY: "auto",
           overflowX: "hidden",
           WebkitOverflowScrolling: "touch",
-          paddingTop: `calc(env(safe-area-inset-top) + 2.2rem + ${HEADER_CONTENT_H}px)`,
+          paddingTop: HEADER_TOTAL_HEIGHT,
           paddingBottom: `calc(env(safe-area-inset-bottom) + 52px)`,
           paddingLeft: "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",
