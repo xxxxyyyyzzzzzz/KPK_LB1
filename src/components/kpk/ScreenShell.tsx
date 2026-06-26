@@ -277,24 +277,31 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
 
   useEffect(() => {
     const scrollEl = scrollRef.current;
-    const sentinel = titleSentinelRef.current;
     const headerEl = headerRef.current;
-    if (!scrollEl || !sentinel || !headerEl) return;
+    if (!scrollEl || !headerEl) return;
 
-    const headerHeight = headerEl.getBoundingClientRect().height;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setTitleVisible(entry.isIntersecting);
-      },
-      {
-        root: scrollEl,
-        rootMargin: `-${headerHeight}px 0px 0px 0px`,
-        threshold: 0,
-      }
-    );
+    const titleElement = scrollEl.querySelector<HTMLElement>("h2.hud-title, div.hud-title, span.hud-title");
+    const target = titleElement ?? titleSentinelRef.current;
+    if (!target) return;
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    const updateVisibility = () => {
+      const titleRect = target.getBoundingClientRect();
+      const headerRect = headerEl.getBoundingClientRect();
+      setTitleVisible(titleRect.bottom > headerRect.bottom + 1);
+    };
+
+    updateVisibility();
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateVisibility);
+    };
+
+    scrollEl.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      scrollEl.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   return (
