@@ -195,7 +195,7 @@ const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HE
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
 const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 0.5rem + ${HEADER_CONTENT_H}px)`;
 
-export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement> }) {
+export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement | null> }) {
   return (
     <header
       ref={headerRef}
