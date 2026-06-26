@@ -55,6 +55,9 @@ export type SessionState = {
   player_order: string[];
   players: Record<string, PlayerState>;
   news: NewsEntry[];
+  session_started_at?: number;
+  session_paused_at?: number;
+  session_pause_accumulated?: number;
   /** Bumped on every news generation; clients use to auto-navigate to NewsScreen. */
   news_signal_ts?: number;
   /** Set true after the last mutant turn of round 4: blocks UI until user opens news. */
@@ -115,6 +118,9 @@ export function makeSession(code: string, hostId: string, opts?: { isTest?: bool
     player_order: [],
     players: {},
     news: [],
+    session_started_at: undefined,
+    session_paused_at: undefined,
+    session_pause_accumulated: 0,
     news_signal_ts: 0,
     awaiting_news_ack: false,
     events: {},

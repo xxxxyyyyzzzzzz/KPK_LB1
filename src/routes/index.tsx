@@ -45,21 +45,6 @@ function KpkApp() {
     <div className="hud-grid-bg hud-scanlines hud-vignette relative overflow-hidden" style={{ width: "100dvw", height: "100dvh" }}>
       <div className="hud-scanbar" />
 
-      {/* Status strip — фон покриває Dynamic Island / notch */}
-      <div
-        className="pointer-events-none absolute top-0 left-0 right-0 z-50 flex justify-between hud-mono text-[0.6rem] uppercase text-[color:var(--hud-amber)]/60 tracking-widest bg-[color:var(--surface-2)]"
-        style={{
-          paddingTop: "max(0.25rem, env(safe-area-inset-top))",
-          paddingBottom: "0.25rem",
-          paddingLeft: "max(0.75rem, env(safe-area-inset-left))",
-          paddingRight: "max(0.75rem, env(safe-area-inset-right))",
-        }}
-      >
-        <span>● REC · ZONE-7</span>
-        <span className="hud-blink">SIGNAL OK</span>
-        <span>v1.0 · 2026.06.10</span>
-      </div>
-
       <button
         onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
         className="hud-btn hud-btn-ghost pointer-events-auto absolute right-3 z-50 !py-1.5 !px-3 !text-[0.65rem]"

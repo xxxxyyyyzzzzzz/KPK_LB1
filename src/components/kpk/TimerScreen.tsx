@@ -14,8 +14,9 @@ const BOTS = [
 
 export function TimerScreen() {
   const {
-    user, round, turn, sessionSeconds, turnSeconds, turnRunning,
-    toggleTurn, nextPlayer,
+    user, round, turn, sessionSeconds, sessionStartedAt, sessionTimerRunning,
+    turnSeconds, turnRunning,
+    toggleTurn, toggleSessionTimer, nextPlayer,
     isMyTurn, isHost, activePlayerId, sessionPlayers,
   } = useKpk();
   const [openBot, setOpenBot] = useState<string | null>(null);
@@ -36,10 +37,31 @@ export function TimerScreen() {
 
         {/* Загальний час сесії */}
         <AnimatedItem index={1}>
-          <div className="hud-panel-corners-4 relative flex items-center justify-between border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] px-4 py-3">
+          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] px-4 py-3">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-            <span className="hud-label">Загальний час сесії</span>
-            <span className="hud-mono text-lg tabular-nums text-[color:var(--hud-cyan)]">{fmtSession(sessionSeconds)}</span>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="hud-label">Загальний час сесії</div>
+                <div className="hud-mono text-lg tabular-nums text-[color:var(--hud-cyan)] mt-1">{fmtSession(sessionSeconds)}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { sfx.click(); toggleSessionTimer(); }}
+                  aria-label={sessionTimerRunning ? "Пауза загального часу" : "Продовжити загальний час"}
+                  className="hud-btn hud-btn-ghost px-3 py-2 min-w-[110px]"
+                >
+                  {sessionTimerRunning ? "❚❚ Пауза" : "▸ Пуск"}
+                </button>
+              </div>
+            </div>
+            {sessionStartedAt && (
+              <div className="hud-mono text-[0.7rem] text-[color:var(--muted-foreground)] mt-3">
+                Початок сесії: {new Date(sessionStartedAt).toLocaleString("uk-UA", {
+                  year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit"
+                })}
+              </div>
+            )}
           </div>
         </AnimatedItem>
 

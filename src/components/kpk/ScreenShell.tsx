@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { useKpk, fmtClock } from "@/lib/kpkStore";
+import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
 import type { Screen } from "@/lib/kpkData";
@@ -40,6 +40,25 @@ function HeaderTimer() {
     >
       {fmtClock(turnSeconds)}
     </button>
+  );
+}
+
+function HudStatus() {
+  const { sessionSeconds } = useKpk();
+  return (
+    <div
+      className="hud-status-strip fixed inset-x-0 top-0 z-50 flex items-center justify-between hud-mono text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)] border-b border-[color:var(--hud-amber)]/20"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "0.25rem",
+        paddingLeft: "max(0.75rem, env(safe-area-inset-left))",
+        paddingRight: "max(0.75rem, env(safe-area-inset-right))",
+      }}
+    >
+      <span>● REC · ZONE-7</span>
+      <span className="hud-blink">SIGNAL OK</span>
+      <span className="tabular-nums">{fmtSession(sessionSeconds)}</span>
+    </div>
   );
 }
 
@@ -158,9 +177,10 @@ const HEADER_CONTENT_H = 52; // висота контенту хедера в px
 export function HudHeader({ title }: { title: string }) {
   return (
     <header
-      className="fixed inset-x-0 top-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
+      className="fixed inset-x-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
       style={{
-        paddingTop: "env(safe-area-inset-top)",
+        top: "calc(env(safe-area-inset-top) + 2rem)",
+        paddingTop: "0.5rem",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
       }}
@@ -190,6 +210,8 @@ export function BottomNav() {
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
       style={{
+        display: "flex",
+        flexDirection: "row",
         paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
@@ -230,6 +252,7 @@ export function BottomNav() {
 export function ScreenShell({ children, title }: { children: ReactNode; title: string }) {
   return (
     <>
+      <HudStatus />
       <HudHeader title={title} />
 
       <div
@@ -243,7 +266,7 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
           overflowY: "auto",
           overflowX: "hidden",
           WebkitOverflowScrolling: "touch",
-          paddingTop: `calc(env(safe-area-inset-top) + ${HEADER_CONTENT_H}px)`,
+          paddingTop: `calc(env(safe-area-inset-top) + 2.2rem + ${HEADER_CONTENT_H}px)`,
           paddingBottom: `calc(env(safe-area-inset-bottom) + 52px)`,
           paddingLeft: "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",

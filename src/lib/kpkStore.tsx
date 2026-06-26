@@ -50,6 +50,8 @@ type KpkState = {
   round: 1 | 2 | 3 | 4;
   turn: number; // 1..TURNS_PER_NEWS_ROUND
   sessionSeconds: number;
+  sessionStartedAt: number | null;
+  sessionTimerRunning: boolean;
   turnSeconds: number;
   turnRunning: boolean;
 
@@ -98,6 +100,7 @@ type KpkState = {
   leaveSession: () => void;
   logout: () => void;
   go: (s: Screen) => void;
+  toggleSessionTimer: () => void;
   setAP: (k: keyof ActionPoints, v: number) => void;
   toggleTurn: () => void;
   nextPlayer: () => void;
@@ -146,7 +149,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const [prevScreen, setPrev] = useState<Screen | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
-  const [sessionSeconds, setSS] = useState(0);
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  const [sessionTimerRunning, setSessionTimerRunning] = useState(false);
 
   const session = useSession(roomCode);
   const me: PlayerState | null = session && playerId ? session.players?.[playerId] ?? null : null;
@@ -155,9 +160,39 @@ export function KpkProvider({ children }: { children: ReactNode }) {
 
   // session timer
   useEffect(() => {
-    const id = setInterval(() => setSS((s) => s + 1), 1000);
+    if (!session?.session_started_at) return;
+    if (sessionStartedAt !== session.session_started_at) {
+      setSessionStartedAt(session.session_started_at);
+      setSessionSeconds(Math.floor((Date.now() - session.session_started_at) / 1000));
+      setSessionTimerRunning(true);
+    }
+  }, [session?.session_started_at, sessionStartedAt]);
+
+  useEffect(() => {
+    if (!sessionStartedAt || !sessionTimerRunning) return;
+    setSessionSeconds(Math.floor((Date.now() - sessionStartedAt) / 1000));
+    const id = setInterval(() => {
+      setSessionSeconds(Math.floor((Date.now() - sessionStartedAt) / 1000));
+    }, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [sessionStartedAt, sessionTimerRunning]);
+
+  useEffect(() => {
+    if (session?.status === "active" && session?.session_started_at && !sessionTimerRunning) {
+      setSessionTimerRunning(true);
+    }
+  }, [session?.status, session?.session_started_at, sessionTimerRunning]);
+
+  const toggleSessionTimer = useCallback(() => {
+    if (!sessionStartedAt) {
+      const now = Date.now();
+      setSessionStartedAt(now);
+      setSessionSeconds(0);
+      setSessionTimerRunning(true);
+      return;
+    }
+    setSessionTimerRunning((current) => !current);
+  }, [sessionStartedAt]);
 
   // ── HOST ENGINE: drive turn timer & news rounds for everyone ──
   const isHost = !!session && !!playerId && session.host_id === playerId;
@@ -583,10 +618,12 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         turn: 1,
         round: 1,
         news: generateNews(1),
+        session_started_at: cur.session_started_at ?? Date.now(),
         news_signal_ts: Date.now(),
         awaiting_news_ack: false,
       };
     });
+    setSessionTimerRunning(true);
     sfx.confirm();
   }, [roomCode]);
 
@@ -631,7 +668,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const value: KpkState = useMemo(() => ({
     screen, prevScreen, user,
     totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
-    round, turn, sessionSeconds, turnSeconds, turnRunning,
+    round, turn, sessionSeconds, sessionStartedAt, sessionTimerRunning, turnSeconds, turnRunning,
     ap, replacements,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
@@ -642,9 +679,26 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     takenFactions,
     status: (session?.status ?? "waiting") as "waiting" | "active" | "finished",
     startGame, reorderPlayers,
-    leaveSession: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
-    logout: () => { setRoomCode(null); setPlayerId(null); setScreen("login"); sfx.back(); },
+    leaveSession: () => {
+      setRoomCode(null);
+      setPlayerId(null);
+      setScreen("login");
+      setSessionStartedAt(null);
+      setSessionSeconds(0);
+      setSessionTimerRunning(false);
+      sfx.back();
+    },
+    logout: () => {
+      setRoomCode(null);
+      setPlayerId(null);
+      setScreen("login");
+      setSessionStartedAt(null);
+      setSessionSeconds(0);
+      setSessionTimerRunning(false);
+      sfx.back();
+    },
     go: (s) => { setPrev(screen); setScreen(s); },
+    toggleSessionTimer,
     setAP: (k, v) => {
       if (!roomCode || !playerId) return;
       const map: Record<string, string> = { active: "active", attack: "attack", build: "build" };
