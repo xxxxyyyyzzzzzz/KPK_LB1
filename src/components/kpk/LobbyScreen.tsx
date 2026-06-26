@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useKpk } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
+import { HudHeader } from "./ScreenShell";
 
 const ORDINALS = ["Ходить першим", "Ходить другим", "Ходить третім", "Ходить четвертим"];
 
@@ -59,8 +60,9 @@ export function LobbyScreen() {
   }
 
   return (
-    <div className="hud-screen-enter safe-pt safe-pb safe-px flex h-full w-full flex-col items-center">
-      <div className="hud-scroll w-full max-w-md sm:max-w-[600px] lg:max-w-[640px] flex-1 overflow-y-auto py-4 sm:py-6">
+    <div className="hud-screen-enter safe-pb safe-px flex h-full w-full flex-col items-center">
+      <HudHeader title="Лобі" />
+      <div className="hud-scroll min-h-0 w-full max-w-md sm:max-w-[600px] lg:max-w-[640px] flex-1 overflow-y-auto py-4 sm:py-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.2rem + 52px)" }}>
         <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
 

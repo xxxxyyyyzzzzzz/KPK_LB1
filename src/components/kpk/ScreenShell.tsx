@@ -43,11 +43,11 @@ function HeaderTimer() {
   );
 }
 
-function HudStatus() {
+export function HudStatus() {
   const { sessionSeconds } = useKpk();
   return (
     <div
-      className="hud-status-strip fixed inset-x-0 top-0 z-50 flex items-center justify-between hud-mono text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)] border-b border-[color:var(--hud-amber)]/20"
+      className="pointer-events-none hud-status-strip fixed inset-x-0 top-0 z-50 flex items-center justify-between hud-mono text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)] border-b border-[color:var(--hud-amber)]/20"
       style={{
         paddingTop: "env(safe-area-inset-top)",
         paddingBottom: "0.25rem",
@@ -208,10 +208,8 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
+      className="fixed inset-x-0 bottom-0 z-40 flex flex-row border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
       style={{
-        display: "flex",
-        flexDirection: "row",
         paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
@@ -252,7 +250,6 @@ export function BottomNav() {
 export function ScreenShell({ children, title }: { children: ReactNode; title: string }) {
   return (
     <>
-      <HudStatus />
       <HudHeader title={title} />
 
       <div

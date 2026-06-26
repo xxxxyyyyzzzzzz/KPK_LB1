@@ -10,6 +10,7 @@ import { ScoreScreen } from "@/components/kpk/ScoreScreen";
 import { NewsScreen } from "@/components/kpk/NewsScreen";
 import { UpgradesScreen } from "@/components/kpk/UpgradesScreen";
 import { TimerScreen } from "@/components/kpk/TimerScreen";
+import { HudStatus } from "@/components/kpk/ScreenShell";
 import { SessionLoadingScreen } from "@/components/kpk/SessionLoadingScreen";
 
 export const Route = createFileRoute("/")({
@@ -44,6 +45,7 @@ function KpkApp() {
   return (
     <div className="hud-grid-bg hud-scanlines hud-vignette relative overflow-hidden" style={{ width: "100dvw", height: "100dvh" }}>
       <div className="hud-scanbar" />
+      <HudStatus />
 
       <button
         onClick={() => { const m = !muted; setMuted(m); sfx.setMuted(m); if (!m) sfx.click(); }}
