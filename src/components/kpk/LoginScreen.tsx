@@ -163,8 +163,10 @@ export function LoginScreen() {
     mode === "join_code" ? "Введіть 4-символьний код тактичної сесії" :
     `Сесія ${connectedCode} · оберіть акаунт або створіть нового оперативника`;
 
+  const topMode = mode === "create" || mode === "join_code" || mode === "join_player";
+
   return (
-    <div className="hud-screen-enter safe-pt safe-pb safe-px flex h-full w-full items-start justify-center sm:items-center">
+    <div className="hud-screen-enter safe-pb safe-px flex h-full w-full justify-center sm:items-center" style={{ alignItems: topMode ? 'flex-start' : undefined, paddingTop: topMode ? '12px' : undefined, overflowY: topMode ? 'auto' : undefined }}>
       <div className="hud-scroll w-full max-w-md sm:max-w-[560px] lg:max-w-[620px] max-h-full overflow-y-auto py-4 sm:py-6">
         <div
           className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-8 backdrop-blur-md"
@@ -361,8 +363,8 @@ export function LoginScreen() {
                 >{busy ? "..." : "⊕ УВІЙТИ ЯК НОВИЙ ГРАВЕЦЬ"}</button>
               </section>
 
-              {/* Turn-order drag block (only meaningful with ≥2 players) */}
-              {(localOrder?.length ?? 0) >= 2 && (
+              {/* Turn-order drag block (only meaningful with ≥2 players) - hidden for join flow */}
+              {(localOrder?.length ?? 0) >= 2 && mode !== "join_player" && (
                 <section>
                   <div className="hud-label mb-1.5">Порядок ходів · перетягніть гравців</div>
                   <ul className="space-y-2" aria-label="Слоти порядку ходів">

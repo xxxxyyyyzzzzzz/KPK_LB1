@@ -30,13 +30,14 @@ function HeaderTimer() {
       onClick={() => { sfx.click(); go("timer"); }}
       aria-label="Перейти до таймера"
       className={[
-        "hud-mono tabular-nums text-base sm:text-xl px-2 py-1 transition-all select-none shrink-0",
+        "hud-mono tabular-nums px-2 py-1 transition-all select-none shrink-0",
         ending
           ? "text-[color:var(--hud-red)] hud-pulse-red"
           : blink
           ? "text-[color:var(--hud-amber-glow)] scale-110"
           : "text-[color:var(--hud-amber-glow)] hud-flicker",
       ].join(" ")}
+      style={{ fontSize: 24 }}
     >
       {fmtClock(turnSeconds)}
     </button>
@@ -84,11 +85,13 @@ function BurgerMenu() {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[200]">
+        <div className="fixed inset-0 z-[99999]">
           <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div
-            className="absolute left-0 top-0 bottom-0 z-10 flex flex-col w-72 max-w-[85vw] bg-[color:var(--surface-1)] border-r-2 border-[color:var(--hud-amber)]/50"
+            className="absolute left-0 z-[100000] flex flex-col w-72 max-w-[85vw] bg-[color:var(--surface-1)] border-r-2 border-[color:var(--hud-amber)]/50"
             style={{
+              top: "env(safe-area-inset-top)",
+              height: "75vh",
               paddingTop: "env(safe-area-inset-top)",
               paddingBottom: "env(safe-area-inset-bottom)",
               animation: "slide-in-left 0.22s cubic-bezier(0.2,0.8,0.2,1) both",
@@ -204,9 +207,12 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
         paddingRight: "env(safe-area-inset-right)",
       }}
     >
-      <div className="flex items-center justify-between gap-2 px-3" style={{ minHeight: `${HEADER_CONTENT_H}px` }}>
-        <BurgerMenu />
-        <div className="flex-1 flex justify-center">
+      <div className="relative px-3" style={{ minHeight: `${HEADER_CONTENT_H}px` }}>
+        <div style={{ position: "absolute", left: "0", top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
+          <BurgerMenu />
+        </div>
+
+        <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, transform: "translateX(-50%)", display: "flex", alignItems: "center" }}>
           <div
             className={[
               "hud-title border border-[color:var(--hud-amber)]/40 px-3 py-1 text-[color:var(--hud-amber)] transition-all duration-200",
@@ -218,7 +224,10 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
             {title}
           </div>
         </div>
-        <HeaderTimer />
+
+        <div style={{ position: "absolute", right: "0", top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
+          {showStickyTitle && <HeaderTimer />}
+        </div>
       </div>
     </header>
   );

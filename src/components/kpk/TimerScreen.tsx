@@ -25,13 +25,17 @@ export function TimerScreen() {
   const activePlayer = sessionPlayers.find((p) => p.id === activePlayerId);
   const activeName = activePlayer?.nickname ?? user?.nickname ?? "—";
 
+  const playersCount = Math.max(1, sessionPlayers?.length ?? 1);
+  const totalTurns = playersCount * 4;
+  const isBotsTurn = (turn % 4) === 0;
+
   return (
     <ScreenShell title="Таймер">
       <div className="mx-auto max-w-2xl space-y-5">
 
         <AnimatedItem index={0}>
           <div className="text-center hud-mono text-xs text-[color:var(--muted-foreground)]">
-            Новина {round} / Хід {turn} з 4
+            Новина {round} / Хід {turn} з {totalTurns}
           </div>
         </AnimatedItem>
 
@@ -70,9 +74,14 @@ export function TimerScreen() {
           <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-6 text-center">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <h3 className="hud-title text-base text-[color:var(--muted-foreground)] mb-2">
-              Хід гравця / <span className="text-[color:var(--hud-amber-glow)]">{activeName}</span>
-              {isMyTurn && (
-                <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-green)]">● ВАШ ХІД</span>
+              {isBotsTurn ? (
+                <span className="text-[color:var(--hud-amber-glow)]">Хід Ботів</span>
+              ) : (
+                <>Хід гравця / <span className="text-[color:var(--hud-amber-glow)]">{activeName}</span>
+                  {isMyTurn && (
+                    <span className="ml-2 hud-mono text-[0.65rem] text-[color:var(--hud-green)]">● ВАШ ХІД</span>
+                  )}
+                </>
               )}
             </h3>
             <div className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${ending ? "text-[color:var(--hud-red)] hud-pulse-red" : "text-[color:var(--hud-amber-glow)]"}`}>
@@ -107,40 +116,7 @@ export function TimerScreen() {
         </AnimatedItem>
 
         {/* Хід ботів */}
-        <AnimatedItem index={3}>
-          <div className="hud-label mb-2">// Хід ботів</div>
-          <div className="space-y-2">
-            {BOTS.map((b, i) => (
-              <div
-                key={b.name}
-                className="border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]"
-                style={{
-                  opacity: 0,
-                  animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${0.35 + i * 0.07}s both`,
-                }}
-              >
-                {b.info ? (
-                  <>
-                    <button
-                      className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[color:var(--surface-3)] text-left"
-                      onClick={() => { sfx.click(); setOpenBot(openBot === b.name ? null : b.name); }}
-                    >
-                      <span className={`hud-mono text-[color:var(--hud-amber)] transition-transform inline-block ${openBot === b.name ? "rotate-90" : ""}`}>▸</span>
-                      <span className="hud-title text-sm">{b.name}</span>
-                    </button>
-                    {openBot === b.name && (
-                      <div className="px-4 py-3 hud-mono text-xs leading-relaxed text-[color:var(--muted-foreground)] border-t border-[color:var(--hud-amber)]/15 bg-black/30">
-                        {b.info}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="px-4 py-2 hud-title text-sm text-[color:var(--muted-foreground)]">{b.name}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </AnimatedItem>
+        {/* Bot info moved to NewsScreen overlay */}
 
       </div>
     </ScreenShell>

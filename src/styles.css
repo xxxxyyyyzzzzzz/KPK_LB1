@@ -402,6 +402,20 @@ a:focus-visible {
   min-width: 0;
 }
 
+/* Bot block show/hide animation helpers */
+.hud-bot-hidden {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  overflow: hidden;
+}
+.hud-bot-visible {
+  max-height: 2000px;
+  opacity: 1;
+  transform: translateY(0);
+  overflow: visible;
+}
+
 /* ============ Scrollbar ============ */
 .hud-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 .hud-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
