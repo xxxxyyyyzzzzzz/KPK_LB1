@@ -492,6 +492,5 @@ export function LoginScreen() {
         </div>
       </div>
     </div>
-  </div>
   );
 }
