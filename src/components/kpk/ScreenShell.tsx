@@ -253,7 +253,7 @@ export function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
         paddingLeft: "calc(6px + env(safe-area-inset-left))",
         paddingRight: "calc(6px + env(safe-area-inset-right))",
-        minHeight: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
+        height: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
       }}
     >
       {NAV_ITEMS.map((item) => {
