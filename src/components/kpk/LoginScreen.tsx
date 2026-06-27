@@ -166,13 +166,14 @@ export function LoginScreen() {
   const topMode = mode === "create" || mode === "join_code" || mode === "join_player";
 
   return (
-    <div className="hud-screen-enter safe-pb safe-px flex min-h-screen w-full justify-center items-center" style={{ overflowY: 'auto' }}>
-      <div className="hud-scroll flex h-full min-h-0 w-full max-w-md sm:max-w-[560px] lg:max-w-[620px] max-h-[calc(100vh-5.5rem)] flex-col justify-center overflow-y-auto py-4 sm:py-6" style={{ minHeight: 0 }}>
-        <div
-          className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-8 backdrop-blur-md"
-          role="dialog"
-          aria-labelledby="login-title"
-        >
+    <div className="hud-screen-enter safe-pb safe-px min-h-screen grid place-items-center">
+      <div className="hud-scroll w-full max-w-md sm:max-w-[560px] lg:max-w-[620px] max-h-[calc(100vh-5.5rem)] overflow-y-auto py-4 sm:py-6">
+        <div className="flex min-h-full w-full items-center justify-center" style={{ minHeight: 0 }}>
+          <div
+            className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-8 backdrop-blur-md"
+            role="dialog"
+            aria-labelledby="login-title"
+          >
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
 
           <div className="mb-6 flex items-start justify-between gap-3 border-b border-[color:var(--hud-amber)]/30 pb-3">
