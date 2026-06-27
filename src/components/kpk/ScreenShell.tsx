@@ -13,7 +13,7 @@ export function AnimatedItem({ children, index = 0, className = "" }: { children
 }
 
 function HeaderTimer() {
-  const { go, turnSeconds } = useKpk();
+  const { go, turnSeconds, screen } = useKpk();
   const [blink, setBlink] = useState(false);
   const ending = turnSeconds <= 30;
 
@@ -24,6 +24,8 @@ function HeaderTimer() {
       return () => clearTimeout(t);
     }
   }, [turnSeconds]);
+
+  if (screen === "timer") return null;
 
   return (
     <button
@@ -203,30 +205,29 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
       style={{
         top: HEADER_OFFSET,
         paddingTop: "0.5rem",
+        paddingBottom: "0.5rem",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
       }}
     >
-      <div className="relative px-3" style={{ minHeight: `${HEADER_CONTENT_H}px` }}>
-        <div style={{ position: "absolute", left: "0", top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
+      <div className="relative mx-auto flex min-h-[52px] items-center justify-center px-3" style={{ minHeight: `${HEADER_CONTENT_H}px` }}>
+        <div className="absolute left-0 top-0 bottom-0 flex items-center">
           <BurgerMenu />
         </div>
 
-        <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, transform: "translateX(-50%)", display: "flex", alignItems: "center" }}>
-          <div
-            className={[
-              "hud-title border border-[color:var(--hud-amber)]/40 px-3 py-1 text-[color:var(--hud-amber)] transition-all duration-200",
-              showStickyTitle
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 -translate-y-1 pointer-events-none",
-            ].join(" ")}
-          >
-            {title}
-          </div>
+        <div
+          className={[
+            "hud-title border border-[color:var(--hud-amber)]/40 px-3 py-1 text-[color:var(--hud-amber)] transition-all duration-200",
+            showStickyTitle
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-1 pointer-events-none",
+          ].join(" ")}
+        >
+          {title}
         </div>
 
-        <div style={{ position: "absolute", right: "0", top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
-          {showStickyTitle && <HeaderTimer />}
+        <div className="absolute right-0 top-0 bottom-0 flex items-center">
+          <HeaderTimer />
         </div>
       </div>
     </header>
@@ -247,10 +248,11 @@ export function BottomNav() {
     <nav
       className="fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch justify-between border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto"
       style={{
-        paddingTop: "0.2rem",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.35rem)",
+        paddingTop: "0.5rem",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
+        minHeight: "calc(52px + env(safe-area-inset-bottom) + 1rem)",
       }}
     >
       {NAV_ITEMS.map((item) => {
@@ -268,9 +270,9 @@ export function BottomNav() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: "4px",
-              padding: "16px 0",
-              minHeight: "96px",
+              gap: "2px",
+              padding: "0.55rem 0",
+              minHeight: "52px",
               borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
               marginTop: "-1px",
               background: active ? "rgba(245,184,64,0.05)" : "transparent",
@@ -280,7 +282,7 @@ export function BottomNav() {
               boxSizing: "border-box",
             }}
           >
-            <span style={{ fontSize: "1.8rem", lineHeight: 1 }}>{item.icon}</span>
+            <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>{item.icon}</span>
             <span className="hud-mono" style={{ fontSize: "0.95rem", letterSpacing: "0.08em" }}>{item.label}</span>
           </button>
         );
