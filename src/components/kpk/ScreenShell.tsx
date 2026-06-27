@@ -195,7 +195,8 @@ const HEADER_CONTENT_H = 52; // висота контенту хедера в px
 const STATUS_BAR_INNER_HEIGHT = "1.5rem";
 const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
-const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 12px + 0.5rem + ${HEADER_CONTENT_H}px)`;
+const HEADER_INNER_HEIGHT = `calc(12px + 0.5rem + ${HEADER_CONTENT_H}px)`;
+const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + ${HEADER_INNER_HEIGHT})`;
 
 export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement | null> }) {
   return (
@@ -246,13 +247,13 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch justify-between border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto"
+      className="fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch gap-1.5 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto"
       style={{
         paddingTop: "0",
         paddingBottom: "env(safe-area-inset-bottom)",
-        paddingLeft: "env(safe-area-inset-left)",
-        paddingRight: "env(safe-area-inset-right)",
-        minHeight: "calc(64px + env(safe-area-inset-bottom))",
+        paddingLeft: "calc(6px + env(safe-area-inset-left))",
+        paddingRight: "calc(6px + env(safe-area-inset-right))",
+        minHeight: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
       }}
     >
       {NAV_ITEMS.map((item) => {
@@ -265,7 +266,6 @@ export function BottomNav() {
             style={{
               flex: "1 1 0%",
               minWidth: "0",
-              maxWidth: "25%",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
