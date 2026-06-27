@@ -195,7 +195,7 @@ const HEADER_CONTENT_H = 52; // висота контенту хедера в px
 const STATUS_BAR_INNER_HEIGHT = "1.5rem";
 const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
-const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 12px + ${HEADER_CONTENT_H}px)`;
+const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 12px + 0.5rem + ${HEADER_CONTENT_H}px)`;
 
 export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement | null> }) {
   return (
@@ -252,7 +252,7 @@ export function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
-        minHeight: "calc(52px + env(safe-area-inset-bottom))",
+        minHeight: "calc(64px + env(safe-area-inset-bottom))",
       }}
     >
       {NAV_ITEMS.map((item) => {
