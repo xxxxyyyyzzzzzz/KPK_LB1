@@ -195,7 +195,7 @@ const HEADER_CONTENT_H = 52; // висота контенту хедера в px
 const STATUS_BAR_INNER_HEIGHT = "1.5rem";
 const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
-const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 0.5rem + ${HEADER_CONTENT_H}px)`;
+const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + 12px + ${HEADER_CONTENT_H}px)`;
 
 export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement | null> }) {
   return (
@@ -204,10 +204,10 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
       className="fixed inset-x-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
       style={{
         top: HEADER_OFFSET,
-        paddingTop: "0.5rem",
+        paddingTop: "12px",
         paddingBottom: "0.5rem",
-        paddingLeft: "env(safe-area-inset-left)",
-        paddingRight: "env(safe-area-inset-right)",
+        paddingLeft: "max(0.75rem, env(safe-area-inset-left))",
+        paddingRight: "max(0.75rem, env(safe-area-inset-right))",
       }}
     >
       <div className="relative mx-auto flex min-h-[52px] items-center justify-center px-3" style={{ minHeight: `${HEADER_CONTENT_H}px` }}>
@@ -248,11 +248,11 @@ export function BottomNav() {
     <nav
       className="fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch justify-between border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto"
       style={{
-        paddingTop: "0.5rem",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
+        paddingTop: "0",
+        paddingBottom: "env(safe-area-inset-bottom)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
-        minHeight: "calc(52px + env(safe-area-inset-bottom) + 1rem)",
+        minHeight: "calc(52px + env(safe-area-inset-bottom))",
       }}
     >
       {NAV_ITEMS.map((item) => {
@@ -271,8 +271,9 @@ export function BottomNav() {
               alignItems: "center",
               justifyContent: "center",
               gap: "2px",
-              padding: "0.55rem 0",
-              minHeight: "52px",
+              height: "100%",
+              padding: "0",
+              minHeight: "0",
               borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
               marginTop: "-1px",
               background: active ? "rgba(245,184,64,0.05)" : "transparent",
