@@ -174,7 +174,7 @@ export function LoginScreen() {
             role="dialog"
             aria-labelledby="login-title"
           >
-          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
 
           <div className="mb-6 flex items-start justify-between gap-3 border-b border-[color:var(--hud-amber)]/30 pb-3">
             <div className="min-w-0">
