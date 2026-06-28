@@ -344,7 +344,7 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
           overflowX: "hidden",
           WebkitOverflowScrolling: "touch",
           paddingTop: HEADER_TOTAL_HEIGHT,
-          paddingBottom: `calc(env(safe-area-inset-bottom) + 52px)`,
+          paddingBottom: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
           paddingLeft: "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",
           zIndex: 10,
