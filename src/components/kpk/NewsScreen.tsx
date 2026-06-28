@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScreenShell } from "./ScreenShell";
+import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { useKpk } from "@/lib/kpkStore";
 import { TURNS_PER_NEWS_ROUND } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
@@ -24,15 +24,15 @@ export function NewsScreen() {
 
   return (
     <ScreenShell title="Новини">
-      <div className="mx-auto max-w-3xl hud-screen-enter">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="mx-auto max-w-3xl">
+        <AnimatedItem index={0} className="mb-4 flex items-center justify-between">
           <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1">
             НОВИНИ ЗОНИ
           </h2>
           <span className="hud-mono text-sm text-[color:var(--hud-cyan)]">Раунд {round}</span>
-        </div>
+        </AnimatedItem>
 
-        <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-5 space-y-3 min-h-[200px]">
+        <AnimatedItem index={1} className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-5 space-y-3 min-h-[200px]">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           {news.length === 0 && (
             <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">// Тиша в ефірі...</div>
@@ -54,10 +54,11 @@ export function NewsScreen() {
               }
             </div>
           ))}
-        </div>
+        </AnimatedItem>
 
         {/* Розгортуване меню з інформацією про ботів */}
-        <Collapsible open={botMenuOpen} onOpenChange={setBotMenuOpen} className="mt-6">
+        <AnimatedItem index={2} className="mt-6">
+          <Collapsible open={botMenuOpen} onOpenChange={setBotMenuOpen}>
           <CollapsibleTrigger asChild>
             <button
               onClick={() => { sfx.click(); setBotMenuOpen(!botMenuOpen); }}
@@ -95,11 +96,14 @@ export function NewsScreen() {
               </div>
             </div>
           </CollapsibleContent>
-        </Collapsible>
+          </Collapsible>
+        </AnimatedItem>
 
-        <p className="mt-4 hud-mono text-center text-xs text-[color:var(--muted-foreground)]">
-          // Ознайомтесь з новинами зони перед початком ходів
-        </p>
+        <AnimatedItem index={3} className="mt-4">
+          <p className="hud-mono text-center text-xs text-[color:var(--muted-foreground)]">
+            // Ознайомтесь з новинами зони перед початком ходів
+          </p>
+        </AnimatedItem>
       </div>
     </ScreenShell>
   );

@@ -28,7 +28,13 @@ export default function LobbyPlayersPanel({ onClose }: { onClose: () => void }) 
             const color = FACTIONS[p.faction] ?? "#fff";
             const isMe = p.id === playerId;
             return (
-              <li key={p.id} className={`hud-panel-corners-4 relative flex items-center gap-3 border px-3 py-2.5 ${isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"}`}>
+              <li 
+                key={p.id}
+                style={{
+                  opacity: 0,
+                  animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${i * 0.08}s both`,
+                }}
+                className={`hud-panel-corners-4 relative flex items-center gap-3 border px-3 py-2.5 ${isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"}`}>
                 <span className="hud-mono w-6 shrink-0 text-center text-[color:var(--hud-amber)]">{i + 1}</span>
                 <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
                 <div className="min-w-0 flex-1">

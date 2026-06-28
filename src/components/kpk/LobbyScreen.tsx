@@ -64,7 +64,10 @@ export function LobbyScreen() {
     <div className="hud-screen-enter safe-pb safe-px flex h-full w-full flex-col items-center">
       <HudHeader title="Лобі" />
       <div className="hud-scroll min-h-0 w-full max-w-md sm:max-w-[600px] lg:max-w-[640px] flex-1 max-h-[calc(100vh-6rem)] overflow-y-auto py-4 sm:py-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.2rem + 52px)" }}>
-        <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md">
+        <div 
+          className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md"
+          style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.1s both" }}
+        >
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
 
           <div className="mb-5 flex items-start justify-between gap-3 border-b border-[color:var(--hud-amber)]/30 pb-3">
@@ -115,6 +118,10 @@ export function LobbyScreen() {
                 return (
                   <li
                     key={p.id}
+                    style={{
+                      opacity: 0,
+                      animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${i * 0.08}s both`,
+                    }}
                     className={`hud-panel-corners-4 relative flex items-center gap-3 border px-3 py-2.5 ${
                       isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"
                     }`}
