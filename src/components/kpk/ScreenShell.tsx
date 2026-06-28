@@ -263,6 +263,7 @@ export function BottomNav() {
             key={item.id}
             onClick={() => { sfx.click(); go(item.id); }}
             aria-label={item.label}
+            className={active ? "hud-nav-btn-active" : "hud-nav-btn-inactive"}
             style={{
               flex: "1 1 0%",
               minWidth: "0",
@@ -274,13 +275,14 @@ export function BottomNav() {
               height: "100%",
               padding: "0",
               minHeight: "0",
-              borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
               marginTop: "-1px",
-              background: active ? "rgba(245,184,64,0.05)" : "transparent",
-              color: active ? "var(--hud-amber)" : "var(--muted-foreground)",
-              transition: "all 0.15s",
               whiteSpace: "nowrap",
               boxSizing: "border-box",
+              color: active ? "var(--hud-amber)" : "var(--muted-foreground)",
+              borderTop: "2px solid transparent",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: "0.95rem",
             }}
           >
             <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>{item.icon}</span>
