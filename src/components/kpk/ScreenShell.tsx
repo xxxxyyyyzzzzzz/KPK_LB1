@@ -6,7 +6,7 @@ import type { Screen } from "@/lib/kpkData";
 
 export function AnimatedItem({ children, index = 0, className = "" }: { children: ReactNode; index?: number; className?: string }) {
   return (
-    <div className={className} style={{ opacity: 0, animation: `hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) ${index * 0.1 + 0.1}s both` }}>
+    <div className={`hdr-animated ${className}`} style={{ opacity: 0, animation: `hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) ${index * 0.1 + 0.1}s both` }}>
       {children}
     </div>
   );

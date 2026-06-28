@@ -84,8 +84,10 @@ export function TimerScreen() {
                 </>
               )}
             </h3>
-            <div className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${ending ? "text-[color:var(--hud-red)] hud-pulse-red" : "text-[color:var(--hud-amber-glow)] hud-timer-glow"}`}>
-              {fmtClock(turnSeconds)}
+            <div className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${ending ? "text-[color:var(--hud-red)]" : "text-[color:var(--hud-amber-glow)]"}`}>
+              <span className={ending ? "hud-pulse-red" : "hud-timer-glow"}>
+                {fmtClock(turnSeconds)}
+              </span>
             </div>
             <div className="flex justify-center gap-3 flex-wrap">
               <button
