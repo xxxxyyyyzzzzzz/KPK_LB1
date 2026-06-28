@@ -43,8 +43,11 @@ function KpkApp() {
   const showEndNewsModal = awaitingNewsAck && screen !== "news";
 
   return (
-    <div className="hud-grid-bg hud-scanlines hud-vignette relative h-screen w-screen overflow-hidden">
-      <div className="hud-scanbar" />
+    <div className="hud-grid-bg hud-scanlines hud-vignette relative h-screen w-screen overflow-hidden isolate">
+      <div className="hud-scanbar" style={{ zIndex: -1 }} />
+
+      {/* Background and effects layer — fixed behind all content */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none' }} />
 
       {/* Status strip */}
       <div className="safe-pt pointer-events-none absolute top-0 left-0 right-0 z-50 flex justify-between px-3 py-1 hud-mono text-[0.6rem] uppercase text-[color:var(--hud-amber)]/60 tracking-widest">
@@ -55,8 +58,8 @@ function KpkApp() {
 
       {/* Sound toggle moved into burger menu */}
 
-      {/* Screen router */}
-      <div className="relative z-10 h-full w-full">
+      {/* Screen router — main content layer */}
+      <div className="relative z-10 h-full w-full" style={{ isolation: 'isolate' }}>
         {screen === "login" && <LoginScreen />}
         {screen === "lobby" && <LobbyScreen />}
         {screen === "main" && <MainMenu />}
