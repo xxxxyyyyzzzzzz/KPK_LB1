@@ -115,8 +115,32 @@ export function TimerScreen() {
           </div>
         </AnimatedItem>
 
-        {/* Хід ботів */}
-        {/* Bot info moved to NewsScreen overlay */}
+        {/* Інформація про хід ботів */}
+        {isBotsTurn && (
+          <AnimatedItem index={3}>
+            <div className="hud-panel-corners-4 relative border-2 border-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)]/90 p-6">
+              <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+              <div className="hud-title text-xl text-[color:var(--hud-amber)] mb-4">Поведінка Ботів</div>
+              <div className="space-y-3">
+                {BOTS.map((bot, idx) => (
+                  <div
+                    key={bot.name}
+                    className="border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-3)]/50 p-3"
+                    style={{
+                      opacity: 0,
+                      animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${idx * 0.06}s both`,
+                    }}
+                  >
+                    <div className="hud-label text-[color:var(--hud-amber)] text-sm mb-1">{bot.name}</div>
+                    <div className="hud-mono text-[0.85rem] text-[color:var(--muted-foreground)]">
+                      {bot.info ?? "(Немає додаткової інформації)"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </AnimatedItem>
+        )}
 
       </div>
     </ScreenShell>
