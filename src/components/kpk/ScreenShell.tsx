@@ -92,9 +92,9 @@ function BurgerMenu() {
           <div
             className="absolute left-0 z-[100000] flex flex-col w-72 max-w-[85vw] bg-[color:var(--surface-1)] border-r-2 border-[color:var(--hud-amber)]/50"
             style={{
-              top: "env(safe-area-inset-top)",
+              top: "calc(env(safe-area-inset-top) + 1.5rem)",
               height: "75vh",
-              paddingTop: "env(safe-area-inset-top)",
+              paddingTop: "0",
               paddingBottom: "env(safe-area-inset-bottom)",
               animation: "slide-in-left 0.22s cubic-bezier(0.2,0.8,0.2,1) both",
             }}
