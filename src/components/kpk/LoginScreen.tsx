@@ -27,7 +27,7 @@ function humanError(reason?: string): string {
 function ErrorMessage({ err }: { err: string }) {
   return (
     <div
-      className={`overflow-hidden transition-all duration-200 ease-in-out ${err ? "mt-2 max-h-24 opacity-100 translate-y-0" : "max-h-0 -translate-y-1 opacity-0"}`}
+      className={`overflow-hidden transition-all duration-200 ease-in-out ${err ? "mt-2 max-h-24 opacity-100" : "max-h-0 opacity-0"}`}
     >
       {err ? (
         <p role="alert" className="hud-mono rounded border border-[color:var(--hud-red)]/40 bg-[color:var(--hud-red)]/10 px-3 py-2 text-center text-sm text-[color:var(--hud-red)]">
@@ -205,7 +205,7 @@ export function LoginScreen() {
 
           <div className="relative min-h-[24rem] overflow-hidden sm:min-h-[28rem]">
             {/* === MENU === */}
-            <div className={`transition-all duration-300 ease-in-out ${mode === "menu" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none absolute inset-0 opacity-0 translate-y-3"}`}>
+            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "menu" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
               <div className="space-y-3">
                 <button
                   onClick={() => { sfx.click(); setMode("create"); setErr(""); }}
@@ -246,7 +246,7 @@ export function LoginScreen() {
             </div>
 
             {/* === JOIN STEP 1: CODE === */}
-            <div className={`transition-all duration-300 ease-in-out ${mode === "join_code" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none absolute inset-0 opacity-0 translate-y-3"}`}>
+            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "join_code" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="room-code" className="hud-label mb-1.5 block">Код сесії</label>
@@ -281,7 +281,7 @@ export function LoginScreen() {
             </div>
 
             {/* === JOIN STEP 2: PICK PLAYER OR JOIN NEW === */}
-            <div className={`transition-all duration-300 ease-in-out ${mode === "join_player" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none absolute inset-0 opacity-0 translate-y-3"}`}>
+            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "join_player" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
               <div className="space-y-5">
               {/* Existing kicked/disconnected accounts */}
               <section>
@@ -438,7 +438,7 @@ export function LoginScreen() {
             </div>
 
             {/* === CREATE === */}
-            <div className={`transition-all duration-300 ease-in-out ${mode === "create" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none absolute inset-0 opacity-0 translate-y-3"}`}>
+            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "create" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="nickname-create" className="hud-label mb-1.5 block">Позивний оперативника</label>
