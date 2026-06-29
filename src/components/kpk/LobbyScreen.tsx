@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useKpk } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
-import { HudHeader } from "./ScreenShell";
 
 const ORDINALS = ["Ходить першим", "Ходить другим", "Ходить третім", "Ходить четвертим"];
 
@@ -70,8 +69,7 @@ export function LobbyScreen() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <HudHeader title="Лобі" showStickyTitle={false} />
-      <div className="flex-1 overflow-y-auto px-3 pt-[5.5rem] pb-3">
+      <div className="flex-1 overflow-y-auto px-3 py-3">
         <div
           className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 backdrop-blur-md"
           style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.1s both" }}
