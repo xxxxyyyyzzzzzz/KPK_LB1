@@ -94,15 +94,15 @@ export function LoginScreen() {
 
   function panelClassName(panel: Mode) {
     if (panel === mode && !isTransitioning) {
-      return "pointer-events-auto max-h-96 opacity-100";
+      return "pointer-events-auto opacity-100";
     }
     if (panel === mode && isTransitioning) {
-      return "pointer-events-none absolute inset-0 max-h-0 opacity-0";
+      return "pointer-events-none absolute inset-0 opacity-0";
     }
     if (panel === pendingMode && isTransitioning) {
-      return "pointer-events-none absolute inset-0 max-h-0 opacity-0";
+      return "pointer-events-none absolute inset-0 opacity-0";
     }
-    return "pointer-events-none absolute inset-0 max-h-0 opacity-0";
+    return "pointer-events-none absolute inset-0 opacity-0";
   }
 
   async function connect() {
@@ -213,11 +213,11 @@ export function LoginScreen() {
   const topMode = mode === "create" || mode === "join_code" || mode === "join_player";
 
   return (
-    <div className="hud-screen-enter safe-pb safe-px min-h-screen grid place-items-center px-[12px] sm:px-[12px]">
-      <div className="hud-scroll w-full max-w-md sm:max-w-[560px] lg:max-w-[620px] max-h-[calc(100vh-5.5rem)] overflow-y-auto py-4 sm:py-6">
-        <div className="flex min-h-full w-full items-center justify-center" style={{ minHeight: 0 }}>
+    <div className="min-h-screen w-full flex flex-col">
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="mx-auto flex w-full max-w-md items-center justify-center sm:max-w-[560px] lg:max-w-[620px]">
           <div
-            className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 sm:p-6 backdrop-blur-md"
+            className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 sm:p-6 backdrop-blur-md"
             role="dialog"
             aria-labelledby="login-title"
           >
@@ -236,9 +236,9 @@ export function LoginScreen() {
             <div className="hud-mono shrink-0 text-[0.65rem] sm:text-xs text-[color:var(--hud-cyan)] hud-blink">● ONLINE</div>
           </div>
 
-          <div className="relative min-h-[24rem] overflow-hidden sm:min-h-[28rem]">
+          <div className="relative">
             {/* === MENU === */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("menu")}`}>
+            <div className={`transition-all duration-300 ease-in-out ${panelClassName("menu")}`}>
               <div className="space-y-3">
                 <button
                   onClick={() => { sfx.click(); switchMode("create"); setErr(""); }}
@@ -279,7 +279,7 @@ export function LoginScreen() {
             </div>
 
             {/* === JOIN STEP 1: CODE === */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("join_code")}`}>
+            <div className={`transition-all duration-300 ease-in-out ${panelClassName("join_code")}`}>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="room-code" className="hud-label mb-1.5 block">Код сесії</label>
@@ -314,7 +314,7 @@ export function LoginScreen() {
             </div>
 
             {/* === JOIN STEP 2: PICK PLAYER OR JOIN NEW === */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("join_player")}`}>
+            <div className={`transition-all duration-300 ease-in-out ${panelClassName("join_player")}`}>
               <div className="space-y-5">
               {/* Existing kicked/disconnected accounts */}
               <section>
@@ -471,7 +471,7 @@ export function LoginScreen() {
             </div>
 
             {/* === CREATE === */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("create")}`}>
+            <div className={`transition-all duration-300 ease-in-out ${panelClassName("create")}`}>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="nickname-create" className="hud-label mb-1.5 block">Позивний оперативника</label>
