@@ -7,7 +7,7 @@ export function ScoreScreen() {
 
   return (
     <ScreenShell title="ЄБали">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="w-full space-y-6">
         <AnimatedItem index={0} className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="hud-title text-2xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ЄБАЛИ</h2>
           <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">

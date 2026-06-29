@@ -24,7 +24,7 @@ export function NewsScreen() {
 
   return (
     <ScreenShell title="Новини">
-      <div className="mx-auto max-w-3xl">
+      <div className="w-full">
         <AnimatedItem index={0} className="mb-4 flex items-center justify-between">
           <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1">
             НОВИНИ ЗОНИ

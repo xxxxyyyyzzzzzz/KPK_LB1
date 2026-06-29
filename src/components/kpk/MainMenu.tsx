@@ -11,10 +11,10 @@ export function MainMenu() {
       <HudHeader title="КПК" />
 
       <div
-        className="hud-scroll min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8"
+        className="hud-scroll min-h-0 flex-1 overflow-y-auto px-[12px] py-6 sm:px-[12px] sm:py-8"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.2rem + 52px)" }}
       >
-        <div className="mx-auto max-w-lg space-y-6">
+        <div className="w-full space-y-6">
 
           {/* Оперативник */}
           <AnimatedItem index={0} className="flex items-center gap-4">

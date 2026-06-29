@@ -71,7 +71,7 @@ export function LobbyScreen() {
   return (
     <div className="hud-screen-enter safe-pb safe-px min-h-screen w-full">
       <HudHeader title="Лобі" showStickyTitle={false} />
-      <div className="mx-auto w-full max-w-lg px-[12px] py-4 pt-24 sm:px-[12px] sm:py-6 sm:pt-28">
+      <div className="mx-auto w-full px-[12px] py-4 pt-[5.5rem] pb-4 sm:px-[12px] sm:py-6 sm:pt-[5.5rem] sm:pb-4">
         <div className="hud-scroll min-h-0 max-h-[calc(100vh-6rem)] overflow-y-auto">
           <div
             className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md"

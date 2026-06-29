@@ -31,7 +31,7 @@ export function TimerScreen() {
 
   return (
     <ScreenShell title="Таймер">
-      <div className="mx-auto max-w-2xl space-y-5">
+      <div className="w-full space-y-5">
 
         <AnimatedItem index={0}>
           <div className="text-center hud-mono text-xs text-[color:var(--muted-foreground)]">

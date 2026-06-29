@@ -7,7 +7,7 @@ export function MissionsScreen() {
   const { user, totalScore, slots, getMission, updateSlotProgress, completeSlot, replaceSlot, replacements } = useKpk();
   return (
     <ScreenShell title="Місії">
-      <div className="mx-auto max-w-5xl">
+      <div className="w-full">
         <AnimatedItem index={0} className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1">МІСІЇ</h2>

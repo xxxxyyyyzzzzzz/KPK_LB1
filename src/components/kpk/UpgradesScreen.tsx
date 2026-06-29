@@ -7,7 +7,7 @@ export function UpgradesScreen() {
   const purchased = upgrades.length;
   return (
     <ScreenShell title="Прокачки">
-      <div className="mx-auto max-w-6xl">
+      <div className="w-full">
         <AnimatedItem index={0} className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ДЕРЕВО ПРОКАЧОК</h2>
