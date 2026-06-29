@@ -213,328 +213,330 @@ export function LoginScreen() {
   const topMode = mode === "create" || mode === "join_code" || mode === "join_player";
 
   return (
-    <div className="min-h-screen w-full flex flex-col">
+    <div className="flex min-h-screen w-full flex-col">
       <div className="flex-1 overflow-y-auto px-3 py-3">
-        <div className="mx-auto flex w-full max-w-md items-center justify-center sm:max-w-[560px] lg:max-w-[620px]">
-          <div
-            className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 sm:p-6 backdrop-blur-md"
-            role="dialog"
-            aria-labelledby="login-title"
-          >
-          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+        <div className="flex min-h-full w-full items-center justify-center">
+          <div className="w-full max-w-md sm:max-w-[560px] lg:max-w-[620px]">
+            <div
+              className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 sm:p-6 backdrop-blur-md"
+              role="dialog"
+              aria-labelledby="login-title"
+            >
+              <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
 
-          <div className="mb-6 flex items-start justify-between gap-3 border-b border-[color:var(--hud-amber)]/30 pb-3">
-            <div className="min-w-0">
-              <div className="hud-label">// СИСТЕМА КПК v1.0</div>
-              <div id="login-title" className="hud-title text-2xl sm:text-3xl text-[color:var(--hud-amber)] hud-flicker">
-                {title}
-              </div>
-              <p className="hud-mono mt-1 text-[0.72rem] sm:text-xs text-[color:var(--muted-foreground)]">
-                {subtitle}
-              </p>
-            </div>
-            <div className="hud-mono shrink-0 text-[0.65rem] sm:text-xs text-[color:var(--hud-cyan)] hud-blink">● ONLINE</div>
-          </div>
-
-          <div className="relative">
-            {/* === MENU === */}
-            <div className={`transition-all duration-300 ease-in-out ${panelClassName("menu")}`}>
-              <div className="space-y-3">
-                <button
-                  onClick={() => { sfx.click(); switchMode("create"); setErr(""); }}
-                  className="hud-btn hud-btn-lg w-full text-base"
-                  aria-label="Створити нову тактичну сесію"
-                >⊕ СТВОРИТИ ГРУ</button>
-                <button
-                  onClick={() => { sfx.click(); switchMode("join_code"); setErr(""); }}
-                  className="hud-btn hud-btn-lg w-full text-base"
-                  style={{
-                    color: "var(--hud-cyan)",
-                    borderColor: "rgba(108,240,255,0.55)",
-                    background: "linear-gradient(180deg, rgba(108,240,255,0.10), rgba(108,240,255,0.02))",
-                  }}
-                  aria-label="Приєднатися до існуючої сесії"
-                >⇆ ПРИЄДНАТИСЯ ДО ГРИ</button>
-                <button
-                  onClick={async () => {
-                    sfx.click();
-                    setErr(""); setBusy(true);
-                    // Тестова сесія: випадкові ім'я та угрупування з вільних
-                    const factionsList = Object.keys(FACTIONS);
-                    const testNick = "TEST_" + Math.random().toString(36).slice(2, 6).toUpperCase();
-                    const testFaction = factionsList[Math.floor(Math.random() * factionsList.length)];
-                    const r = await createGame({ nickname: testNick, faction: testFaction }, { isTest: true });
-                    setBusy(false);
-                    if (!r.ok) setErr(humanError(r.reason));
-                  }}
-                  disabled={busy}
-                  className="hud-btn hud-btn-ghost w-full text-sm"
-                  aria-label="Створити тестову гру (не зберігається в історії)"
-                  title="Окрема сесія з прапором isTest — не показуватиметься в історії"
-                >🧪 ТЕСТОВА ГРА</button>
-                <p className="hud-mono pt-2 text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
-                  До 4 гравців · унікальне угрупування для кожного
-                </p>
-              </div>
-            </div>
-
-            {/* === JOIN STEP 1: CODE === */}
-            <div className={`transition-all duration-300 ease-in-out ${panelClassName("join_code")}`}>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="room-code" className="hud-label mb-1.5 block">Код сесії</label>
-                  <input
-                    id="room-code"
-                    name="room-code"
-                    autoComplete="off"
-                    inputMode="text"
-                    aria-label="Код сесії (4 символи)"
-                    className="hud-input text-center text-lg uppercase tracking-[0.5em]"
-                    placeholder="ABCD"
-                    value={code}
-                    maxLength={4}
-                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => e.key === "Enter" && connect()}
-                  />
-                  <p className="hud-mono mt-2 text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
-                    4 символи · отримайте код від хоста сесії
+              <div className="mb-6 flex items-start justify-between gap-3 border-b border-[color:var(--hud-amber)]/30 pb-3">
+                <div className="min-w-0">
+                  <div className="hud-label">// СИСТЕМА КПК v1.0</div>
+                  <div id="login-title" className="hud-title text-2xl sm:text-3xl text-[color:var(--hud-amber)] hud-flicker">
+                    {title}
+                  </div>
+                  <p className="hud-mono mt-1 text-[0.72rem] sm:text-xs text-[color:var(--muted-foreground)]">
+                    {subtitle}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={goBack} className="hud-btn hud-btn-ghost min-h-11 px-4" aria-label="Назад">↶ Назад</button>
-                  <button
-                    onClick={connect}
-                    disabled={busy || code.trim().length !== 4}
-                    className="hud-btn hud-btn-lg flex-1"
-                    aria-label="Підключитися до сесії"
-                  >{busy ? "..." : "⌬ ПІДКЛЮЧИТИСЯ"}</button>
-                </div>
-                <ErrorMessage err={err} />
-              </div>
-            </div>
-
-            {/* === JOIN STEP 2: PICK PLAYER OR JOIN NEW === */}
-            <div className={`transition-all duration-300 ease-in-out ${panelClassName("join_player")}`}>
-              <div className="space-y-5">
-              {/* Existing kicked/disconnected accounts */}
-              <section>
-                <div className="hud-label mb-1.5">Акаунти у сесії · {existingPlayers.length}/4</div>
-                {existingPlayers.length === 0 ? (
-                  <p className="hud-mono rounded border border-[color:var(--hud-amber)]/20 bg-black/20 px-3 py-2 text-[0.75rem] text-[color:var(--muted-foreground)]">
-                    Поки немає створених гравців.
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {existingPlayers.map((p) => {
-                      const color = FACTIONS[p.faction] ?? "#fff";
-                      return (
-                        <li key={p.id}>
-                          <button
-                            type="button"
-                            onClick={() => pickExisting(p.id)}
-                            disabled={busy}
-                            className="hud-panel-corners-4 hud-mono relative flex w-full items-center gap-3 border border-[color:var(--hud-cyan)]/40 bg-black/30 px-3 py-3 text-left transition-all hover:border-[color:var(--hud-cyan)] hover:bg-[color:var(--hud-cyan)]/5 active:translate-y-px"
-                            aria-label={`Увійти як ${p.nickname}`}
-                          >
-                            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-                            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate hud-title text-base text-[color:var(--foreground)]">{p.nickname}</div>
-                              <div className="text-[0.7rem] text-[color:var(--muted-foreground)]">{p.faction}</div>
-                            </div>
-                            <span className="hud-mono text-[0.65rem] text-[color:var(--hud-cyan)]">↩ УВІЙТИ</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </section>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-[color:var(--hud-amber)]/20" />
-                <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">АБО</span>
-                <span className="h-px flex-1 bg-[color:var(--hud-amber)]/20" />
+                <div className="hud-mono shrink-0 text-[0.65rem] sm:text-xs text-[color:var(--hud-cyan)] hud-blink">● ONLINE</div>
               </div>
 
-              {/* New player */}
-              <section className="space-y-3">
-                <div className="hud-label">Новий оперативник</div>
-                <input
-                  id="nickname"
-                  name="nickname"
-                  autoComplete="off"
-                  aria-label="Позивний оперативника"
-                  className="hud-input"
-                  placeholder="введіть позивний..."
-                  value={nickname}
-                  onChange={(e) => setNick(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && submitJoinNew()}
-                />
-                <div>
-                  <div className="hud-label mb-1.5">Угрупування</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(FACTIONS).map(([name, color]) => {
-                      const isTaken = takenFactions.includes(name);
-                      const selected = faction === name;
-                      return (
-                        <button
-                          key={name}
-                          type="button"
-                          disabled={isTaken}
-                          aria-pressed={selected}
-                          aria-label={`Угрупування ${name}${isTaken ? " — зайняте" : ""}`}
-                          onClick={() => { if (isTaken) return; sfx.click(); setFaction(name); }}
-                          className={`hud-mono relative min-h-11 border px-3 py-2.5 text-left text-sm transition-all ${
-                            isTaken
-                              ? "border-[color:var(--muted-foreground)]/20 bg-black/30 opacity-40 cursor-not-allowed line-through"
-                              : selected
-                                ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/10 shadow-[0_0_12px_rgba(245,184,64,0.25)]"
-                                : "border-[color:var(--hud-amber)]/25 hover:border-[color:var(--hud-amber)]/60 active:translate-y-px"
-                          }`}
-                          data-hud-sound="hover"
-                        >
-                          <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                          {name}{isTaken ? " · зайнято" : ""}
-                        </button>
-                      );
-                    })}
+              <div className="relative">
+                {/* === MENU === */}
+                <div className={`transition-all duration-300 ease-in-out ${panelClassName("menu")}`}>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => { sfx.click(); switchMode("create"); setErr(""); }}
+                      className="hud-btn hud-btn-lg w-full text-base"
+                      aria-label="Створити нову тактичну сесію"
+                    >⊕ СТВОРИТИ ГРУ</button>
+                    <button
+                      onClick={() => { sfx.click(); switchMode("join_code"); setErr(""); }}
+                      className="hud-btn hud-btn-lg w-full text-base"
+                      style={{
+                        color: "var(--hud-cyan)",
+                        borderColor: "rgba(108,240,255,0.55)",
+                        background: "linear-gradient(180deg, rgba(108,240,255,0.10), rgba(108,240,255,0.02))",
+                      }}
+                      aria-label="Приєднатися до існуючої сесії"
+                    >⇆ ПРИЄДНАТИСЯ ДО ГРИ</button>
+                    <button
+                      onClick={async () => {
+                        sfx.click();
+                        setErr(""); setBusy(true);
+                        // Тестова сесія: випадкові ім'я та угрупування з вільних
+                        const factionsList = Object.keys(FACTIONS);
+                        const testNick = "TEST_" + Math.random().toString(36).slice(2, 6).toUpperCase();
+                        const testFaction = factionsList[Math.floor(Math.random() * factionsList.length)];
+                        const r = await createGame({ nickname: testNick, faction: testFaction }, { isTest: true });
+                        setBusy(false);
+                        if (!r.ok) setErr(humanError(r.reason));
+                      }}
+                      disabled={busy}
+                      className="hud-btn hud-btn-ghost w-full text-sm"
+                      aria-label="Створити тестову гру (не зберігається в історії)"
+                      title="Окрема сесія з прапором isTest — не показуватиметься в історії"
+                    >🧪 ТЕСТОВА ГРА</button>
+                    <p className="hud-mono pt-2 text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
+                      До 4 гравців · унікальне угрупування для кожного
+                    </p>
                   </div>
                 </div>
-                <button
-                  onClick={submitJoinNew}
-                  disabled={busy || !nickname.trim() || !faction}
-                  className="hud-btn hud-btn-lg w-full"
-                  aria-label="Увійти як новий гравець"
-                >{busy ? "..." : "⊕ УВІЙТИ ЯК НОВИЙ ГРАВЕЦЬ"}</button>
-              </section>
 
-              {/* Turn-order drag block (only meaningful with ≥2 players) - hidden for join flow */}
-              {(localOrder?.length ?? 0) >= 2 && mode !== "join_player" && (
-                <section>
-                  <div className="hud-label mb-1.5">Порядок ходів · перетягніть гравців</div>
-                  <ul className="space-y-2" aria-label="Слоти порядку ходів">
-                    {localOrder!.map((pid, i) => {
-                      const p = peeked?.players?.[pid];
-                      if (!p) return null;
-                      const color = FACTIONS[p.faction] ?? "#fff";
-                      return (
-                        <li
-                          key={pid}
-                          draggable
-                          onDragStart={() => onDragStart(i)}
-                          onDragOver={onDragOver}
-                          onDrop={() => onDrop(i)}
-                          className="hud-panel-corners-4 relative flex cursor-grab items-center gap-3 border border-[color:var(--hud-amber)]/30 bg-black/25 px-3 py-2.5 active:cursor-grabbing"
-                        >
-                          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-                          <span className="hud-mono w-6 shrink-0 text-center text-[color:var(--hud-amber)]">{i + 1}</span>
-                          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate hud-title text-sm text-[color:var(--foreground)]">{p.nickname}</div>
-                            <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
-                              {p.faction} · <span className="text-[color:var(--hud-amber)]/70">{ORDINALS[i] ?? `Ходить ${i + 1}-м`}</span>
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 flex-col gap-1">
-                            <button
-                              onClick={() => nudge(i, -1)}
-                              disabled={i === 0}
-                              className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
-                              aria-label={`Підняти ${p.nickname}`}
-                            >▲</button>
-                            <button
-                              onClick={() => nudge(i, 1)}
-                              disabled={i === (localOrder!.length - 1)}
-                              className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
-                              aria-label={`Опустити ${p.nickname}`}
-                            >▼</button>
-                          </div>
-                          <span className="hud-mono shrink-0 text-[0.6rem] text-[color:var(--hud-cyan)]/60">⋮⋮</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <p className="hud-mono mt-2 text-center text-[0.65rem] text-[color:var(--muted-foreground)]">
-                    Зміни підтверджуються хостом сесії
-                  </p>
-                </section>
-              )}
-
-              <button onClick={goBack} className="hud-btn hud-btn-ghost min-h-11 w-full" aria-label="Назад до коду сесії">
-                ↶ Назад до коду
-              </button>
-
-              <ErrorMessage err={err} />
-            </div>
-            </div>
-
-            {/* === CREATE === */}
-            <div className={`transition-all duration-300 ease-in-out ${panelClassName("create")}`}>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="nickname-create" className="hud-label mb-1.5 block">Позивний оперативника</label>
-                  <input
-                    id="nickname-create"
-                    name="nickname"
-                    autoComplete="off"
-                    aria-label="Позивний оперативника"
-                    className="hud-input"
-                    placeholder="введіть позивний..."
-                    value={nickname}
-                    onChange={(e) => setNick(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && submitCreate()}
-                  />
-                </div>
-                <div>
-                  <div className="hud-label mb-1.5">Угрупування</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(FACTIONS).map(([name, color]) => {
-                      const selected = faction === name;
-                      return (
-                        <button
-                          key={name}
-                          type="button"
-                          aria-pressed={selected}
-                          aria-label={`Угрупування ${name}`}
-                          onClick={() => { sfx.click(); setFaction(name); }}
-                          className={`hud-mono relative min-h-11 border px-3 py-2.5 text-left text-sm transition-all ${
-                            selected
-                              ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/10 shadow-[0_0_12px_rgba(245,184,64,0.25)]"
-                              : "border-[color:var(--hud-amber)]/25 hover:border-[color:var(--hud-amber)]/60 active:translate-y-px"
-                          }`}
-                          data-hud-sound="hover"
-                        >
-                          <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                          {name}
-                        </button>
-                      );
-                    })}
+                {/* === JOIN STEP 1: CODE === */}
+                <div className={`transition-all duration-300 ease-in-out ${panelClassName("join_code")}`}>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="room-code" className="hud-label mb-1.5 block">Код сесії</label>
+                      <input
+                        id="room-code"
+                        name="room-code"
+                        autoComplete="off"
+                        inputMode="text"
+                        aria-label="Код сесії (4 символи)"
+                        className="hud-input text-center text-lg uppercase tracking-[0.5em]"
+                        placeholder="ABCD"
+                        value={code}
+                        maxLength={4}
+                        onChange={(e) => setCode(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => e.key === "Enter" && connect()}
+                      />
+                      <p className="hud-mono mt-2 text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
+                        4 символи · отримайте код від хоста сесії
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={goBack} className="hud-btn hud-btn-ghost min-h-11 px-4" aria-label="Назад">↶ Назад</button>
+                      <button
+                        onClick={connect}
+                        disabled={busy || code.trim().length !== 4}
+                        className="hud-btn hud-btn-lg flex-1"
+                        aria-label="Підключитися до сесії"
+                      >{busy ? "..." : "⌬ ПІДКЛЮЧИТИСЯ"}</button>
+                    </div>
+                    <ErrorMessage err={err} />
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={goBack} className="hud-btn hud-btn-ghost min-h-11 px-4" aria-label="Назад">↶ Назад</button>
-                  <button
-                    onClick={submitCreate}
-                    disabled={busy}
-                    className="hud-btn hud-btn-lg flex-1"
-                    aria-label="Створити сесію"
-                  >{busy ? "..." : "⊕ СТВОРИТИ"}</button>
+
+                {/* === JOIN STEP 2: PICK PLAYER OR JOIN NEW === */}
+                <div className={`transition-all duration-300 ease-in-out ${panelClassName("join_player")}`}>
+                  <div className="space-y-5">
+                    {/* Existing kicked/disconnected accounts */}
+                    <section>
+                      <div className="hud-label mb-1.5">Акаунти у сесії · {existingPlayers.length}/4</div>
+                      {existingPlayers.length === 0 ? (
+                        <p className="hud-mono rounded border border-[color:var(--hud-amber)]/20 bg-black/20 px-3 py-2 text-[0.75rem] text-[color:var(--muted-foreground)]">
+                          Поки немає створених гравців.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {existingPlayers.map((p) => {
+                            const color = FACTIONS[p.faction] ?? "#fff";
+                            return (
+                              <li key={p.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => pickExisting(p.id)}
+                                  disabled={busy}
+                                  className="hud-panel-corners-4 hud-mono relative flex w-full items-center gap-3 border border-[color:var(--hud-cyan)]/40 bg-black/30 px-3 py-3 text-left transition-all hover:border-[color:var(--hud-cyan)] hover:bg-[color:var(--hud-cyan)]/5 active:translate-y-px"
+                                  aria-label={`Увійти як ${p.nickname}`}
+                                >
+                                  <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+                                  <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate hud-title text-base text-[color:var(--foreground)]">{p.nickname}</div>
+                                    <div className="text-[0.7rem] text-[color:var(--muted-foreground)]">{p.faction}</div>
+                                  </div>
+                                  <span className="hud-mono text-[0.65rem] text-[color:var(--hud-cyan)]">↩ УВІЙТИ</span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </section>
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3">
+                      <span className="h-px flex-1 bg-[color:var(--hud-amber)]/20" />
+                      <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">АБО</span>
+                      <span className="h-px flex-1 bg-[color:var(--hud-amber)]/20" />
+                    </div>
+
+                    {/* New player */}
+                    <section className="space-y-3">
+                      <div className="hud-label">Новий оперативник</div>
+                      <input
+                        id="nickname"
+                        name="nickname"
+                        autoComplete="off"
+                        aria-label="Позивний оперативника"
+                        className="hud-input"
+                        placeholder="введіть позивний..."
+                        value={nickname}
+                        onChange={(e) => setNick(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && submitJoinNew()}
+                      />
+                      <div>
+                        <div className="hud-label mb-1.5">Угрупування</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(FACTIONS).map(([name, color]) => {
+                            const isTaken = takenFactions.includes(name);
+                            const selected = faction === name;
+                            return (
+                              <button
+                                key={name}
+                                type="button"
+                                disabled={isTaken}
+                                aria-pressed={selected}
+                                aria-label={`Угрупування ${name}${isTaken ? " — зайняте" : ""}`}
+                                onClick={() => { if (isTaken) return; sfx.click(); setFaction(name); }}
+                                className={`hud-mono relative min-h-11 border px-3 py-2.5 text-left text-sm transition-all ${
+                                  isTaken
+                                    ? "border-[color:var(--muted-foreground)]/20 bg-black/30 opacity-40 cursor-not-allowed line-through"
+                                    : selected
+                                      ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/10 shadow-[0_0_12px_rgba(245,184,64,0.25)]"
+                                      : "border-[color:var(--hud-amber)]/25 hover:border-[color:var(--hud-amber)]/60 active:translate-y-px"
+                                }`}
+                                data-hud-sound="hover"
+                              >
+                                <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                                {name}{isTaken ? " · зайнято" : ""}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={submitJoinNew}
+                        disabled={busy || !nickname.trim() || !faction}
+                        className="hud-btn hud-btn-lg w-full"
+                        aria-label="Увійти як новий гравець"
+                      >{busy ? "..." : "⊕ УВІЙТИ ЯК НОВИЙ ГРАВЕЦЬ"}</button>
+                    </section>
+
+                    {/* Turn-order drag block (only meaningful with ≥2 players) - hidden for join flow */}
+                    {(localOrder?.length ?? 0) >= 2 && mode !== "join_player" && (
+                      <section>
+                        <div className="hud-label mb-1.5">Порядок ходів · перетягніть гравців</div>
+                        <ul className="space-y-2" aria-label="Слоти порядку ходів">
+                          {localOrder!.map((pid, i) => {
+                            const p = peeked?.players?.[pid];
+                            if (!p) return null;
+                            const color = FACTIONS[p.faction] ?? "#fff";
+                            return (
+                              <li
+                                key={pid}
+                                draggable
+                                onDragStart={() => onDragStart(i)}
+                                onDragOver={onDragOver}
+                                onDrop={() => onDrop(i)}
+                                className="hud-panel-corners-4 relative flex cursor-grab items-center gap-3 border border-[color:var(--hud-amber)]/30 bg-black/25 px-3 py-2.5 active:cursor-grabbing"
+                              >
+                                <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+                                <span className="hud-mono w-6 shrink-0 text-center text-[color:var(--hud-amber)]">{i + 1}</span>
+                                <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate hud-title text-sm text-[color:var(--foreground)]">{p.nickname}</div>
+                                  <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
+                                    {p.faction} · <span className="text-[color:var(--hud-amber)]/70">{ORDINALS[i] ?? `Ходить ${i + 1}-м`}</span>
+                                  </div>
+                                </div>
+                                <div className="flex shrink-0 flex-col gap-1">
+                                  <button
+                                    onClick={() => nudge(i, -1)}
+                                    disabled={i === 0}
+                                    className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
+                                    aria-label={`Підняти ${p.nickname}`}
+                                  >▲</button>
+                                  <button
+                                    onClick={() => nudge(i, 1)}
+                                    disabled={i === (localOrder!.length - 1)}
+                                    className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
+                                    aria-label={`Опустити ${p.nickname}`}
+                                  >▼</button>
+                                </div>
+                                <span className="hud-mono shrink-0 text-[0.6rem] text-[color:var(--hud-cyan)]/60">⋮⋮</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        <p className="hud-mono mt-2 text-center text-[0.65rem] text-[color:var(--muted-foreground)]">
+                          Зміни підтверджуються хостом сесії
+                        </p>
+                      </section>
+                    )}
+
+                    <button onClick={goBack} className="hud-btn hud-btn-ghost min-h-11 w-full" aria-label="Назад до коду сесії">
+                      ↶ Назад до коду
+                    </button>
+
+                    <ErrorMessage err={err} />
+                  </div>
                 </div>
-                <ErrorMessage err={err} />
+
+                {/* === CREATE === */}
+                <div className={`transition-all duration-300 ease-in-out ${panelClassName("create")}`}>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="nickname-create" className="hud-label mb-1.5 block">Позивний оперативника</label>
+                      <input
+                        id="nickname-create"
+                        name="nickname"
+                        autoComplete="off"
+                        aria-label="Позивний оперативника"
+                        className="hud-input"
+                        placeholder="введіть позивний..."
+                        value={nickname}
+                        onChange={(e) => setNick(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && submitCreate()}
+                      />
+                    </div>
+                    <div>
+                      <div className="hud-label mb-1.5">Угрупування</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(FACTIONS).map(([name, color]) => {
+                          const selected = faction === name;
+                          return (
+                            <button
+                              key={name}
+                              type="button"
+                              aria-pressed={selected}
+                              aria-label={`Угрупування ${name}`}
+                              onClick={() => { sfx.click(); setFaction(name); }}
+                              className={`hud-mono relative min-h-11 border px-3 py-2.5 text-left text-sm transition-all ${
+                                selected
+                                  ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/10 shadow-[0_0_12px_rgba(245,184,64,0.25)]"
+                                  : "border-[color:var(--hud-amber)]/25 hover:border-[color:var(--hud-amber)]/60 active:translate-y-px"
+                              }`}
+                              data-hud-sound="hover"
+                            >
+                              <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                              {name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={goBack} className="hud-btn hud-btn-ghost min-h-11 px-4" aria-label="Назад">↶ Назад</button>
+                      <button
+                        onClick={submitCreate}
+                        disabled={busy}
+                        className="hud-btn hud-btn-lg flex-1"
+                        aria-label="Створити сесію"
+                      >{busy ? "..." : "⊕ СТВОРИТИ"}</button>
+                    </div>
+                    <ErrorMessage err={err} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between border-t border-[color:var(--hud-amber)]/20 pt-3 text-[0.65rem] hud-mono text-[color:var(--muted-foreground)]">
+                <span>NET: ZONE-7</span>
+                <span>SIG: <span className="text-[color:var(--hud-green)]">▮▮▮▮</span></span>
+                <span>2026.06.15</span>
               </div>
             </div>
-          </div>
-
-          <div className="mt-6 flex items-center justify-between border-t border-[color:var(--hud-amber)]/20 pt-3 text-[0.65rem] hud-mono text-[color:var(--muted-foreground)]">
-            <span>NET: ZONE-7</span>
-            <span>SIG: <span className="text-[color:var(--hud-green)]">▮▮▮▮</span></span>
-            <span>2026.06.15</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
   );
 }
