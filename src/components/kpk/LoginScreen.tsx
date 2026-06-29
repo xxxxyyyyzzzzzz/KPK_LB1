@@ -27,7 +27,7 @@ function humanError(reason?: string): string {
 function ErrorMessage({ err }: { err: string }) {
   return (
     <div
-      className={`overflow-hidden transition-all duration-200 ease-in-out ${err ? "mt-2 max-h-24 opacity-100" : "max-h-0 opacity-0"}`}
+      className={`overflow-hidden transition-all duration-300 ease-in-out ${err ? "mt-2 max-h-24 opacity-100" : "max-h-0 opacity-0"}`}
     >
       {err ? (
         <p role="alert" className="hud-mono rounded border border-[color:var(--hud-red)]/40 bg-[color:var(--hud-red)]/10 px-3 py-2 text-center text-sm text-[color:var(--hud-red)]">
@@ -48,6 +48,9 @@ export function LoginScreen() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
+  const [pendingMode, setPendingMode] = useState<Mode | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const transitionTimeoutRef = useRef<number | null>(null);
 
   // Live snapshot of the session once code is verified (re-renders on Firebase onValue)
   const peeked = useSession(connectedCode);
@@ -72,6 +75,36 @@ export function LoginScreen() {
     setLocalOrder(existingPlayers.map((p) => p.id));
   }, [existingPlayers]);
 
+  useEffect(() => () => {
+    if (transitionTimeoutRef.current) window.clearTimeout(transitionTimeoutRef.current);
+  }, []);
+
+  function switchMode(nextMode: Mode) {
+    if (nextMode === mode || isTransitioning) return;
+    setPendingMode(nextMode);
+    setIsTransitioning(true);
+    if (transitionTimeoutRef.current) window.clearTimeout(transitionTimeoutRef.current);
+    transitionTimeoutRef.current = window.setTimeout(() => {
+      setMode(nextMode);
+      setPendingMode(null);
+      setIsTransitioning(false);
+      transitionTimeoutRef.current = null;
+    }, 450);
+  }
+
+  function panelClassName(panel: Mode) {
+    if (panel === mode && !isTransitioning) {
+      return "pointer-events-auto max-h-96 opacity-100";
+    }
+    if (panel === mode && isTransitioning) {
+      return "pointer-events-none absolute inset-0 max-h-0 opacity-0";
+    }
+    if (panel === pendingMode && isTransitioning) {
+      return "pointer-events-none absolute inset-0 max-h-0 opacity-0";
+    }
+    return "pointer-events-none absolute inset-0 max-h-0 opacity-0";
+  }
+
   async function connect() {
     const c = code.trim().toUpperCase();
     if (c.length !== 4) { setErr(humanError("4 символи")); sfx.deny(); return; }
@@ -80,7 +113,7 @@ export function LoginScreen() {
       const s = await readSession(c);
       if (!s) { setErr(humanError("Сесію не знайдено")); sfx.deny(); setBusy(false); return; }
       setConnectedCode(c);
-      setMode("join_player");
+      switchMode("join_player");
       sfx.confirm();
     } catch {
       setErr("Немає зв'язку з сервером."); sfx.deny();
@@ -158,11 +191,11 @@ export function LoginScreen() {
     setFaction("");
     if (mode === "join_player") {
       setConnectedCode(null);
-      setMode("join_code");
+      switchMode("join_code");
     } else if (mode === "create" || mode === "join_code") {
-      setMode("menu");
+      switchMode("menu");
     } else {
-      setMode("menu");
+      switchMode("menu");
     }
   }
 
@@ -205,15 +238,15 @@ export function LoginScreen() {
 
           <div className="relative min-h-[24rem] overflow-hidden sm:min-h-[28rem]">
             {/* === MENU === */}
-            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "menu" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("menu")}`}>
               <div className="space-y-3">
                 <button
-                  onClick={() => { sfx.click(); setMode("create"); setErr(""); }}
+                  onClick={() => { sfx.click(); switchMode("create"); setErr(""); }}
                   className="hud-btn hud-btn-lg w-full text-base"
                   aria-label="Створити нову тактичну сесію"
                 >⊕ СТВОРИТИ ГРУ</button>
                 <button
-                  onClick={() => { sfx.click(); setMode("join_code"); setErr(""); }}
+                  onClick={() => { sfx.click(); switchMode("join_code"); setErr(""); }}
                   className="hud-btn hud-btn-lg w-full text-base"
                   style={{
                     color: "var(--hud-cyan)",
@@ -246,7 +279,7 @@ export function LoginScreen() {
             </div>
 
             {/* === JOIN STEP 1: CODE === */}
-            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "join_code" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("join_code")}`}>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="room-code" className="hud-label mb-1.5 block">Код сесії</label>
@@ -281,7 +314,7 @@ export function LoginScreen() {
             </div>
 
             {/* === JOIN STEP 2: PICK PLAYER OR JOIN NEW === */}
-            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "join_player" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("join_player")}`}>
               <div className="space-y-5">
               {/* Existing kicked/disconnected accounts */}
               <section>
@@ -438,7 +471,7 @@ export function LoginScreen() {
             </div>
 
             {/* === CREATE === */}
-            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${mode === "create" ? "pointer-events-auto max-h-96 opacity-100" : "pointer-events-none absolute inset-0 max-h-0 opacity-0"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${panelClassName("create")}`}>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="nickname-create" className="hud-label mb-1.5 block">Позивний оперативника</label>
