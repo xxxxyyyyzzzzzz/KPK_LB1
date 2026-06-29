@@ -50,11 +50,16 @@ export function useSession(roomCode: string | null): SessionState | null {
   return snap;
 }
 
+function sanitizeForFirebase<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
 // ── Mutation helpers shared between Firebase and local-mode ──
 export async function writeSession(code: string, value: SessionState): Promise<void> {
-  if (LOCAL_MODE) { localApi.set(code, value); return; }
+  const payload = sanitizeForFirebase(value);
+  if (LOCAL_MODE) { localApi.set(code, payload); return; }
   const fb = getFirebase(); if (!fb) return;
-  await set(ref(fb.db, `sessions/${code}`), value);
+  await set(ref(fb.db, `sessions/${code}`), payload);
 }
 
 export async function readSession(code: string): Promise<SessionState | null> {
@@ -66,6 +71,7 @@ export async function readSession(code: string): Promise<SessionState | null> {
 }
 
 export async function updateSessionPath(code: string, path: string, value: unknown): Promise<void> {
+  const payload = sanitizeForFirebase(value);
   if (LOCAL_MODE) {
     localApi.update(code, (s) => {
       const parts = path.split("/").filter(Boolean);
@@ -75,13 +81,13 @@ export async function updateSessionPath(code: string, path: string, value: unkno
         cur[parts[i]] = cur[parts[i]] ?? {};
         cur = cur[parts[i]];
       }
-      cur[parts[parts.length - 1]] = value;
+      cur[parts[parts.length - 1]] = payload;
       return next as SessionState;
     });
     return;
   }
   const fb = getFirebase(); if (!fb) return;
-  await update(ref(fb.db, `sessions/${code}`), { [path]: value });
+  await update(ref(fb.db, `sessions/${code}`), { [path]: payload });
 }
 
 // runTransaction wrapper that works in both modes.
@@ -93,11 +99,16 @@ export async function txSession(
     const cur = localApi.get(code);
     const next = mutator(cur);
     if (!next) return { ok: false, value: cur };
-    localApi.set(code, next);
-    return { ok: true, value: next };
+    const payload = sanitizeForFirebase(next);
+    localApi.set(code, payload);
+    return { ok: true, value: payload };
   }
   const fb = getFirebase(); if (!fb) return { ok: false, value: null };
   const r = ref(fb.db, `sessions/${code}`);
-  const result = await runTransaction(r, (cur) => mutator(cur as SessionState | null));
+  const result = await runTransaction(r, (cur) => {
+    const next = mutator(cur as SessionState | null);
+    if (!next) return undefined;
+    return sanitizeForFirebase(next);
+  });
   return { ok: result.committed, value: (result.snapshot.val() as SessionState) ?? null };
 }
