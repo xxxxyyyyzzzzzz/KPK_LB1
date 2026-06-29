@@ -223,7 +223,6 @@ export function LobbyScreen() {
           </div>
         </div>
       </div>
-    </div>
 
       {showQR && (
         <div
