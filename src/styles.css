@@ -497,7 +497,6 @@ a[role="button"] {
                 0 0 60px 12px rgba(255, 255, 255, 0.08);
   }
 }
-.hud-pulse-red { animation: hud-pulse 1.2s ease-in-out infinite; }
 
 @keyframes hud-blink {
   0%, 50% { 
@@ -841,8 +840,7 @@ a[role="button"] {
 /* Apply fallback glow to pulse animations with HDR-like text glow */
 .hud-pulse-red {
   display: inline-block;
-  animation: hud-pulse 1.2s ease-in-out infinite,
-             hud-text-glow-pulse-red 1.2s ease-in-out infinite;
+  animation: hud-text-glow-pulse-red 1.2s ease-in-out infinite;
   text-shadow: 
     0 0 8px currentColor,
     0 0 16px rgba(255, 90, 74, 0.4),

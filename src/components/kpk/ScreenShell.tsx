@@ -34,14 +34,16 @@ function HeaderTimer() {
       className={[
         "hud-mono tabular-nums px-2 py-1 transition-all select-none shrink-0",
         ending
-          ? "text-[color:var(--hud-red)] hud-pulse-red"
+          ? "text-[color:var(--hud-red)]"
           : blink
           ? "text-[color:var(--hud-amber-glow)] scale-110"
           : "text-[color:var(--hud-amber-glow)] hud-flicker",
       ].join(" ")}
       style={{ fontSize: 24 }}
     >
-      {fmtClock(turnSeconds)}
+      <span className={ending ? "hud-pulse-red" : ""}>
+        {fmtClock(turnSeconds)}
+      </span>
     </button>
   );
 }
