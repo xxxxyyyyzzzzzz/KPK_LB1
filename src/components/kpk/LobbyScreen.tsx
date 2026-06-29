@@ -71,7 +71,7 @@ export function LobbyScreen() {
   return (
     <div className="hud-screen-enter safe-pb safe-px min-h-screen w-full">
       <HudHeader title="Лобі" showStickyTitle={false} />
-      <div className="mx-auto w-full max-w-lg px-3 py-4 pt-24 sm:px-6 sm:py-6 sm:pt-28">
+      <div className="mx-auto w-full max-w-lg px-[12px] py-4 pt-24 sm:px-[12px] sm:py-6 sm:pt-28">
         <div className="hud-scroll min-h-0 max-h-[calc(100vh-6rem)] overflow-y-auto">
           <div
             className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md"
@@ -82,7 +82,7 @@ export function LobbyScreen() {
             <span className="corner bl" />
             <span className="corner br" />
 
-            <div className="mb-5 overflow-hidden border-b border-[color:var(--hud-amber)]/30 pb-4">
+            <div className="mb-5 overflow-hidden border-b border-[color:var(--hud-amber)]/30 py-[12px]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="hud-label">// ЛОБІ СЕСІЇ</div>

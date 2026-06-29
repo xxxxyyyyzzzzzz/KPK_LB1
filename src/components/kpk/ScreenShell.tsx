@@ -201,10 +201,17 @@ const HEADER_INNER_HEIGHT = `calc(12px + 0.5rem + ${HEADER_CONTENT_H}px)`;
 const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + ${HEADER_INNER_HEIGHT})`;
 
 export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement | null> }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setVisible(true), 40);
+    return () => window.clearTimeout(t);
+  }, []);
+
   return (
     <header
       ref={headerRef}
-      className="fixed inset-x-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]"
+      className={`fixed inset-x-0 z-40 border-b border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] transition-all duration-300 ease-out ${visible ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0 pointer-events-none"}`}
       style={{
         top: HEADER_OFFSET,
         paddingTop: "12px",
@@ -246,10 +253,16 @@ const NAV_ITEMS: { id: Screen; label: string; icon: string }[] = [
 
 export function BottomNav() {
   const { screen, go } = useKpk();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setVisible(true), 40);
+    return () => window.clearTimeout(t);
+  }, []);
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch gap-1.5 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto"
+      className={`fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch gap-1.5 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto transition-all duration-300 ease-out ${visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0 pointer-events-none"}`}
       style={{
         paddingTop: "0",
         paddingBottom: "env(safe-area-inset-bottom)",
