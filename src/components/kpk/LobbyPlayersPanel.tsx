@@ -23,7 +23,7 @@ export default function LobbyPlayersPanel({ onClose }: { onClose: () => void }) 
           <button onClick={onClose} className="hud-btn hud-btn-ghost min-h-0 !py-1 !px-2 !text-xs">✕</button>
         </div>
 
-        <ul className="space-y-2">
+        <ul className="space-y-1.5">
           {players.map((p, i) => {
             const color = FACTIONS[p.faction] ?? "#fff";
             const isMe = p.id === playerId;
@@ -34,16 +34,16 @@ export default function LobbyPlayersPanel({ onClose }: { onClose: () => void }) 
                   opacity: 0,
                   animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${i * 0.08}s both`,
                 }}
-                className={`hud-panel-corners-4 relative flex items-center gap-3 border px-3 py-2.5 ${isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"}`}>
-                <span className="hud-mono w-6 shrink-0 text-center text-[color:var(--hud-amber)]">{i + 1}</span>
-                <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                className={`hud-panel-corners-4 relative flex items-center gap-2 border px-2 py-1.5 ${isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"}`}>
+                <span className="hud-mono w-4 shrink-0 text-center text-[0.65rem] text-[color:var(--hud-amber)]">{i + 1}</span>
+                <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate hud-title text-base text-[color:var(--foreground)]">{p.nickname}{isMe ? " · ви" : ""}</div>
-                  <div className="hud-mono text-[0.7rem] text-[color:var(--muted-foreground)]">{p.faction}</div>
+                  <div className="truncate hud-title text-xs text-[color:var(--foreground)]">{p.nickname}{isMe ? " · ви" : ""}</div>
+                  <div className="hud-mono text-[0.58rem] leading-3 text-[color:var(--muted-foreground)]">{p.faction}</div>
                 </div>
-                <div className="flex shrink-0 flex-col gap-1">
-                  <button onClick={() => move(i, -1)} disabled={i === 0} className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs">▲</button>
-                  <button onClick={() => move(i, 1)} disabled={i === players.length - 1} className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs">▼</button>
+                <div className="flex shrink-0 flex-row gap-0.5">
+                  <button onClick={() => move(i, -1)} disabled={i === 0} className="hud-btn hud-btn-ghost min-h-0 !h-6 !w-7 !p-0 !text-[0.6rem] disabled:opacity-20">▲</button>
+                  <button onClick={() => move(i, 1)} disabled={i === players.length - 1} className="hud-btn hud-btn-ghost min-h-0 !h-6 !w-7 !p-0 !text-[0.6rem] disabled:opacity-20">▼</button>
                 </div>
               </li>
             );

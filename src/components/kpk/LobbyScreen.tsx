@@ -68,8 +68,8 @@ export function LobbyScreen() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+    <div className="fixed inset-0 overflow-y-auto">
+      <div className="min-h-full px-3 py-3 pb-3">
         <div
           className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 backdrop-blur-md"
           style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.1s both" }}
@@ -146,7 +146,7 @@ export function LobbyScreen() {
                       opacity: 0,
                       animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${i * 0.08}s both`,
                     }}
-                    className={`hud-panel-corners-4 relative flex items-center gap-2.5 border px-2.5 py-2 ${
+                    className={`hud-panel-corners-4 relative flex items-center gap-2 border px-2 py-1.5 ${
                       isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"
                     }`}
                   >
@@ -154,43 +154,36 @@ export function LobbyScreen() {
                     <span className="corner tr" />
                     <span className="corner bl" />
                     <span className="corner br" />
-                    <span className="hud-mono w-5 shrink-0 text-center text-[0.7rem] text-[color:var(--hud-amber)]">{i + 1}</span>
-                    <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                    <span className="hud-mono w-4 shrink-0 text-center text-[0.65rem] text-[color:var(--hud-amber)]">{i + 1}</span>
+                    <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate hud-title text-sm text-[color:var(--foreground)]">
-                        {p.nickname}
-                        {isMe ? " · ви" : ""}
-                      </div>
-                      <div className="hud-mono text-[0.62rem] leading-4 text-[color:var(--muted-foreground)]">
-                        {p.faction}
-                        <span className="ml-2 hud-mono text-[0.6rem] text-[color:var(--hud-amber)]/70">
-                          {ORDINALS[i] ?? `Ходить ${i + 1}-м`}
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="truncate hud-title text-xs text-[color:var(--foreground)]">
+                          {p.nickname}{isMe ? " · ви" : ""}
                         </span>
+                        {isHostPlayer && (
+                          <span className="hud-mono shrink-0 rounded border border-[color:var(--hud-cyan)]/50 px-1 py-0 text-[0.5rem] text-[color:var(--hud-cyan)]">HOST</span>
+                        )}
+                      </div>
+                      <div className="hud-mono text-[0.58rem] leading-3 text-[color:var(--muted-foreground)]">
+                        {p.faction}
+                        <span className="ml-1.5 text-[color:var(--hud-amber)]/60">{ORDINALS[i] ?? `Ходить ${i + 1}-м`}</span>
                       </div>
                     </div>
-                    {isHostPlayer && (
-                      <span className="hud-mono shrink-0 rounded border border-[color:var(--hud-cyan)]/50 px-1.5 py-0.5 text-[0.55rem] text-[color:var(--hud-cyan)]">
-                        HOST
-                      </span>
-                    )}
                     {isHost && players.length > 1 && (
-                      <div className="flex shrink-0 flex-col gap-0.5">
+                      <div className="flex shrink-0 flex-row gap-0.5">
                         <button
                           onClick={() => move(i, -1)}
                           disabled={i === 0}
-                          className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-1.5 !text-[0.6rem]"
-                          aria-label={`Підняти ${p.nickname} вище у порядку ходів`}
-                        >
-                          ▲
-                        </button>
+                          className="hud-btn hud-btn-ghost min-h-0 !h-6 !w-7 !p-0 !text-[0.6rem] disabled:opacity-20"
+                          aria-label={`Підняти ${p.nickname}`}
+                        >▲</button>
                         <button
                           onClick={() => move(i, 1)}
                           disabled={i === players.length - 1}
-                          className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
-                          aria-label={`Опустити ${p.nickname} нижче у порядку ходів`}
-                        >
-                          ▼
-                        </button>
+                          className="hud-btn hud-btn-ghost min-h-0 !h-6 !w-7 !p-0 !text-[0.6rem] disabled:opacity-20"
+                          aria-label={`Опустити ${p.nickname}`}
+                        >▼</button>
                       </div>
                     )}
                   </li>
@@ -230,6 +223,7 @@ export function LobbyScreen() {
           </div>
         </div>
       </div>
+    </div>
 
       {showQR && (
         <div
