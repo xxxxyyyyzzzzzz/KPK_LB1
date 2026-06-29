@@ -31,7 +31,9 @@ export function LobbyScreen() {
     if (!roomCode) return "";
     try {
       return `${window.location.origin}/?room=${roomCode}`;
-    } catch { return roomCode; }
+    } catch {
+      return roomCode;
+    }
   }, [roomCode]);
 
   if (!roomCode) return null;
@@ -39,9 +41,12 @@ export function LobbyScreen() {
   async function copyCode() {
     try {
       await navigator.clipboard.writeText(roomCode!);
-      setCopied(true); sfx.confirm();
+      setCopied(true);
+      sfx.confirm();
       setTimeout(() => setCopied(false), 1500);
-    } catch { sfx.deny(); }
+    } catch {
+      sfx.deny();
+    }
   }
 
   function move(idx: number, dir: -1 | 1) {
@@ -54,7 +59,10 @@ export function LobbyScreen() {
   }
 
   async function onStart() {
-    if (players.length < 2) { sfx.deny(); return; }
+    if (players.length < 2) {
+      sfx.deny();
+      return;
+    }
     setStarting(true);
     await startGame();
     setStarting(false);
@@ -62,14 +70,17 @@ export function LobbyScreen() {
 
   return (
     <div className="hud-screen-enter safe-pb safe-px min-h-screen w-full">
-      <HudHeader title="Лобі" />
+      <HudHeader title="Лобі" showStickyTitle={false} />
       <div className="mx-auto w-full max-w-lg px-3 py-4 pt-24 sm:px-6 sm:py-6 sm:pt-28">
         <div className="hud-scroll min-h-0 max-h-[calc(100vh-6rem)] overflow-y-auto">
           <div
             className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-5 sm:p-7 backdrop-blur-md"
             style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.1s both" }}
           >
-            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <span className="corner tl" />
+            <span className="corner tr" />
+            <span className="corner bl" />
+            <span className="corner br" />
 
             <div className="mb-5 overflow-hidden border-b border-[color:var(--hud-amber)]/30 pb-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -79,7 +90,9 @@ export function LobbyScreen() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2 self-start">
                   {isHost && (
-                    <button onClick={() => setShowPlayers(true)} className="hud-btn hud-btn-ghost min-h-10 !py-1 !px-3">Гравці</button>
+                    <button onClick={() => setShowPlayers(true)} className="hud-btn hud-btn-ghost min-h-10 !py-1 !px-3">
+                      Гравці
+                    </button>
                   )}
                   <div className="hud-mono text-[0.65rem] sm:text-xs text-[color:var(--hud-cyan)] hud-blink">● WAITING</div>
                 </div>
@@ -87,7 +100,10 @@ export function LobbyScreen() {
 
               <div className="mt-4 flex flex-col gap-3">
                 <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 bg-black/30 p-4">
-                  <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+                  <span className="corner tl" />
+                  <span className="corner tr" />
+                  <span className="corner bl" />
+                  <span className="corner br" />
                   <div className="hud-title text-center text-4xl sm:text-5xl tracking-[0.4em] text-[color:var(--hud-cyan)] tabular-nums">
                     {roomCode}
                   </div>
@@ -97,10 +113,15 @@ export function LobbyScreen() {
                     {copied ? "✓ СКОПІЙОВАНО" : "⧉ СКОПІЮВАТИ КОД"}
                   </button>
                   <button
-                    onClick={() => { sfx.click(); setShowQR(true); }}
+                    onClick={() => {
+                      sfx.click();
+                      setShowQR(true);
+                    }}
                     className="hud-btn min-h-12 w-full"
                     aria-label="Показати QR-код"
-                  >▦ QR-КОД</button>
+                  >
+                    ▦ QR-КОД
+                  </button>
                 </div>
                 <p className="hud-mono text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
                   Передайте код або QR-код іншим гравцям
@@ -108,101 +129,108 @@ export function LobbyScreen() {
               </div>
             </div>
 
-          {/* Players */}
-          <div className="mb-5">
-            <div className="mb-1.5 flex items-center justify-between">
-              <div className="hud-label">Гравці у сесії · {players.length}/4</div>
-              <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
-                {isHost ? "Перетягуйте порядок ходів" : "Чекайте на хоста"}
+            {/* Players */}
+            <div className="mb-5">
+              <div className="mb-1.5 flex items-center justify-between">
+                <div className="hud-label">Гравці у сесії · {players.length}/4</div>
+                <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
+                  {isHost ? "Перетягуйте порядок ходів" : "Чекайте на хоста"}
+                </div>
               </div>
-            </div>
-            <ul className="space-y-1.5" aria-label="Список гравців у лобі">
-              {players.map((p, i) => {
-                const color = FACTIONS[p.faction] ?? "#fff";
-                const isMe = p.id === playerId;
-                const isHostPlayer = i === 0; // host is always first in player_order
-                return (
-                  <li
-                    key={p.id}
-                    style={{
-                      opacity: 0,
-                      animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${i * 0.08}s both`,
-                    }}
-                    className={`hud-panel-corners-4 relative flex items-center gap-2.5 border px-2.5 py-2 ${
-                      isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"
-                    }`}
-                  >
-                    <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-                    <span className="hud-mono w-5 shrink-0 text-center text-[0.7rem] text-[color:var(--hud-amber)]">{i + 1}</span>
-                    <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate hud-title text-sm text-[color:var(--foreground)]">
-                        {p.nickname}{isMe ? " · ви" : ""}
+              <ul className="space-y-1.5" aria-label="Список гравців у лобі">
+                {players.map((p, i) => {
+                  const color = FACTIONS[p.faction] ?? "#fff";
+                  const isMe = p.id === playerId;
+                  const isHostPlayer = i === 0;
+                  return (
+                    <li
+                      key={p.id}
+                      style={{
+                        opacity: 0,
+                        animation: `hud-screen-in 0.35s cubic-bezier(0.2,0.8,0.2,1) ${i * 0.08}s both`,
+                      }}
+                      className={`hud-panel-corners-4 relative flex items-center gap-2.5 border px-2.5 py-2 ${
+                        isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"
+                      }`}
+                    >
+                      <span className="corner tl" />
+                      <span className="corner tr" />
+                      <span className="corner bl" />
+                      <span className="corner br" />
+                      <span className="hud-mono w-5 shrink-0 text-center text-[0.7rem] text-[color:var(--hud-amber)]">{i + 1}</span>
+                      <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate hud-title text-sm text-[color:var(--foreground)]">
+                          {p.nickname}
+                          {isMe ? " · ви" : ""}
+                        </div>
+                        <div className="hud-mono text-[0.62rem] leading-4 text-[color:var(--muted-foreground)]">
+                          {p.faction}
+                          <span className="ml-2 hud-mono text-[0.6rem] text-[color:var(--hud-amber)]/70">
+                            {ORDINALS[i] ?? `Ходить ${i + 1}-м`}
+                          </span>
+                        </div>
                       </div>
-                      <div className="hud-mono text-[0.62rem] leading-4 text-[color:var(--muted-foreground)]">
-                        {p.faction}
-                        <span className="ml-2 hud-mono text-[0.6rem] text-[color:var(--hud-amber)]/70">
-                          {ORDINALS[i] ?? `Ходить ${i + 1}-м`}
+                      {isHostPlayer && (
+                        <span className="hud-mono shrink-0 rounded border border-[color:var(--hud-cyan)]/50 px-1.5 py-0.5 text-[0.55rem] text-[color:var(--hud-cyan)]">
+                          HOST
                         </span>
-                      </div>
-                    </div>
-                    {isHostPlayer && (
-                      <span className="hud-mono shrink-0 rounded border border-[color:var(--hud-cyan)]/50 px-1.5 py-0.5 text-[0.55rem] text-[color:var(--hud-cyan)]">
-                        HOST
-                      </span>
-                    )}
-                    {isHost && players.length > 1 && (
-                      <div className="flex shrink-0 flex-col gap-0.5">
-                        <button
-                          onClick={() => move(i, -1)}
-                          disabled={i === 0}
-                          className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-1.5 !text-[0.6rem]"
-                          aria-label={`Підняти ${p.nickname} вище у порядку ходів`}
-                        >▲</button>
-                        <button
-                          onClick={() => move(i, 1)}
-                          disabled={i === players.length - 1}
-                          className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
-                          aria-label={`Опустити ${p.nickname} нижче у порядку ходів`}
-                        >▼</button>
-                      </div>
-                    )}
+                      )}
+                      {isHost && players.length > 1 && (
+                        <div className="flex shrink-0 flex-col gap-0.5">
+                          <button
+                            onClick={() => move(i, -1)}
+                            disabled={i === 0}
+                            className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-1.5 !text-[0.6rem]"
+                            aria-label={`Підняти ${p.nickname} вище у порядку ходів`}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={() => move(i, 1)}
+                            disabled={i === players.length - 1}
+                            className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-2 !text-xs"
+                            aria-label={`Опустити ${p.nickname} нижче у порядку ходів`}
+                          >
+                            ▼
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+                {Array.from({ length: Math.max(0, 4 - players.length) }).map((_, i) => (
+                  <li
+                    key={`empty-${i}`}
+                    className="hud-mono flex items-center gap-2.5 border border-dashed border-[color:var(--hud-amber)]/15 px-2.5 py-2 text-[0.7rem] text-[color:var(--muted-foreground)]/60"
+                  >
+                    <span className="w-5 text-center">{players.length + i + 1}</span>
+                    <span className="opacity-60">очікування підключення...</span>
                   </li>
-                );
-              })}
-              {Array.from({ length: Math.max(0, 4 - players.length) }).map((_, i) => (
-                <li
-                  key={`empty-${i}`}
-                  className="hud-mono flex items-center gap-2.5 border border-dashed border-[color:var(--hud-amber)]/15 px-2.5 py-2 text-[0.7rem] text-[color:var(--muted-foreground)]/60"
-                >
-                  <span className="w-5 text-center">{players.length + i + 1}</span>
-                  <span className="opacity-60">очікування підключення...</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+                ))}
+              </ul>
+            </div>
 
-          {/* Start / leave */}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              onClick={leaveSession}
-              className="hud-btn hud-btn-ghost min-h-11"
-              aria-label="Покинути лобі"
-            >↶ Покинути лобі</button>
-            {isHost ? (
-              <button
-                onClick={onStart}
-                disabled={players.length < 2 || starting}
-                className="hud-btn hud-btn-lg flex-1 sm:flex-none sm:px-8"
-                aria-label="Розпочати гру"
-              >
-                {starting ? "..." : players.length < 2 ? "⏳ ПОТРІБНО ≥2 ГРАВЦІВ" : "▶ РОЗПОЧАТИ ГРУ"}
+            {/* Start / leave */}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <button onClick={leaveSession} className="hud-btn hud-btn-ghost min-h-11" aria-label="Покинути лобі">
+                ↶ Покинути лобі
               </button>
-            ) : (
-              <span className="hud-mono text-center text-xs text-[color:var(--hud-cyan)] sm:text-right">
-                ◌ Очікуємо, поки хост розпочне сесію...
-              </span>
-            )}
+              {isHost ? (
+                <button
+                  onClick={onStart}
+                  disabled={players.length < 2 || starting}
+                  className="hud-btn hud-btn-lg flex-1 sm:flex-none sm:px-8"
+                  aria-label="Розпочати гру"
+                >
+                  {starting ? "..." : players.length < 2 ? "⏳ ПОТРІБНО ≥2 ГРАВЦІВ" : "▶ РОЗПОЧАТИ ГРУ"}
+                </button>
+              ) : (
+                <span className="hud-mono text-center text-xs text-[color:var(--hud-cyan)] sm:text-right">
+                  ◌ Очікуємо, поки хост розпочне сесію...
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -219,14 +247,22 @@ export function LobbyScreen() {
             className="hud-panel-corners-4 relative w-full max-w-sm border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-5 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <span className="corner tl" />
+            <span className="corner tr" />
+            <span className="corner bl" />
+            <span className="corner br" />
             <div className="mb-3 flex items-center justify-between border-b border-[color:var(--hud-amber)]/30 pb-2">
               <div className="hud-title text-base text-[color:var(--hud-amber)]">// QR · {roomCode}</div>
               <button
-                onClick={() => { sfx.back(); setShowQR(false); }}
+                onClick={() => {
+                  sfx.back();
+                  setShowQR(false);
+                }}
                 className="hud-btn hud-btn-ghost min-h-0 !py-1 !px-2 !text-xs"
                 aria-label="Закрити QR-код"
-              >✕</button>
+              >
+                ✕
+              </button>
             </div>
             <div className="flex items-center justify-center rounded border border-[color:var(--hud-amber)]/30 bg-black/50 p-3">
               <img
@@ -246,24 +282,46 @@ export function LobbyScreen() {
       )}
 
       {showPlayers && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Гравці" onClick={() => setShowPlayers(false)}>
-          <div className="hud-panel-corners-4 relative w-full max-w-md border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-5 sm:p-6" onClick={(e) => e.stopPropagation()}>
-            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+        <div
+          className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Гравці"
+          onClick={() => setShowPlayers(false)}
+        >
+          <div
+            className="hud-panel-corners-4 relative w-full max-w-md border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-5 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="corner tl" />
+            <span className="corner tr" />
+            <span className="corner bl" />
+            <span className="corner br" />
             <div className="mb-3 flex items-center justify-between border-b border-[color:var(--hud-amber)]/30 pb-2">
               <div className="hud-title text-base text-[color:var(--hud-amber)]">Гравці · Порядок ходів</div>
-              <button onClick={() => setShowPlayers(false)} className="hud-btn hud-btn-ghost min-h-0 !py-1 !px-2 !text-xs">✕</button>
+              <button onClick={() => setShowPlayers(false)} className="hud-btn hud-btn-ghost min-h-0 !py-1 !px-2 !text-xs">
+                ✕
+              </button>
             </div>
             <ul className="space-y-1.5">
               {players.map((p, i) => {
                 const color = FACTIONS[p.faction] ?? "#fff";
                 const isMe = p.id === playerId;
-                const isHostPlayer = i === 0; // host is always first in player_order
+                const isHostPlayer = i === 0;
                 return (
-                  <li key={p.id} className={`hud-panel-corners-4 relative flex items-center gap-2.5 border px-2.5 py-2 ${isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"}`}>
+                  <li
+                    key={p.id}
+                    className={`hud-panel-corners-4 relative flex items-center gap-2.5 border px-2.5 py-2 ${
+                      isMe ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/5" : "border-[color:var(--hud-amber)]/25 bg-black/20"
+                    }`}
+                  >
                     <span className="hud-mono w-5 shrink-0 text-center text-[0.7rem] text-[color:var(--hud-amber)]">{i + 1}</span>
                     <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate hud-title text-sm text-[color:var(--foreground)]">{p.nickname}{isMe ? " · ви" : ""}</div>
+                      <div className="truncate hud-title text-sm text-[color:var(--foreground)]">
+                        {p.nickname}
+                        {isMe ? " · ви" : ""}
+                      </div>
                       <div className="hud-mono text-[0.62rem] leading-4 text-[color:var(--muted-foreground)]">
                         {p.faction}
                         <span className="ml-2 hud-mono text-[0.6rem] text-[color:var(--hud-amber)]/70">
@@ -272,8 +330,12 @@ export function LobbyScreen() {
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col gap-0.5">
-                      <button onClick={() => move(i, -1)} disabled={i === 0} className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-1.5 !text-[0.6rem]">▲</button>
-                      <button onClick={() => move(i, 1)} disabled={i === players.length - 1} className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-1.5 !text-[0.6rem]">▼</button>
+                      <button onClick={() => move(i, -1)} disabled={i === 0} className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-1.5 !text-[0.6rem]">
+                        ▲
+                      </button>
+                      <button onClick={() => move(i, 1)} disabled={i === players.length - 1} className="hud-btn hud-btn-ghost min-h-0 !py-0.5 !px-1.5 !text-[0.6rem]">
+                        ▼
+                      </button>
                     </div>
                   </li>
                 );
