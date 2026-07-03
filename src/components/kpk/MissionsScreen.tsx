@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { MISSION_CLASS_COLOR, MISSION_CLASSES } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
@@ -376,7 +377,8 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.76)` : `scale(0.92)`;
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6" onClick={onCancel}>
       <div
         className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:p-8"
@@ -421,7 +423,8 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
           Скасувати
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -445,7 +448,8 @@ function MissionSelectionModal({
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-black/80 p-4 sm:p-6" onClick={onCancel}>
       <div
         className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-5 shadow-[0_0_40px_rgba(0,0,0,0.55)] sm:p-7"
@@ -507,7 +511,8 @@ function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onC
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div
         className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-sm w-full mx-4"
@@ -530,6 +535,7 @@ function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onC
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
