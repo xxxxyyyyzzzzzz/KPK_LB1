@@ -377,7 +377,7 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.76)` : `scale(0.92)`;
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === "undefined" || !document.body) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6" onClick={onCancel}>
       <div
@@ -448,7 +448,7 @@ function MissionSelectionModal({
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === "undefined" || !document.body) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 bg-black/80 p-4 sm:p-6" onClick={onCancel}>
       <div
@@ -511,7 +511,7 @@ function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onC
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === "undefined" || !document.body) return null;
   return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div
