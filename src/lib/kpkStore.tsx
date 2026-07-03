@@ -234,7 +234,11 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const slots: PlayerSlot[] = me?.slots ?? [];
   const completedIds = me?.completed_ids ?? [];
   const global_replacements_left = me?.global_replacements_left ?? 0;
-  const unlockedClasses = me?.unlocked_classes ?? { "1": MISSION_CLASSES, "2": [], "3": [] };
+  const unlockedClasses = me?.unlocked_classes ? {
+    "1": me.unlocked_classes["1"] ?? MISSION_CLASSES,
+    "2": me.unlocked_classes["2"] ?? [],
+    "3": me.unlocked_classes["3"] ?? [],
+  } : { "1": MISSION_CLASSES, "2": [], "3": [] };
   const ap: ActionPoints = me ? {
     active: me.action_points.active, activeMax: me.action_points.active_max,
     attack: me.action_points.attack, attackMax: me.action_points.attack_max,
@@ -405,7 +409,11 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       };
 
       // Розблокування класу для наступного рівня
-      np.unlocked_classes = { ...p.unlocked_classes };
+      np.unlocked_classes = {
+        "1": p.unlocked_classes["1"] ?? MISSION_CLASSES,
+        "2": p.unlocked_classes["2"] ?? [],
+        "3": p.unlocked_classes["3"] ?? [],
+      };
       if (m.level === 1 && !np.unlocked_classes["2"].includes(m.cls)) {
         np.unlocked_classes["2"] = [...np.unlocked_classes["2"], m.cls];
       } else if (m.level === 2 && !np.unlocked_classes["3"].includes(m.cls)) {

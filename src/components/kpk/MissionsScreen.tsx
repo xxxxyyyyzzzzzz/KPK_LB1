@@ -91,7 +91,7 @@ export function MissionsScreen() {
                             slot={s}
                             mission={m}
                             tier={tier}
-                            unlockedClassesForTier={unlockedClasses[String(tier) as "1" | "2" | "3"]}
+                            unlockedClassesForTier={unlockedClasses[String(tier) as "1" | "2" | "3"] ?? []}
                             onSelectClass={(cls) => {
                               selectClassForSlot(s.slot_index, cls);
                               setTimeout(() => generateCandidatesForSlot(s.slot_index), 100);
