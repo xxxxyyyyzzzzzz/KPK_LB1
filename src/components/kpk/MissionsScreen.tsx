@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { MISSION_CLASS_COLOR, MISSION_CLASSES } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
@@ -154,22 +154,50 @@ function SlotCard({
   const [showMissionSelection, setShowMissionSelection] = useState(false);
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const { getMission } = useKpk();
+  const { allMissions, completedIds, slots: allSlots } = useKpk();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [originOffset, setOriginOffset] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!showClassSelection && !showMissionSelection && !showReplaceDialog) setOriginOffset(null);
+  }, [showClassSelection, showMissionSelection, showReplaceDialog]);
 
   // Якщо слот пустий - показуємо кнопку "Вибрати місію"
+  // compute availability of missions by class for this tier
+  const taken = new Set<number>([...(completedIds ?? []), ...allSlots.map((s) => s.mission_id ?? -1)]);
+  const availableByClass: Record<string, boolean> = {};
+  for (const cls of MISSION_CLASSES) {
+    const pool = allMissions.filter((mm) => mm.level === tier && mm.cls === cls && !taken.has(mm.id));
+    availableByClass[cls] = pool.length > 0;
+  }
+  const hasAnyAvailable = Object.values(availableByClass).some((v) => v === true);
+
   if (!m && !slot.selected_class) {
     return (
-      <div className="hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]/30 p-3 text-center">
+      <div ref={rootRef} className="hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]/30 p-3 text-center">
         <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
         <button
-          onClick={() => setShowClassSelection(true)}
+          onClick={(e) => {
+            const rect = rootRef.current?.getBoundingClientRect();
+            if (rect) {
+              const offsetX = rect.left + rect.width / 2 - (window.innerWidth / 2);
+              const offsetY = rect.top + rect.height / 2 - (window.innerHeight / 2);
+              setOriginOffset({ x: offsetX, y: offsetY });
+            }
+            setShowClassSelection(true);
+          }}
           className="hud-btn w-full py-2 text-sm"
+          disabled={!hasAnyAvailable}
+          title={!hasAnyAvailable ? "Немає доступних місій" : undefined}
         >
           Вибрати місію
         </button>
         {showClassSelection && (
           <ClassSelectionModal
             tier={tier}
-            unlockedClasses={unlockedClassesForTier}
+            unlockedClasses={unlockedClasses}
+            availableByClass={availableByClass}
+            originOffset={originOffset}
             onSelect={(cls) => {
               onSelectClass(cls);
               setShowClassSelection(false);
@@ -181,6 +209,7 @@ function SlotCard({
         {showMissionSelection && slot.candidate_missions && (
           <MissionSelectionModal
             candidateMissionIds={slot.candidate_missions}
+            originOffset={originOffset}
             onSelect={(missionId) => {
               onSelectMission(missionId);
               setShowMissionSelection(false);
@@ -338,30 +367,39 @@ type ClassSelectionModalProps = {
   unlockedClasses: string[];
   onSelect: (cls: string) => void;
   onCancel: () => void;
+  availableByClass?: Record<string, boolean>;
+  originOffset?: { x: number; y: number };
 };
 
-function ClassSelectionModal({ tier, unlockedClasses, onSelect, onCancel }: ClassSelectionModalProps) {
+function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOffset, onSelect, onCancel }: ClassSelectionModalProps & { availableByClass?: Record<string, boolean>; originOffset?: { x: number; y: number } }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
+  const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.76)` : `scale(0.92)`;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div
         className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-sm w-full mx-4"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          transform: mounted ? "translate(0,0) scale(1)" : initialTransform,
+          transition: "transform 260ms cubic-bezier(0.2,0.8,0.2,1), opacity 260ms",
+          opacity: mounted ? 1 : 0,
+        }}
       >
         <h3 className="hud-title text-lg text-[color:var(--hud-amber)] mb-4">Вибрати клас (Рівень {tier})</h3>
         <div className="space-y-2">
           {MISSION_CLASSES.map((cls) => {
             const isUnlocked = unlockedClasses.includes(cls);
+            const hasAvailable = availableByClass ? !!availableByClass[cls] : true;
+            const disabled = !isUnlocked || !hasAvailable;
             return (
               <button
                 key={cls}
-                onClick={() => isUnlocked && (onSelect(cls), sfx.confirm())}
-                disabled={!isUnlocked}
+                onClick={() => !disabled && (onSelect(cls), sfx.confirm())}
+                disabled={disabled}
                 className="w-full hud-btn py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                title={
-                  !isUnlocked
-                    ? `Розблокується після виконання місії ${cls} рівня ${tier - 1}`
-                    : undefined
-                }
+                title={!isUnlocked ? `Розблокується після виконання місії рівня ${tier - 1}` : (!hasAvailable ? "Немає доступних місій" : undefined)}
               >
                 <span style={{ color: MISSION_CLASS_COLOR[cls as keyof typeof MISSION_CLASS_COLOR] }}>
                   {cls}
@@ -370,6 +408,9 @@ function ClassSelectionModal({ tier, unlockedClasses, onSelect, onCancel }: Clas
                   <span className="hud-mono text-[0.65rem] ml-2 text-[color:var(--muted-foreground)]">
                     (розблокується)
                   </span>
+                )}
+                {isUnlocked && !hasAvailable && (
+                  <span className="hud-mono text-[0.65rem] ml-2 text-[color:var(--muted-foreground)]">(немає місій)</span>
                 )}
               </button>
             );
@@ -388,42 +429,52 @@ type MissionSelectionModalProps = {
   onSelect: (missionId: number) => void;
   onReplace: () => void;
   onCancel: () => void;
+  originOffset?: { x: number; y: number };
 };
 
 function MissionSelectionModal({
   candidateMissionIds,
+  originOffset,
   onSelect,
   onReplace,
   onCancel,
-}: MissionSelectionModalProps) {
+}: MissionSelectionModalProps & { originOffset?: { x: number; y: number } }) {
   const { getMission } = useKpk();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
+  const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div
-        className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-md w-full mx-4"
+        className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-4xl w-full mx-4 sm:mx-auto"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          transform: mounted ? "translate(0,0) scale(1)" : initialTransform,
+          transition: "transform 260ms cubic-bezier(0.2,0.8,0.2,1), opacity 260ms",
+          opacity: mounted ? 1 : 0,
+          maxHeight: "90vh",
+        }}
       >
         <h3 className="hud-title text-lg text-[color:var(--hud-amber)] mb-4">Вибрати місію</h3>
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto py-2">
           {candidateMissionIds.map((mid) => {
             const m = getMission(mid);
             if (!m) return null;
             return (
-              <button
-                key={mid}
-                onClick={() => {
-                  onSelect(mid);
-                  sfx.confirm();
-                }}
-                className="w-full text-left hud-btn p-3 py-2"
-              >
-                <div className="font-medium text-sm">{m.name}</div>
-                <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">{m.description}</div>
-                <div className="text-[0.65rem] mt-1 text-[color:var(--muted-foreground)]">
-                  +{formatPoints(m.mainReward)} балів
-                </div>
-              </button>
+              <div key={mid} className="hud-panel p-3 rounded-lg border cursor-pointer">
+                <button
+                  onClick={() => { onSelect(mid); sfx.confirm(); }}
+                  className="w-full text-left"
+                >
+                  <div className="font-medium text-sm mb-1">{m.name}</div>
+                  <div className="hud-mono text-[0.75rem] text-[color:var(--muted-foreground)] mb-2">{m.description}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="hud-mono text-[0.85rem]">{m.cls} · L{m.level}</div>
+                    <div className="hud-mono text-[0.85rem]">+{formatPoints(m.mainReward)} pts · +{m.currencyReward} ⛁</div>
+                  </div>
+                </button>
+              </div>
             );
           })}
         </div>
@@ -444,14 +495,20 @@ type ReplaceConfirmDialogProps = {
   onFullReplace: () => void;
   onClassReplace: () => void;
   onCancel: () => void;
+  originOffset?: { x: number; y: number };
 };
 
-function ReplaceConfirmDialog({ onFullReplace, onClassReplace, onCancel }: ReplaceConfirmDialogProps) {
+function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onCancel }: ReplaceConfirmDialogProps & { originOffset?: { x: number; y: number } }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
+  const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div
         className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-sm w-full mx-4"
         onClick={(e) => e.stopPropagation()}
+        style={{ transform: mounted ? "translate(0,0) scale(1)" : initialTransform, transition: "transform 240ms cubic-bezier(0.2,0.8,0.2,1), opacity 240ms", opacity: mounted ? 1 : 0 }}
       >
         <h3 className="hud-title text-lg text-[color:var(--hud-amber)] mb-2">Замінити місію?</h3>
         <p className="text-sm text-[color:var(--muted-foreground)] mb-4">
