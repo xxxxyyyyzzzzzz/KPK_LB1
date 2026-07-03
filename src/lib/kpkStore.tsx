@@ -518,7 +518,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       if (fullReplace) {
         // Повна заміна — повертаємо до вибору класу
         np.slots = p.slots.map((s) =>
-          s.slot_index === slotIndex ? { ...s, selected_class: null, candidate_missions: null } : s,
+          s.slot_index === slotIndex ? { ...s, selected_class: null, candidate_missions: null, mission_id: null, current_progress: 0 } : s,
         );
       } else {
         // Заміна вибраного класу — генеруємо нові кандидати
@@ -540,7 +540,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         }
 
         np.slots = p.slots.map((s) =>
-          s.slot_index === slotIndex ? { ...s, candidate_missions: candidates.length > 0 ? candidates : null } : s,
+          s.slot_index === slotIndex ? { ...s, candidate_missions: candidates.length > 0 ? candidates : null, mission_id: null, current_progress: 0 } : s,
         );
       }
 

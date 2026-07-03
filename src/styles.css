@@ -350,9 +350,9 @@
 
 /* ============ Screen transitions (cyberpunk) ============ */
 @keyframes hud-screen-in {
-  0%   { opacity: 0; filter: blur(8px) hue-rotate(20deg); transform: translateY(8px); clip-path: inset(0 0 100% 0); }
-  40%  { opacity: 1; filter: blur(0) hue-rotate(0); clip-path: inset(0); }
-  100% { opacity: 1; transform: translateY(0); clip-path: inset(0); }
+  0%   { opacity: 0; /* start clipped to top */ clip-path: inset(0 0 100% 0); }
+  40%  { opacity: 1; clip-path: inset(0); }
+  100% { opacity: 1; clip-path: inset(0); }
 }
 .hud-screen-enter {
   animation: hud-screen-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;

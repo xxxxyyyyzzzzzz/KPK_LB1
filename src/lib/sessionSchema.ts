@@ -75,23 +75,13 @@ export type SessionState = {
 };
 
 export function initialPlayerSlots(): PlayerSlot[] {
-  const missions = generateAllMissions();
-  const byLevel: Record<1 | 2 | 3, Mission[]> = { 1: [], 2: [], 3: [] };
-  for (const m of missions) byLevel[m.level].push(m);
-  const used = new Set<number>();
-  return Array.from({ length: 6 }).map((_, i) => {
-    const lvl = ((i % 3) + 1) as 1 | 2 | 3;
-    const pool = byLevel[lvl].filter((m) => !used.has(m.id));
-    const m = pool[Math.floor(Math.random() * pool.length)];
-    if (m) used.add(m.id);
-    return {
-      slot_index: i,
-      mission_id: m?.id ?? null,
-      current_progress: 0,
-      selected_class: null,
-      candidate_missions: null,
-    };
-  });
+  return Array.from({ length: 6 }).map((_, i) => ({
+    slot_index: i,
+    mission_id: null,
+    current_progress: 0,
+    selected_class: null,
+    candidate_missions: null,
+  }));
 }
 
 export function makePlayer(nickname: string, faction: string): PlayerState {
