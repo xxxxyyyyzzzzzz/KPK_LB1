@@ -2,9 +2,11 @@ import { useKpk, fmtSession } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
 import { formatPoints } from "@/lib/utils";
 import { HudHeader, BottomNav, AnimatedItem } from "./ScreenShell";
+import { formatPoints } from "@/lib/utils";
 
 export function MainMenu() {
   const { user, sessionSeconds, totalScore, level1, level2, level3, round, turn } = useKpk();
+  
   const factionColor = user ? FACTIONS[user.faction] : "#fff";
 
   return (

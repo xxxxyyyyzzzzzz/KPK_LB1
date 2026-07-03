@@ -40,3 +40,9 @@ export function attachHdrTouchGlow(button: HTMLElement) {
     if (touchTimer) clearTimeout(touchTimer);
   };
 }
+
+export function formatPoints(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  if (Number.isInteger(rounded)) return String(rounded);
+  return String(rounded.toFixed(1)).replace(/\.0$/, "");
+}

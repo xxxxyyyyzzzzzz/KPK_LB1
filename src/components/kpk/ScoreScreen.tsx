@@ -2,6 +2,7 @@ import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { FACTIONS } from "@/lib/kpkData";
 import { formatPoints } from "@/lib/utils";
 import { useKpk } from "@/lib/kpkStore";
+import { formatPoints } from "@/lib/utils";
 
 export function ScoreScreen() {
   const { sessionPlayers, currency, history, playerId } = useKpk();
@@ -84,7 +85,7 @@ export function ScoreScreen() {
                     <div className="hud-mono text-xs text-[color:var(--foreground)] truncate">{h.nickname}</div>
                     <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] truncate">{h.reason}</div>
                   </div>
-                  <span className="hud-mono text-sm tabular-nums text-[color:var(--hud-green)]">+{h.reward}</span>
+                  <span className="hud-mono text-sm tabular-nums text-[color:var(--hud-green)]">+{formatPoints(h.reward as number)}</span>
                 </div>
               ))}
             </div>
