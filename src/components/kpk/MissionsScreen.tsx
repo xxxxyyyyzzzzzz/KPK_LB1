@@ -493,12 +493,8 @@ function MissionSelectionModal({
             })}
           </div>
           <div className="flex gap-2 mt-4">
-            <button onClick={onReplace} className="hud-btn flex-1 text-sm">
-              🔄 Заміна
-            </button>
-            <button onClick={onCancel} className="hud-btn hud-btn-ghost flex-1 text-sm">
-              Назад
-            </button>
+            <button onClick={onReplace} className="hud-btn flex-1 text-sm">🔄 Заміна</button>
+            <button onClick={onCancel} className="hud-btn hud-btn-ghost flex-1 text-sm">Назад</button>
           </div>
         </div>
       </div>,
@@ -509,57 +505,6 @@ function MissionSelectionModal({
     console.error(err);
     return null;
   }
-      <div
-        className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-5 shadow-[0_0_40px_rgba(0,0,0,0.55)] sm:p-7"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          transform: mounted ? "translate(0,0) scale(1)" : initialTransform,
-          transition: "transform 260ms cubic-bezier(0.2,0.8,0.2,1), opacity 260ms",
-          opacity: mounted ? 1 : 0,
-          maxHeight: "90vh",
-        }}
-      >
-        <h3 className="hud-title text-lg text-[color:var(--hud-amber)] mb-4">Вибрати місію</h3>
-        <div className="grid grid-cols-1 gap-4 overflow-y-auto py-2 sm:grid-cols-2">
-          {candidateMissionIds.map((mid) => {
-            const m = getMission(mid);
-            if (!m) return null;
-            return (
-              <button
-                key={mid}
-                onClick={() => { onSelect(mid); sfx.confirm(); }}
-                className="hud-panel flex h-full flex-col justify-between rounded-3xl border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5"
-              >
-                <div>
-                  <div className="font-semibold text-lg mb-2">{m.name}</div>
-                  <div className="hud-mono text-sm leading-6 text-[color:var(--muted-foreground)] mb-4">{m.description}</div>
-                </div>
-                <div className="flex flex-col gap-2 pt-3 text-[0.85rem] text-[color:var(--foreground)]">
-                  <div className="hud-mono">Клас: <span className="font-semibold">{m.cls}</span></div>
-                  <div className="hud-mono">Рівень: <span className="font-semibold">{m.level}</span></div>
-                  <div className="hud-mono">Нагорода: <span className="font-semibold">+{formatPoints(m.mainReward)} pts</span></div>
-                  <div className="hud-mono">Кредити: <span className="font-semibold">+{m.currencyReward} ⛁</span></div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex gap-2 mt-4">
-          <button onClick={onReplace} className="hud-btn flex-1 text-sm">
-            🔄 Заміна
-        document.body,
-      );
-    } catch (err) {
-      reportLovableError(err, { modal: 'MissionSelectionModal' });
-      console.error(err);
-      return null;
-    }
-            Назад
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 type ReplaceConfirmDialogProps = {
