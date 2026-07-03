@@ -5,13 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Форматування балів: округлення максимум до однієї цифри після коми */
-export function formatPoints(value: number): string {
-  if (typeof value !== "number") return "0";
-  const rounded = Math.round(value * 10) / 10;
-  return rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1);
-}
-
 /**
  * Add HDR glow touch support to buttons
  * On touchstart: add hdr-active class for dramatic glow
