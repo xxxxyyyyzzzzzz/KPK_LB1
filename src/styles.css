@@ -1025,12 +1025,10 @@ button:active:not(:disabled) {
 /* Apply HDR glow to all animated content */
 .hud-screen-enter,
 [class*="hud-screen-in"],
-[class*="hud-panel"],
 [class*="hud-button"],
 [style*="animation"] {
-  will-change: box-shadow, filter;
+  will-change: box-shadow;
   backface-visibility: hidden;
-  perspective: 1000px;
 }
 
 /* Enhance glow at animation peaks */

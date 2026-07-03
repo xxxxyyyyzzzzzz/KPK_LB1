@@ -377,14 +377,15 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.76)` : `scale(0.92)`;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6" onClick={onCancel}>
       <div
-        className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-sm w-full mx-4"
+        className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:p-8"
         onClick={(e) => e.stopPropagation()}
         style={{
           transform: mounted ? "translate(0,0) scale(1)" : initialTransform,
           transition: "transform 260ms cubic-bezier(0.2,0.8,0.2,1), opacity 260ms",
           opacity: mounted ? 1 : 0,
+          minWidth: "min(640px, 100vw)",
         }}
       >
         <h3 className="hud-title text-lg text-[color:var(--hud-amber)] mb-4">Вибрати клас (Рівень {tier})</h3>
@@ -445,9 +446,9 @@ function MissionSelectionModal({
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 bg-black/80 p-4 sm:p-6" onClick={onCancel}>
       <div
-        className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-4xl w-full mx-4 sm:mx-auto"
+        className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-5 shadow-[0_0_40px_rgba(0,0,0,0.55)] sm:p-7"
         onClick={(e) => e.stopPropagation()}
         style={{
           transform: mounted ? "translate(0,0) scale(1)" : initialTransform,
@@ -457,24 +458,27 @@ function MissionSelectionModal({
         }}
       >
         <h3 className="hud-title text-lg text-[color:var(--hud-amber)] mb-4">Вибрати місію</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto py-2">
+        <div className="grid grid-cols-1 gap-4 overflow-y-auto py-2 sm:grid-cols-2">
           {candidateMissionIds.map((mid) => {
             const m = getMission(mid);
             if (!m) return null;
             return (
-              <div key={mid} className="hud-panel p-3 rounded-lg border cursor-pointer">
-                <button
-                  onClick={() => { onSelect(mid); sfx.confirm(); }}
-                  className="w-full text-left"
-                >
-                  <div className="font-medium text-sm mb-1">{m.name}</div>
-                  <div className="hud-mono text-[0.75rem] text-[color:var(--muted-foreground)] mb-2">{m.description}</div>
-                  <div className="flex items-center justify-between">
-                    <div className="hud-mono text-[0.85rem]">{m.cls} · L{m.level}</div>
-                    <div className="hud-mono text-[0.85rem]">+{formatPoints(m.mainReward)} pts · +{m.currencyReward} ⛁</div>
-                  </div>
-                </button>
-              </div>
+              <button
+                key={mid}
+                onClick={() => { onSelect(mid); sfx.confirm(); }}
+                className="hud-panel flex h-full flex-col justify-between rounded-3xl border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5"
+              >
+                <div>
+                  <div className="font-semibold text-lg mb-2">{m.name}</div>
+                  <div className="hud-mono text-sm leading-6 text-[color:var(--muted-foreground)] mb-4">{m.description}</div>
+                </div>
+                <div className="flex flex-col gap-2 pt-3 text-[0.85rem] text-[color:var(--foreground)]">
+                  <div className="hud-mono">Клас: <span className="font-semibold">{m.cls}</span></div>
+                  <div className="hud-mono">Рівень: <span className="font-semibold">{m.level}</span></div>
+                  <div className="hud-mono">Нагорода: <span className="font-semibold">+{formatPoints(m.mainReward)} pts</span></div>
+                  <div className="hud-mono">Кредити: <span className="font-semibold">+{m.currencyReward} ⛁</span></div>
+                </div>
+              </button>
             );
           })}
         </div>
