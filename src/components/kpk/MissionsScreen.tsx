@@ -5,6 +5,7 @@ import { MISSION_CLASS_COLOR, MISSION_CLASSES } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
 import { formatPoints } from "@/lib/utils";
 import { sfx } from "@/lib/sounds";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
 
 export function MissionsScreen() {
   const {
@@ -378,8 +379,9 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.76)` : `scale(0.92)`;
 
   if (typeof document === "undefined" || !document.body) return null;
-  return createPortal(
-    <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6" onClick={onCancel}>
+  try {
+    return createPortal(
+      <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6" onClick={onCancel}>
       <div
         className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:p-8"
         onClick={(e) => e.stopPropagation()}
@@ -424,8 +426,13 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
         </button>
       </div>
     </div>,
-    document.body,
-  );
+      document.body,
+    );
+  } catch (err) {
+    reportLovableError(err, { modal: 'ClassSelectionModal' });
+    console.error(err);
+    return null;
+  }
 }
 
 type MissionSelectionModalProps = {
@@ -440,16 +447,16 @@ function MissionSelectionModal({
   candidateMissionIds,
   originOffset,
   onSelect,
-  onReplace,
-  onCancel,
-}: MissionSelectionModalProps & { originOffset?: { x: number; y: number } }) {
-  const { getMission } = useKpk();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
-  const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
-
-  if (typeof document === "undefined" || !document.body) return null;
-  return createPortal(
+    if (typeof document === "undefined" || !document.body) return null;
+    try {
+      return createPortal(
+        <div className="fixed inset-0 z-50 bg-black/80 p-4 sm:p-6" onClick={onCancel}>
+    , document.body);
+  } catch (err) {
+    reportLovableError(err, { modal: 'MissionSelectionModal' });
+    console.error(err);
+    return null;
+  }
     <div className="fixed inset-0 z-50 bg-black/80 p-4 sm:p-6" onClick={onCancel}>
       <div
         className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-5 shadow-[0_0_40px_rgba(0,0,0,0.55)] sm:p-7"
@@ -489,8 +496,13 @@ function MissionSelectionModal({
         <div className="flex gap-2 mt-4">
           <button onClick={onReplace} className="hud-btn flex-1 text-sm">
             🔄 Заміна
-          </button>
-          <button onClick={onCancel} className="hud-btn hud-btn-ghost flex-1 text-sm">
+        document.body,
+      );
+    } catch (err) {
+      reportLovableError(err, { modal: 'MissionSelectionModal' });
+      console.error(err);
+      return null;
+    }
             Назад
           </button>
         </div>
@@ -510,10 +522,10 @@ function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onC
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
-
   if (typeof document === "undefined" || !document.body) return null;
-  return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
+  try {
+    return createPortal(
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div
         className="bg-[color:var(--surface-1)] border border-[color:var(--hud-amber)]/30 rounded-lg p-6 max-w-sm w-full mx-4"
         onClick={(e) => e.stopPropagation()}
@@ -536,6 +548,11 @@ function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onC
         </div>
       </div>
     </div>,
-    document.body,
-  );
+      document.body,
+    );
+  } catch (err) {
+    reportLovableError(err, { modal: 'ReplaceConfirmDialog' });
+    console.error(err);
+    return null;
+  }
 }
