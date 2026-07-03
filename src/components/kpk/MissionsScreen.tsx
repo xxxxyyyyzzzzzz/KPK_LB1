@@ -195,7 +195,7 @@ function SlotCard({
         {showClassSelection && (
           <ClassSelectionModal
             tier={tier}
-            unlockedClasses={unlockedClasses}
+            unlockedClasses={unlockedClassesForTier}
             availableByClass={availableByClass}
             originOffset={originOffset}
             onSelect={(cls) => {
