@@ -6,6 +6,7 @@ import {
   TURNS_PER_NEWS_ROUND,
   TIER_LIMITS,
   UPGRADES,
+  MISSION_CLASSES,
   generateAllMissions,
   generateNews,
   type Mission,
@@ -15,12 +16,10 @@ import {
 } from "./kpkData";
 import { sfx } from "./sounds";
 import { generatePlayerId, generateRoomCode } from "./firebase";
-import { makePlayer, makeSession, type PlayerState, type SessionState } from "./sessionSchema";
+import { makePlayer, makeSession, type PlayerState, type PlayerSlot, type SessionState } from "./sessionSchema";
 import { readSession, txSession, useSession, writeSession } from "@/hooks/useSession";
 
 type User = { nickname: string; faction: string };
-
-type Slot = { slot_index: number; mission_id: number | null; current_progress: number };
 
 type ActionPoints = {
   active: number; activeMax: number;
@@ -57,10 +56,11 @@ type KpkState = {
 
   // ap / replacements
   ap: ActionPoints;
-  replacements: Record<1 | 2 | 3, number>;
+  global_replacements_left: number;  // 0-2, обнуляється на 2 на початку ходу
+  unlockedClasses: { "1": string[]; "2": string[]; "3": string[] };
 
   // missions
-  slots: Slot[];
+  slots: PlayerSlot[];
   completedIds: number[];
   missionsByLevel: Record<1 | 2 | 3, Mission[]>;
   allMissions: Mission[];
@@ -106,23 +106,16 @@ type KpkState = {
   nextPlayer: () => void;
   updateSlotProgress: (slotIndex: number, delta: number) => void;
   completeSlot: (slotIndex: number) => void;
-  replaceSlot: (slotIndex: number) => void;
+  selectClassForSlot: (slotIndex: number, className: string) => void;
+  generateCandidatesForSlot: (slotIndex: number) => void;
+  replaceSlotMissions: (slotIndex: number, fullReplace: boolean) => void;
+  selectMissionForSlot: (slotIndex: number, missionId: number) => void;
+  cancelSlotSelection: (slotIndex: number) => void;
 };
 
 const KpkContext = createContext<KpkState | null>(null);
 
 const slotLevel = (i: number) => ((i % 3) + 1) as 1 | 2 | 3;
-
-function buildInitialSlots(byLevel: Record<1 | 2 | 3, Mission[]>): Slot[] {
-  const used = new Set<number>();
-  return Array.from({ length: 6 }).map((_, i) => {
-    const lvl = slotLevel(i);
-    const pool = byLevel[lvl].filter((m) => !used.has(m.id));
-    const m = pool[Math.floor(Math.random() * pool.length)];
-    if (m) used.add(m.id);
-    return { slot_index: i, mission_id: m?.id ?? null, current_progress: 0 };
-  });
-}
 
 function bonusActiveAP(upgrades: string[]) {
   return upgrades.includes("komanduvannya_2_3") ? 1 : 0;
@@ -238,16 +231,15 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const turnRunning = session?.turn_running ?? false;
   const news = session?.news ?? [];
   const upgradesList = Object.keys(me?.upgrades ?? {});
-  const slots: Slot[] = me?.slots ?? [];
+  const slots: PlayerSlot[] = me?.slots ?? [];
   const completedIds = me?.completed_ids ?? [];
+  const global_replacements_left = me?.global_replacements_left ?? 0;
+  const unlockedClasses = me?.unlocked_classes ?? { "1": MISSION_CLASSES, "2": [], "3": [] };
   const ap: ActionPoints = me ? {
     active: me.action_points.active, activeMax: me.action_points.active_max,
     attack: me.action_points.attack, attackMax: me.action_points.attack_max,
     build: me.action_points.build, buildMax: me.action_points.build_max,
   } : baseAP([]);
-  const replacements: Record<1 | 2 | 3, number> = me
-    ? { 1: me.replacements["1"], 2: me.replacements["2"], 3: me.replacements["3"] }
-    : { 1: 1, 2: 1, 3: 1 };
   const history: HistoryEntry[] = useMemo(() => {
     const ev = session?.events ?? {};
     return Object.values(ev)
@@ -411,13 +403,22 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         level3_score: p.level3_score + (m.level === 3 ? m.levelReward : 0),
         completed_ids: [...(p.completed_ids ?? []), m.id],
       };
+
+      // Розблокування класу для наступного рівня
+      np.unlocked_classes = { ...p.unlocked_classes };
+      if (m.level === 1 && !np.unlocked_classes["2"].includes(m.cls)) {
+        np.unlocked_classes["2"] = [...np.unlocked_classes["2"], m.cls];
+      } else if (m.level === 2 && !np.unlocked_classes["3"].includes(m.cls)) {
+        np.unlocked_classes["3"] = [...np.unlocked_classes["3"], m.cls];
+      }
+
       // assign next mission to that slot, excluding completed + currently held
       const taken = new Set<number>([...np.completed_ids, ...np.slots.map((s) => s.mission_id ?? -1)]);
       const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
       const pool = allMissions.filter((mm) => mm.level === lvl && !taken.has(mm.id));
       const nextId = pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
       np.slots = np.slots.map((s) =>
-        s.slot_index === slotIndex ? { ...s, mission_id: nextId, current_progress: 0 } : s,
+        s.slot_index === slotIndex ? { ...s, mission_id: nextId, current_progress: 0, selected_class: null, candidate_missions: null } : s,
       );
 
       const ts = Date.now();
@@ -439,26 +440,142 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     completeMissionTx(roomCode, playerId, slotIndex).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
   }, [roomCode, playerId, completeMissionTx]);
 
-  const replaceSlot = useCallback((slotIndex: number) => {
+  const selectClassForSlot = useCallback((slotIndex: number, className: string) => {
     if (!roomCode || !playerId) return;
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
-      const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
-      if ((p.replacements[String(lvl) as "1" | "2" | "3"] ?? 0) <= 0) return undefined;
-      const taken = new Set<number>([...(p.completed_ids ?? []), ...p.slots.map((s) => s.mission_id ?? -1)]);
-      const pool = allMissions.filter((mm) => mm.level === lvl && !taken.has(mm.id));
-      const nextId = pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
+      const slot = p.slots.find((s) => s.slot_index === slotIndex);
+      if (!slot) return undefined;
       return {
         ...cur,
         players: { ...cur.players, [playerId]: {
           ...p,
-          slots: p.slots.map((s) => s.slot_index === slotIndex ? { ...s, mission_id: nextId, current_progress: 0 } : s),
-          replacements: { ...p.replacements, [String(lvl)]: p.replacements[String(lvl) as "1" | "2" | "3"] - 1 },
+          slots: p.slots.map((s) =>
+            s.slot_index === slotIndex ? { ...s, selected_class: className, candidate_missions: null } : s,
+          ),
+        }},
+      };
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId]);
+
+  const generateCandidatesForSlot = useCallback((slotIndex: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      const slot = p.slots.find((s) => s.slot_index === slotIndex);
+      if (!slot || !slot.selected_class) return undefined;
+      
+      const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
+      const taken = new Set<number>([...(p.completed_ids ?? []), ...p.slots.map((s) => s.mission_id ?? -1)]);
+      const pool = allMissions.filter(
+        (mm) => mm.level === lvl && mm.cls === slot.selected_class && !taken.has(mm.id),
+      );
+      
+      // Генеруємо 4 кандидатів
+      const candidates: number[] = [];
+      const poolCopy = [...pool];
+      for (let i = 0; i < 4 && poolCopy.length > 0; i++) {
+        const idx = Math.floor(Math.random() * poolCopy.length);
+        candidates.push(poolCopy[idx].id);
+        poolCopy.splice(idx, 1);
+      }
+      
+      return {
+        ...cur,
+        players: { ...cur.players, [playerId]: {
+          ...p,
+          slots: p.slots.map((s) =>
+            s.slot_index === slotIndex ? { ...s, candidate_missions: candidates.length > 0 ? candidates : null } : s,
+          ),
         }},
       };
     }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
   }, [roomCode, playerId, allMissions]);
+
+  const replaceSlotMissions = useCallback((slotIndex: number, fullReplace: boolean) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      if ((p.global_replacements_left ?? 0) <= 0) return undefined;
+      
+      const slot = p.slots.find((s) => s.slot_index === slotIndex);
+      if (!slot) return undefined;
+
+      const np = { ...p };
+      np.global_replacements_left = Math.max(0, (p.global_replacements_left ?? 0) - 1);
+
+      if (fullReplace) {
+        // Повна заміна — повертаємо до вибору класу
+        np.slots = p.slots.map((s) =>
+          s.slot_index === slotIndex ? { ...s, selected_class: null, candidate_missions: null } : s,
+        );
+      } else {
+        // Заміна вибраного класу — генеруємо нові кандидати
+        const slot = p.slots.find((s) => s.slot_index === slotIndex);
+        if (!slot || !slot.selected_class) return undefined;
+
+        const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
+        const taken = new Set<number>([...(p.completed_ids ?? []), ...p.slots.map((s) => s.mission_id ?? -1)]);
+        const pool = allMissions.filter(
+          (mm) => mm.level === lvl && mm.cls === slot.selected_class && !taken.has(mm.id),
+        );
+
+        const candidates: number[] = [];
+        const poolCopy = [...pool];
+        for (let i = 0; i < 4 && poolCopy.length > 0; i++) {
+          const idx = Math.floor(Math.random() * poolCopy.length);
+          candidates.push(poolCopy[idx].id);
+          poolCopy.splice(idx, 1);
+        }
+
+        np.slots = p.slots.map((s) =>
+          s.slot_index === slotIndex ? { ...s, candidate_missions: candidates.length > 0 ? candidates : null } : s,
+        );
+      }
+
+      return {
+        ...cur,
+        players: { ...cur.players, [playerId]: np },
+      };
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId, allMissions]);
+
+  const cancelSlotSelection = useCallback((slotIndex: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      return {
+        ...cur,
+        players: { ...cur.players, [playerId]: {
+          ...p,
+          slots: p.slots.map((s) =>
+            s.slot_index === slotIndex ? { ...s, selected_class: null, candidate_missions: null } : s,
+          ),
+        }},
+      };
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId]);
+
+  const selectMissionForSlot = useCallback((slotIndex: number, missionId: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      return {
+        ...cur,
+        players: { ...cur.players, [playerId]: {
+          ...p,
+          slots: p.slots.map((s) =>
+            s.slot_index === slotIndex ? { ...s, mission_id: missionId, current_progress: 0, selected_class: null, candidate_missions: null } : s,
+          ),
+        }},
+      };
+    }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
+  }, [roomCode, playerId]);
 
   // ── Turn rotation / News round (host engine triggers news on round boundary) ──
   // Сценарій: гравці ходять по черзі за player_order; коли всі N гравців відіграли
@@ -502,17 +619,18 @@ export function KpkProvider({ children }: { children: ReactNode }) {
           newsSignalTs = Date.now();
         }
       }
-      // Reset AP, replacements, currency-earned-this-turn for ALL players
+      // Reset AP, currency-earned-this-turn for ALL players, обнулити глобальний лічильник замін для новоактивного гравця
       const players = { ...cur.players };
       for (const pid of Object.keys(players)) {
         const p = players[pid];
         const ap = p.action_points;
+        const isNewActive = pid === nextActive;
         players[pid] = {
           ...p,
           action_points: {
             ...ap, active: ap.active_max, attack: ap.attack_max, build: ap.build_max,
           },
-          replacements: { "1": 1, "2": 1, "3": 1 },
+          global_replacements_left: isNewActive ? 2 : (p.global_replacements_left ?? 0),
           currency_earned_this_turn: 0,
         };
       }
@@ -669,7 +787,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     screen, prevScreen, user,
     totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
     round, turn, sessionSeconds, sessionStartedAt, sessionTimerRunning, turnSeconds, turnRunning,
-    ap, replacements,
+    ap, global_replacements_left, unlockedClasses,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
     news, history,
@@ -724,17 +842,21 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     nextPlayer,
     updateSlotProgress,
     completeSlot,
-    replaceSlot,
+    selectClassForSlot,
+    generateCandidatesForSlot,
+    replaceSlotMissions,
+    selectMissionForSlot,
+    cancelSlotSelection,
   }), [
     screen, prevScreen, user, totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
-    round, turn, sessionSeconds, turnSeconds, turnRunning, ap, replacements,
+    round, turn, sessionSeconds, turnSeconds, turnRunning, ap, global_replacements_left, unlockedClasses,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, news, history,
     roomCode, playerId, isHost, players, sessionPlayers,
     activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
     takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
-    nextPlayer, updateSlotProgress, completeSlot, replaceSlot,
+    nextPlayer, updateSlotProgress, completeSlot, selectClassForSlot, generateCandidatesForSlot, replaceSlotMissions, selectMissionForSlot, cancelSlotSelection,
   ]);
 
   return <KpkContext.Provider value={value}>{children}</KpkContext.Provider>;

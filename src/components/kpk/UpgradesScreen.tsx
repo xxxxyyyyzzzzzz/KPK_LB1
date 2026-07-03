@@ -1,5 +1,6 @@
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { UPGRADES, UPGRADE_CATEGORIES, type UpgradeCategory, type UpgradeDef } from "@/lib/kpkData";
+import { formatPoints } from "@/lib/utils";
 import { useKpk } from "@/lib/kpkStore";
 
 export function UpgradesScreen() {
@@ -13,16 +14,16 @@ export function UpgradesScreen() {
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ДЕРЕВО ПРОКАЧОК</h2>
             <div className="mt-2 hud-mono text-xs text-[color:var(--muted-foreground)]">
               Куплено: <span className="text-[color:var(--hud-amber)]">{purchased}</span>
-              <span className="mx-2">·</span>L1: <span className="text-[color:var(--mission-defense)]">{level1}</span>
-              <span className="mx-2">·</span>L2: <span className="text-[color:var(--mission-loot)]">{level2}</span>
-              <span className="mx-2">·</span>L3: <span className="text-[color:var(--mission-economy)]">{level3}</span>
+              <span className="mx-2">·</span>L1: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
+              <span className="mx-2">·</span>L2: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
+              <span className="mx-2">·</span>L3: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
               <span className="mx-2">·</span>⛁ <span className="text-[color:var(--hud-amber)]">{currency}</span>
             </div>
           </div>
           <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 px-4 py-2">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <div className="hud-label text-[0.6rem] text-[color:var(--hud-cyan)]">// Сума балів</div>
-            <div className="hud-title text-2xl text-[color:var(--hud-cyan)]">{upgradePoints}</div>
+            <div className="hud-title text-2xl text-[color:var(--hud-cyan)]">{formatPoints(upgradePoints)}</div>
           </div>
         </AnimatedItem>
 

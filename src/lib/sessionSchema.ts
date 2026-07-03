@@ -8,6 +8,14 @@ import {
   type NewsEntry,
 } from "./kpkData";
 
+export type PlayerSlot = {
+  slot_index: number;
+  mission_id: number | null;
+  current_progress: number;
+  selected_class: string | null;  // Вибраний клас для цього слота (null = не вибраний)
+  candidate_missions: number[] | null;  // [id1, id2, id3, id4] зафіксовані місії для вибраного класу
+};
+
 export type PlayerState = {
   nickname: string;
   faction: string;
@@ -25,11 +33,12 @@ export type PlayerState = {
     attack: number; attack_max: number;
     build: number; build_max: number;
   };
-  replacements: { "1": number; "2": number; "3": number };
+  global_replacements_left: number;  // 0-2, обнуляється на 2 на початку ходу гравця
+  unlocked_classes: { "1": string[]; "2": string[]; "3": string[] };  // Розблоковані класи по рівнях
   // Прокачки
   upgrades: Record<string, true>;
   // Слоти місій (індекс 0..5; рівень = (idx % 3) + 1)
-  slots: Array<{ slot_index: number; mission_id: number | null; current_progress: number }>;
+  slots: Array<PlayerSlot>;
   completed_ids: number[];
 };
 
@@ -65,7 +74,7 @@ export type SessionState = {
   events: Record<string, EventEntry>;
 };
 
-export function initialPlayerSlots(): PlayerState["slots"] {
+export function initialPlayerSlots(): PlayerSlot[] {
   const missions = generateAllMissions();
   const byLevel: Record<1 | 2 | 3, Mission[]> = { 1: [], 2: [], 3: [] };
   for (const m of missions) byLevel[m.level].push(m);
@@ -75,12 +84,19 @@ export function initialPlayerSlots(): PlayerState["slots"] {
     const pool = byLevel[lvl].filter((m) => !used.has(m.id));
     const m = pool[Math.floor(Math.random() * pool.length)];
     if (m) used.add(m.id);
-    return { slot_index: i, mission_id: m?.id ?? null, current_progress: 0 };
+    return {
+      slot_index: i,
+      mission_id: m?.id ?? null,
+      current_progress: 0,
+      selected_class: null,
+      candidate_missions: null,
+    };
   });
 }
 
 export function makePlayer(nickname: string, faction: string): PlayerState {
   const ap = DEFAULT_ACTION_POINTS;
+  const MISSION_CLASSES = ["Атака", "Захист", "Лут", "Економіка"];
   return {
     nickname,
     faction,
@@ -96,7 +112,12 @@ export function makePlayer(nickname: string, faction: string): PlayerState {
       attack: ap.attack, attack_max: ap.attack,
       build: ap.build, build_max: ap.build,
     },
-    replacements: { "1": 1, "2": 1, "3": 1 },
+    global_replacements_left: 2,
+    unlocked_classes: {
+      "1": MISSION_CLASSES,  // Рівень 1: усі класи доступні з самого початку
+      "2": [],  // Рівень 2: розблокуються після виконання місії рівня 1
+      "3": [],  // Рівень 3: розблокуються після виконання місії рівня 2
+    },
     upgrades: {},
     slots: initialPlayerSlots(),
     completed_ids: [],

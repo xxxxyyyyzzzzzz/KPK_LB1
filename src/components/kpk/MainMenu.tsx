@@ -1,5 +1,6 @@
 import { useKpk, fmtSession } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
+import { formatPoints } from "@/lib/utils";
 import { HudHeader, BottomNav, AnimatedItem } from "./ScreenShell";
 
 export function MainMenu() {
@@ -62,7 +63,7 @@ function Kpi({ label, value, accent }: { label: string; value: number; accent: s
     <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/25 bg-[color:var(--surface-2)] px-3 py-3">
       <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
       <div className="hud-label text-[0.6rem]" style={{ color: accent }}>{label}</div>
-      <div className="hud-title mt-1 text-2xl tabular-nums" style={{ color: accent }}>{value}</div>
+      <div className="hud-title mt-1 text-2xl tabular-nums" style={{ color: accent }}>{formatPoints(value)}</div>
     </div>
   );
 }

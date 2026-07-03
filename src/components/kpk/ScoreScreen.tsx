@@ -1,5 +1,6 @@
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { FACTIONS } from "@/lib/kpkData";
+import { formatPoints } from "@/lib/utils";
 import { useKpk } from "@/lib/kpkStore";
 
 export function ScoreScreen() {
@@ -48,11 +49,11 @@ export function ScoreScreen() {
                           <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] truncate">{p.faction}</span>
                         </div>
                         <div className="hud-mono mt-0.5 text-[0.62rem] text-[color:var(--muted-foreground)]/70 tabular-nums tracking-wide">
-                          I {p.level1} · II {p.level2} · III {p.level3} · ⛁ {p.currency}
+                          I {formatPoints(p.level1)} · II {formatPoints(p.level2)} · III {formatPoints(p.level3)} · ⛁ {p.currency}
                         </div>
                       </div>
                       <span className="hud-title text-3xl sm:text-4xl tabular-nums text-[color:var(--hud-amber-glow)]">
-                        {p.score}
+                        {formatPoints(p.score)}
                       </span>
                     </div>
                   );
