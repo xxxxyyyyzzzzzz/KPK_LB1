@@ -4,7 +4,7 @@ import { formatPoints } from "@/lib/utils";
 import { useKpk } from "@/lib/kpkStore";
 
 export function UpgradesScreen() {
-  const { upgradePoints, upgrades, level1, level2, level3, currency } = useKpk();
+  const { upgradePoints, upgrades, level1, level2, level3 } = useKpk();
   const purchased = upgrades.length;
   return (
     <ScreenShell title="Прокачки">
@@ -17,7 +17,6 @@ export function UpgradesScreen() {
               <span className="mx-2">·</span>L1: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
               <span className="mx-2">·</span>L2: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
               <span className="mx-2">·</span>L3: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
-              <span className="mx-2">·</span>⛁ <span className="text-[color:var(--hud-amber)]">{currency}</span>
             </div>
           </div>
           <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 px-4 py-2">

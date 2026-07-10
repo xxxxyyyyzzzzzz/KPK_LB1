@@ -4,16 +4,13 @@ import { formatPoints } from "@/lib/utils";
 import { useKpk } from "@/lib/kpkStore";
 
 export function ScoreScreen() {
-  const { sessionPlayers, currency, history, playerId } = useKpk();
+  const { sessionPlayers, history, playerId } = useKpk();
 
   return (
     <ScreenShell title="ЄБали">
       <div className="w-full space-y-6">
         <AnimatedItem index={0} className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="hud-title text-2xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ЄБАЛИ</h2>
-          <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">
-            Валюта: <span className="text-[color:var(--hud-amber)]">{currency}</span> ⛁
-          </div>
         </AnimatedItem>
 
         <AnimatedItem index={1}>
@@ -49,7 +46,7 @@ export function ScoreScreen() {
                           <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] truncate">{p.faction}</span>
                         </div>
                         <div className="hud-mono mt-0.5 text-[0.62rem] text-[color:var(--muted-foreground)]/70 tabular-nums tracking-wide">
-                          I {formatPoints(p.level1)} · II {formatPoints(p.level2)} · III {formatPoints(p.level3)} · ⛁ {p.currency}
+                          I {formatPoints(p.level1)} · II {formatPoints(p.level2)} · III {formatPoints(p.level3)}
                         </div>
                       </div>
                       <span className="hud-title text-3xl sm:text-4xl tabular-nums text-[color:var(--hud-amber-glow)]">

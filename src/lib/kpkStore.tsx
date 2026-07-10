@@ -235,10 +235,10 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const completedIds = me?.completed_ids ?? [];
   const global_replacements_left = me?.global_replacements_left ?? 0;
   const unlockedClasses = me?.unlocked_classes ? {
-    "1": me.unlocked_classes["1"] ?? MISSION_CLASSES,
+    "1": me.unlocked_classes["1"] ?? [...MISSION_CLASSES],
     "2": me.unlocked_classes["2"] ?? [],
     "3": me.unlocked_classes["3"] ?? [],
-  } : { "1": MISSION_CLASSES, "2": [], "3": [] };
+  } : { "1": [...MISSION_CLASSES], "2": [], "3": [] };
   const ap: ActionPoints = me ? {
     active: me.action_points.active, activeMax: me.action_points.active_max,
     attack: me.action_points.attack, attackMax: me.action_points.attack_max,
@@ -394,14 +394,11 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       const m = slot?.mission_id != null ? allMissions.find((mm) => mm.id === slot.mission_id) : null;
       if (!slot || !m || slot.current_progress < m.target) return undefined;
 
-      const isMyTurn = cur.active_player_id === pid;
-      const currencyBonus = isMyTurn ? 1 : 0; // бонус валюти, якщо твій хід
-
       const np: PlayerState = {
         ...p,
         score: p.score + m.mainReward,
-        currency: p.currency + m.currencyReward + currencyBonus,
-        currency_earned_this_turn: p.currency_earned_this_turn + m.currencyReward + currencyBonus,
+        currency: p.currency,
+        currency_earned_this_turn: p.currency_earned_this_turn,
         level1_score: p.level1_score + (m.level === 1 ? m.levelReward : 0),
         level2_score: p.level2_score + (m.level === 2 ? m.levelReward : 0),
         level3_score: p.level3_score + (m.level === 3 ? m.levelReward : 0),
@@ -410,7 +407,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
 
       // Розблокування класу для наступного рівня
       np.unlocked_classes = {
-        "1": p.unlocked_classes["1"] ?? MISSION_CLASSES,
+        "1": p.unlocked_classes["1"] ?? [...MISSION_CLASSES],
         "2": p.unlocked_classes["2"] ?? [],
         "3": p.unlocked_classes["3"] ?? [],
       };
