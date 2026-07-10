@@ -94,7 +94,7 @@ function BurgerMenu() {
           <div
             className="absolute left-0 z-[100000] flex flex-col w-72 max-w-[85vw] bg-[color:var(--surface-1)] border-r-2 border-[color:var(--hud-amber)]/50"
             style={{
-              top: "calc(env(safe-area-inset-top) + 1.5rem)",
+              top: "env(safe-area-inset-top)",
               height: "75vh",
               paddingTop: "0",
               paddingBottom: "env(safe-area-inset-bottom)",
