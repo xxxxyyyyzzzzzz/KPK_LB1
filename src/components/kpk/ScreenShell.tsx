@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
@@ -88,7 +89,7 @@ function BurgerMenu() {
         <span className="block h-[2px] w-5 bg-[color:var(--hud-amber)]" />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-[99999]">
           <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div
@@ -165,10 +166,11 @@ function BurgerMenu() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {confirmExit && (
+      {confirmExit && createPortal(
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setConfirmExit(false)}>
           <div
             className="hud-panel-corners-4 relative w-full max-w-sm border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-5"
@@ -187,7 +189,8 @@ function BurgerMenu() {
               <button onClick={() => { setConfirmExit(false); logout(); }} className="hud-btn hud-btn-danger flex-1">Вийти</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
