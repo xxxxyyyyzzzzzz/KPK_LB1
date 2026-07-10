@@ -1,6 +1,8 @@
 // КПК — повний набір даних та формул з kpk_integration_spec.md
 // БАЛАНС НЕ ЗМІНЮВАТИ.
 
+import { generateEntityCoords, type NewsZone } from "./game/newsCoordinates";
+
 export const FACTIONS: Record<string, string> = {
   Скаєри: "#66ADFF",
   Авантюристи: "#A0A0A0",
@@ -319,7 +321,7 @@ export const NEWS_RULES: Record<1 | 2 | 3 | 4, Record<string, NewsRule>> = {
   },
 };
 
-export type NewsEntry = { entity: string; count: number; zone?: string; note?: string };
+export type NewsEntry = { entity: string; count: number; zone?: string; note?: string; coords?: string[] };
 
 function rollQty(q: string): number {
   if (q.includes(",")) {
@@ -333,9 +335,25 @@ function rollQty(q: string): number {
   return parseInt(q, 10);
 }
 
+function parseA1Coord(coord: string): { x: number; y: number } {
+  const match = /^([A-Z]+)([0-9]+)$/.exec(coord);
+  if (!match) {
+    return { x: 0, y: 0 };
+  }
+
+  const column = match[1];
+  const row = parseInt(match[2], 10);
+  let x = 0;
+  for (const char of column) {
+    x = x * 26 + char.charCodeAt(0) - 64;
+  }
+  return { x: x - 1, y: row - 1 };
+}
+
 export function generateNews(round: 1 | 2 | 3 | 4): NewsEntry[] {
   const rules = NEWS_RULES[round];
   const out: NewsEntry[] = [];
+  const occupiedCoords = new Set<string>();
   for (const [entity, rule] of Object.entries(rules)) {
     const hit = Math.random() * 100 < rule.chance;
     if (!hit) continue;
@@ -343,7 +361,17 @@ export function generateNews(round: 1 | 2 | 3 | 4): NewsEntry[] {
     if (!rule.quantity) continue;
     const q = rollQty(rule.quantity);
     if (q <= 0) continue;
-    out.push({ entity, count: q, zone: rule.zone });
+    const coords = generateEntityCoords(
+      q,
+      rule.zone as NewsZone,
+      occupiedCoords,
+      entity === "Мутанти 1" || entity === "Мутанти 2",
+    );
+    for (const coord of coords) {
+      const { x, y } = parseA1Coord(coord);
+      occupiedCoords.add(`${x},${y}`);
+    }
+    out.push({ entity, count: q, zone: rule.zone, coords });
   }
   return out;
 }

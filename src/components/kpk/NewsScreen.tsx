@@ -50,7 +50,7 @@ export function NewsScreen() {
               <span className="text-[color:var(--hud-amber-glow)]">{n.entity}</span>
               {n.note
                 ? <span className="ml-2">— {n.note}</span>
-                : <span className="ml-2">×{n.count}{n.zone && n.zone !== "any" ? ` · ${n.zone}` : ""}</span>
+                : <span className="ml-2">×{n.count}{n.coords && n.coords.length > 0 ? ` · ${n.coords.join(", ")}` : ""}</span>
               }
             </div>
           ))}
