@@ -2,7 +2,6 @@ import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { FACTIONS } from "@/lib/kpkData";
 import { formatPoints } from "@/lib/utils";
 import { useKpk } from "@/lib/kpkStore";
-import { formatPoints } from "@/lib/utils";
 
 export function ScoreScreen() {
   const { sessionPlayers, currency, history, playerId } = useKpk();
