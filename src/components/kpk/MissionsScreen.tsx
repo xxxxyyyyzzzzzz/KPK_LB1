@@ -233,7 +233,7 @@ function SlotCard({
 
   // Якщо слот з активною місією - показуємо карточку
   if (m) {
-    const color = MISSION_CLASS_COLOR[m.cls];
+    const color = MISSION_CLASS_COLOR[m.cls as keyof typeof MISSION_CLASS_COLOR];
     const pct = Math.min(100, (slot.current_progress / m.target) * 100);
     const done = slot.current_progress >= m.target;
 
@@ -370,10 +370,10 @@ type ClassSelectionModalProps = {
   onSelect: (cls: string) => void;
   onCancel: () => void;
   availableByClass?: Record<string, boolean>;
-  originOffset?: { x: number; y: number };
+  originOffset?: { x: number; y: number } | null;
 };
 
-function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOffset, onSelect, onCancel }: ClassSelectionModalProps & { availableByClass?: Record<string, boolean>; originOffset?: { x: number; y: number } }) {
+function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOffset, onSelect, onCancel }: ClassSelectionModalProps & { availableByClass?: Record<string, boolean>; originOffset?: { x: number; y: number } | null }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.76)` : `scale(0.92)`;
@@ -440,14 +440,16 @@ type MissionSelectionModalProps = {
   onSelect: (missionId: number) => void;
   onReplace: () => void;
   onCancel: () => void;
-  originOffset?: { x: number; y: number };
+  originOffset?: { x: number; y: number } | null;
 };
 
 function MissionSelectionModal({
   candidateMissionIds,
   originOffset,
   onSelect,
-}: MissionSelectionModalProps & { originOffset?: { x: number; y: number } }) {
+  onReplace,
+  onCancel,
+}: MissionSelectionModalProps & { originOffset?: { x: number; y: number } | null }) {
   const { getMission } = useKpk();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
