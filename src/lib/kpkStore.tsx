@@ -108,7 +108,7 @@ type KpkState = {
   completeSlot: (slotIndex: number) => void;
   selectClassForSlot: (slotIndex: number, className: string) => void;
   generateCandidatesForSlot: (slotIndex: number) => void;
-  replaceSlotMissions: (slotIndex: number, fullReplace: boolean) => void;
+  replaceSlotMissions: (slotIndex: number, fullReplace: boolean) => Promise<boolean>;
   selectMissionForSlot: (slotIndex: number, missionId: number) => void;
   cancelSlotSelection: (slotIndex: number) => void;
 };
@@ -417,13 +417,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         np.unlocked_classes["3"] = [...np.unlocked_classes["3"], m.cls];
       }
 
-      // assign next mission to that slot, excluding completed + currently held
-      const taken = new Set<number>([...np.completed_ids, ...np.slots.map((s) => s.mission_id ?? -1)]);
-      const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
-      const pool = allMissions.filter((mm) => mm.level === lvl && !taken.has(mm.id));
-      const nextId = pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
       np.slots = np.slots.map((s) =>
-        s.slot_index === slotIndex ? { ...s, mission_id: nextId, current_progress: 0, selected_class: null, candidate_missions: null } : s,
+        s.slot_index === slotIndex ? { ...s, mission_id: null, current_progress: 0, selected_class: null, candidate_missions: null } : s,
       );
 
       const ts = Date.now();
@@ -499,9 +494,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
   }, [roomCode, playerId, allMissions]);
 
-  const replaceSlotMissions = useCallback((slotIndex: number, fullReplace: boolean) => {
-    if (!roomCode || !playerId) return;
-    txSession(roomCode, (cur) => {
+  const replaceSlotMissions = useCallback((slotIndex: number, fullReplace: boolean): Promise<boolean> => {
+    if (!roomCode || !playerId) return Promise.resolve(false);
+    return txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
       if ((p.global_replacements_left ?? 0) <= 0) return undefined;
@@ -545,7 +540,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         ...cur,
         players: { ...cur.players, [playerId]: np },
       };
-    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); return r.ok; });
   }, [roomCode, playerId, allMissions]);
 
   const cancelSlotSelection = useCallback((slotIndex: number) => {

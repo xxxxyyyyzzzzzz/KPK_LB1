@@ -289,14 +289,12 @@ function SlotCard({
         {showReplaceDialog && (
           <ReplaceConfirmDialog
             onFullReplace={() => {
-              replaceSlotMissions(true);
               setShowReplaceDialog(false);
-              setShowClassSelection(true);
+              replaceSlotMissions(true).then((ok) => { if (ok) setShowClassSelection(true); });
             }}
             onClassReplace={() => {
-              replaceSlotMissions(false);
               setShowReplaceDialog(false);
-              setShowMissionSelection(true);
+              replaceSlotMissions(false).then((ok) => { if (ok) setShowMissionSelection(true); });
             }}
             onCancel={() => setShowReplaceDialog(false)}
           />
@@ -348,14 +346,12 @@ function SlotCard({
       {showReplaceDialog && (
         <ReplaceConfirmDialog
           onFullReplace={() => {
-            replaceSlotMissions(true);
             setShowReplaceDialog(false);
-            setShowClassSelection(true);
+            replaceSlotMissions(true).then((ok) => { if (ok) setShowClassSelection(true); });
           }}
           onClassReplace={() => {
-            replaceSlotMissions(false);
             setShowReplaceDialog(false);
-            setShowMissionSelection(true);
+            replaceSlotMissions(false).then((ok) => { if (ok) setShowMissionSelection(true); });
           }}
           onCancel={() => setShowReplaceDialog(false)}
         />
