@@ -12,8 +12,9 @@ export type PlayerSlot = {
   slot_index: number;
   mission_id: number | null;
   current_progress: number;
-  selected_class: string | null;  // Вибраний клас для цього слота (null = не вибраний)
-  candidate_missions: number[] | null;  // [id1, id2, id3, id4] зафіксовані місії для вибраного класу
+  browse_stage: "confirm" | "class" | "mission" | null;  // яке вікно вибору зараз відкрите
+  browse_class: string | null;  // клас, який зараз переглядається (не обов'язково клас активної місії)
+  candidates_by_class: Record<string, number[]> | null;  // кеш: клас → 4 id місій, заморожено до виконання
 };
 
 export type PlayerState = {
@@ -79,8 +80,9 @@ export function initialPlayerSlots(): PlayerSlot[] {
     slot_index: i,
     mission_id: null,
     current_progress: 0,
-    selected_class: null,
-    candidate_missions: null,
+    browse_stage: null,
+    browse_class: null,
+    candidates_by_class: null,
   }));
 }
 

@@ -20,11 +20,13 @@ export function MissionsScreen() {
     unlockedClasses,
     updateSlotProgress,
     completeSlot,
-    selectClassForSlot,
-    generateCandidatesForSlot,
-    replaceSlotMissions,
-    selectMissionForSlot,
-    cancelSlotSelection,
+    startReplaceConfirm,
+    startBrowseClass,
+    selectBrowseClass,
+    startBrowseSameClass,
+    backToClassBrowse,
+    cancelBrowse,
+    confirmMissionSelection,
   } = useKpk();
 
   return (
@@ -94,21 +96,16 @@ export function MissionsScreen() {
                             mission={m}
                             tier={tier}
                             unlockedClassesForTier={unlockedClasses[String(tier) as "1" | "2" | "3"] ?? []}
-                            onSelectClass={(cls) => {
-                              selectClassForSlot(s.slot_index, cls);
-                              setTimeout(() => generateCandidatesForSlot(s.slot_index), 100);
-                            }}
-                            onSelectMission={(missionId) => {
-                              selectMissionForSlot(s.slot_index, missionId);
-                            }}
-                            onReplace={() => {
-                              // Показати діалог замены (буде в SlotCard)
-                            }}
-                            onCancel={() => cancelSlotSelection(s.slot_index)}
+                            onStartBrowseClass={() => startBrowseClass(s.slot_index)}
+                            onSelectBrowseClass={(cls) => selectBrowseClass(s.slot_index, cls)}
+                            onStartBrowseSameClass={() => startBrowseSameClass(s.slot_index)}
+                            onStartReplaceConfirm={() => startReplaceConfirm(s.slot_index)}
+                            onBackToClassBrowse={() => backToClassBrowse(s.slot_index)}
+                            onCancelBrowse={() => cancelBrowse(s.slot_index)}
+                            onConfirmMissionSelection={(missionId) => confirmMissionSelection(s.slot_index, missionId)}
                             onUpdateProgress={(delta) => updateSlotProgress(s.slot_index, delta)}
                             onComplete={() => completeSlot(s.slot_index)}
                             canReplace={global_replacements_left > 0}
-                            replaceSlotMissions={(fullReplace) => replaceSlotMissions(s.slot_index, fullReplace)}
                           />
                         </div>
                       );
@@ -124,18 +121,20 @@ export function MissionsScreen() {
 }
 
 type SlotCardProps = {
-  slot: any;
-  mission: any;
+  slot: import("@/lib/sessionSchema").PlayerSlot;
+  mission: ReturnType<typeof import("@/lib/kpkStore").useKpk> extends never ? never : any;
   tier: 1 | 2 | 3;
   unlockedClassesForTier: string[];
-  onSelectClass: (cls: string) => void;
-  onSelectMission: (missionId: number) => void;
-  onReplace: () => void;
-  onCancel: () => void;
+  onStartBrowseClass: () => void;
+  onSelectBrowseClass: (cls: string) => void;
+  onStartBrowseSameClass: () => void;
+  onStartReplaceConfirm: () => void;
+  onBackToClassBrowse: () => void;
+  onCancelBrowse: () => void;
+  onConfirmMissionSelection: (missionId: number) => void;
   onUpdateProgress: (delta: number) => void;
   onComplete: () => void;
   canReplace: boolean;
-  replaceSlotMissions: (fullReplace: boolean) => void;
 };
 
 function SlotCard({
@@ -143,29 +142,35 @@ function SlotCard({
   mission: m,
   tier,
   unlockedClassesForTier,
-  onSelectClass,
-  onSelectMission,
-  onReplace,
-  onCancel,
+  onStartBrowseClass,
+  onSelectBrowseClass,
+  onStartBrowseSameClass,
+  onStartReplaceConfirm,
+  onBackToClassBrowse,
+  onCancelBrowse,
+  onConfirmMissionSelection,
   onUpdateProgress,
   onComplete,
   canReplace,
-  replaceSlotMissions,
 }: SlotCardProps) {
-  const [showClassSelection, setShowClassSelection] = useState(false);
-  const [showMissionSelection, setShowMissionSelection] = useState(false);
-  const [showReplaceDialog, setShowReplaceDialog] = useState(false);
-  const { getMission } = useKpk();
-  const { allMissions, completedIds, slots: allSlots } = useKpk();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [originOffset, setOriginOffset] = useState<{ x: number; y: number } | null>(null);
+  const { allMissions, completedIds, slots: allSlots } = useKpk();
 
   useEffect(() => {
-    if (!showClassSelection && !showMissionSelection && !showReplaceDialog) setOriginOffset(null);
-  }, [showClassSelection, showMissionSelection, showReplaceDialog]);
+    if (!slot.browse_stage) setOriginOffset(null);
+  }, [slot.browse_stage]);
 
-  // Якщо слот пустий - показуємо кнопку "Вибрати місію"
-  // compute availability of missions by class for this tier
+  const captureOrigin = () => {
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (rect) {
+      setOriginOffset({
+        x: rect.left + rect.width / 2 - window.innerWidth / 2,
+        y: rect.top + rect.height / 2 - window.innerHeight / 2,
+      });
+    }
+  };
+
   const taken = new Set<number>([...(completedIds ?? []), ...allSlots.map((s) => s.mission_id ?? -1)]);
   const availableByClass: Record<string, boolean> = {};
   for (const cls of MISSION_CLASSES) {
@@ -173,190 +178,87 @@ function SlotCard({
     availableByClass[cls] = pool.length > 0;
   }
   const hasAnyAvailable = Object.values(availableByClass).some((v) => v === true);
+  const candidateIds = slot.browse_class ? slot.candidates_by_class?.[slot.browse_class] ?? null : null;
 
-  if (!m && !slot.selected_class) {
-    return (
-      <div ref={rootRef} className="hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]/30 p-3 text-center">
-        <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-        <button
-          onClick={(e) => {
-            const rect = rootRef.current?.getBoundingClientRect();
-            if (rect) {
-              const offsetX = rect.left + rect.width / 2 - (window.innerWidth / 2);
-              const offsetY = rect.top + rect.height / 2 - (window.innerHeight / 2);
-              setOriginOffset({ x: offsetX, y: offsetY });
-            }
-            setShowClassSelection(true);
-          }}
-          className="hud-btn w-full py-2 text-sm"
-          disabled={!hasAnyAvailable}
-          title={!hasAnyAvailable ? "Немає доступних місій" : undefined}
-        >
-          Вибрати місію
-        </button>
-        {showClassSelection && (
-          <ClassSelectionModal
-            tier={tier}
-            unlockedClasses={unlockedClassesForTier}
-            availableByClass={availableByClass}
-            originOffset={originOffset}
-            onSelect={(cls) => {
-              onSelectClass(cls);
-              setShowClassSelection(false);
-              setTimeout(() => setShowMissionSelection(true), 100);
-            }}
-            onCancel={() => setShowClassSelection(false)}
-          />
-        )}
-        {showMissionSelection && slot.candidate_missions && (
-          <MissionSelectionModal
-            candidateMissionIds={slot.candidate_missions}
-            originOffset={originOffset}
-            onSelect={(missionId) => {
-              onSelectMission(missionId);
-              setShowMissionSelection(false);
-            }}
-            onReplace={() => {
-              setShowMissionSelection(false);
-              setShowReplaceDialog(true);
-            }}
-            onCancel={() => {
-              onCancel();
-              setShowMissionSelection(false);
-              setShowClassSelection(true);
-            }}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // Якщо слот з активною місією - показуємо карточку
-  if (m) {
-    const color = MISSION_CLASS_COLOR[m.cls as keyof typeof MISSION_CLASS_COLOR];
-    const pct = Math.min(100, (slot.current_progress / m.target) * 100);
-    const done = slot.current_progress >= m.target;
-
-    return (
-      <>
-        <div
-          className={`hud-panel-corners-4 relative flex flex-col gap-2 border bg-[color:var(--surface-2)] p-3 transition-all ${
-            done ? "mission-active-glow" : "border-[color:var(--hud-amber)]/25"
-          }`}
-        >
-          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm font-medium leading-tight">{m.name}</span>
-            <button
-              disabled={!canReplace}
-              onClick={() => setShowReplaceDialog(true)}
-              title={canReplace ? "Замінити місію" : "Немає замін"}
-              className="grid h-6 w-6 shrink-0 place-items-center border border-[color:var(--hud-amber)]/40 text-[color:var(--hud-amber)] hover:bg-[color:var(--hud-amber)]/10 disabled:opacity-30"
-            >
-              ⟲
-            </button>
-          </div>
-          <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] leading-snug">{m.description}</div>
-          <div className="flex items-center justify-between">
-            <span className="hud-mono text-[0.65rem] uppercase tracking-widest" style={{ color }}>
-              {m.cls}
-            </span>
-            <span className="hud-mono text-xs tabular-nums">
-              {slot.current_progress}/{m.target}
-            </span>
-          </div>
-          <div className="h-1 w-full bg-[color:var(--surface-3)]">
-            <div
-              className="h-full transition-all"
-              style={{ width: `${pct}%`, background: color, boxShadow: `0 0 6px ${color}` }}
-            />
-          </div>
-          <div className="flex gap-2 pt-1">
-            <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(-1)}>
-              −
-            </button>
-            <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(+1)}>
-              +
-            </button>
-            <button className="hud-btn flex-1 !py-1 !text-[0.65rem]" disabled={!done} onClick={onComplete}>
-              ✓ Виплатити
-            </button>
-          </div>
-          <div className="border-t border-dashed border-[color:var(--hud-amber)]/20 pt-1 hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
-            Нагорода: +{formatPoints(m.mainReward)} · +{formatPoints(m.levelReward)} L{m.level} · +{m.currencyReward} ⛁
-          </div>
-        </div>
-        {showReplaceDialog && (
-          <ReplaceConfirmDialog
-            onFullReplace={() => {
-              setShowReplaceDialog(false);
-              replaceSlotMissions(true).then((ok) => { if (ok) setShowClassSelection(true); });
-            }}
-            onClassReplace={() => {
-              setShowReplaceDialog(false);
-              replaceSlotMissions(false).then((ok) => { if (ok) setShowMissionSelection(true); });
-            }}
-            onCancel={() => setShowReplaceDialog(false)}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Якщо слот у процесі вибору класу/місії
   return (
-    <>
-      <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]/30 p-3">
-        <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-        <div className="text-center hud-mono text-xs text-[color:var(--muted-foreground)]">Вибір у процесі...</div>
-      </div>
-      {showClassSelection && (
+    <div ref={rootRef} className="relative">
+      {m ? (() => {
+        const color = MISSION_CLASS_COLOR[m.cls as keyof typeof MISSION_CLASS_COLOR];
+        const pct = Math.min(100, (slot.current_progress / m.target) * 100);
+        const done = slot.current_progress >= m.target;
+        return (
+          <div
+            className={`hud-panel-corners-4 relative flex flex-col gap-2 border bg-[color:var(--surface-2)] p-3 transition-all ${
+              done ? "mission-active-glow" : "border-[color:var(--hud-amber)]/25"
+            }`}
+          >
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-sm font-medium leading-tight">{m.name}</span>
+              <button
+                disabled={!canReplace}
+                onClick={() => { captureOrigin(); onStartReplaceConfirm(); }}
+                title={canReplace ? "Замінити місію" : "Немає замін"}
+                className="grid h-6 w-6 shrink-0 place-items-center border border-[color:var(--hud-amber)]/40 text-[color:var(--hud-amber)] hover:bg-[color:var(--hud-amber)]/10 disabled:opacity-30"
+              >⟲</button>
+            </div>
+            <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] leading-snug">{m.description}</div>
+            <div className="flex items-center justify-between">
+              <span className="hud-mono text-[0.65rem] uppercase tracking-widest" style={{ color }}>{m.cls}</span>
+              <span className="hud-mono text-xs tabular-nums">{slot.current_progress}/{m.target}</span>
+            </div>
+            <div className="h-1 w-full bg-[color:var(--surface-3)]">
+              <div className="h-full transition-all" style={{ width: `${pct}%`, background: color, boxShadow: `0 0 6px ${color}` }} />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(-1)}>−</button>
+              <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(+1)}>+</button>
+              <button className="hud-btn flex-1 !py-1 !text-[0.65rem]" disabled={!done} onClick={onComplete}>✓ Виплатити</button>
+            </div>
+            <div className="border-t border-dashed border-[color:var(--hud-amber)]/20 pt-1 hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
+              Нагорода: +{formatPoints(m.mainReward)} · +{formatPoints(m.levelReward)} L{m.level} · +{m.currencyReward} ⛁
+            </div>
+          </div>
+        );
+      })() : (
+        <div className="hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]/30 p-3 text-center">
+          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+          <button
+            onClick={() => { captureOrigin(); onStartBrowseClass(); }}
+            className="hud-btn w-full py-2 text-sm"
+            disabled={!hasAnyAvailable}
+            title={!hasAnyAvailable ? "Немає доступних місій" : undefined}
+          >Вибрати місію</button>
+        </div>
+      )}
+
+      {slot.browse_stage === "confirm" && (
+        <ReplaceConfirmDialog
+          originOffset={originOffset}
+          onFullReplace={() => onStartBrowseClass()}
+          onClassReplace={() => onStartBrowseSameClass()}
+          onCancel={() => onCancelBrowse()}
+        />
+      )}
+      {slot.browse_stage === "class" && (
         <ClassSelectionModal
           tier={tier}
           unlockedClasses={unlockedClassesForTier}
-          onSelect={(cls) => {
-            onSelectClass(cls);
-            setShowClassSelection(false);
-            setTimeout(() => setShowMissionSelection(true), 100);
-          }}
-          onCancel={() => {
-            onCancel();
-            setShowClassSelection(false);
-          }}
+          availableByClass={availableByClass}
+          originOffset={originOffset}
+          onSelect={(cls) => onSelectBrowseClass(cls)}
+          onCancel={() => onCancelBrowse()}
         />
       )}
-      {showMissionSelection && slot.candidate_missions && (
+      {slot.browse_stage === "mission" && candidateIds && (
         <MissionSelectionModal
-          candidateMissionIds={slot.candidate_missions}
-          onSelect={(missionId) => {
-            onSelectMission(missionId);
-            setShowMissionSelection(false);
-          }}
-          onReplace={() => {
-            setShowMissionSelection(false);
-            setShowReplaceDialog(true);
-          }}
-          onCancel={() => {
-            onCancel();
-            setShowMissionSelection(false);
-            setShowClassSelection(true);
-          }}
+          candidateMissionIds={candidateIds}
+          originOffset={originOffset}
+          onSelect={(missionId) => onConfirmMissionSelection(missionId)}
+          onCancel={() => onBackToClassBrowse()}
         />
       )}
-      {showReplaceDialog && (
-        <ReplaceConfirmDialog
-          onFullReplace={() => {
-            setShowReplaceDialog(false);
-            replaceSlotMissions(true).then((ok) => { if (ok) setShowClassSelection(true); });
-          }}
-          onClassReplace={() => {
-            setShowReplaceDialog(false);
-            replaceSlotMissions(false).then((ok) => { if (ok) setShowMissionSelection(true); });
-          }}
-          onCancel={() => setShowReplaceDialog(false)}
-        />
-      )}
-    </>
+    </div>
   );
 }
 
@@ -434,7 +336,6 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
 type MissionSelectionModalProps = {
   candidateMissionIds: number[];
   onSelect: (missionId: number) => void;
-  onReplace: () => void;
   onCancel: () => void;
   originOffset?: { x: number; y: number } | null;
 };
@@ -443,7 +344,6 @@ function MissionSelectionModal({
   candidateMissionIds,
   originOffset,
   onSelect,
-  onReplace,
   onCancel,
 }: MissionSelectionModalProps & { originOffset?: { x: number; y: number } | null }) {
   const { getMission } = useKpk();
@@ -491,7 +391,6 @@ function MissionSelectionModal({
             })}
           </div>
           <div className="flex gap-2 mt-4">
-            <button onClick={onReplace} className="hud-btn flex-1 text-sm">🔄 Заміна</button>
             <button onClick={onCancel} className="hud-btn hud-btn-ghost flex-1 text-sm">Назад</button>
           </div>
         </div>
@@ -509,10 +408,10 @@ type ReplaceConfirmDialogProps = {
   onFullReplace: () => void;
   onClassReplace: () => void;
   onCancel: () => void;
-  originOffset?: { x: number; y: number };
+  originOffset?: { x: number; y: number } | null;
 };
 
-function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onCancel }: ReplaceConfirmDialogProps & { originOffset?: { x: number; y: number } }) {
+function ReplaceConfirmDialog({ originOffset, onFullReplace, onClassReplace, onCancel }: ReplaceConfirmDialogProps & { originOffset?: { x: number; y: number } | null }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;

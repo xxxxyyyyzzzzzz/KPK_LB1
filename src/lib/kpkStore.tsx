@@ -106,11 +106,13 @@ type KpkState = {
   nextPlayer: () => void;
   updateSlotProgress: (slotIndex: number, delta: number) => void;
   completeSlot: (slotIndex: number) => void;
-  selectClassForSlot: (slotIndex: number, className: string) => void;
-  generateCandidatesForSlot: (slotIndex: number) => void;
-  replaceSlotMissions: (slotIndex: number, fullReplace: boolean) => Promise<boolean>;
-  selectMissionForSlot: (slotIndex: number, missionId: number) => void;
-  cancelSlotSelection: (slotIndex: number) => void;
+  startReplaceConfirm: (slotIndex: number) => void;
+  startBrowseClass: (slotIndex: number) => void;
+  selectBrowseClass: (slotIndex: number, cls: string) => void;
+  startBrowseSameClass: (slotIndex: number) => void;
+  backToClassBrowse: (slotIndex: number) => void;
+  cancelBrowse: (slotIndex: number) => void;
+  confirmMissionSelection: (slotIndex: number, missionId: number) => Promise<boolean>;
 };
 
 const KpkContext = createContext<KpkState | null>(null);
@@ -418,7 +420,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       }
 
       np.slots = np.slots.map((s) =>
-        s.slot_index === slotIndex ? { ...s, mission_id: null, current_progress: 0, selected_class: null, candidate_missions: null } : s,
+        s.slot_index === slotIndex ? { ...s, mission_id: null, current_progress: 0, browse_stage: null, browse_class: null, candidates_by_class: null } : s,
       );
 
       const ts = Date.now();
@@ -440,141 +442,122 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     completeMissionTx(roomCode, playerId, slotIndex).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
   }, [roomCode, playerId, completeMissionTx]);
 
-  const selectClassForSlot = useCallback((slotIndex: number, className: string) => {
+  function buildCandidatePool(allMissions: Mission[], p: PlayerState, slotIndex: number, cls: string): number[] {
+    const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
+    const taken = new Set<number>([...(p.completed_ids ?? []), ...p.slots.map((s) => s.mission_id ?? -1)]);
+    const pool = allMissions.filter((mm) => mm.level === lvl && mm.cls === cls && !taken.has(mm.id));
+    const candidates: number[] = [];
+    const poolCopy = [...pool];
+    for (let i = 0; i < 4 && poolCopy.length > 0; i++) {
+      const idx = Math.floor(Math.random() * poolCopy.length);
+      candidates.push(poolCopy[idx].id);
+      poolCopy.splice(idx, 1);
+    }
+    return candidates;
+  }
+
+  const startReplaceConfirm = useCallback((slotIndex: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      if ((p.global_replacements_left ?? 0) <= 0) return undefined;
+      return { ...cur, players: { ...cur.players, [playerId]: {
+        ...p, slots: p.slots.map((s) => s.slot_index === slotIndex ? { ...s, browse_stage: "confirm" as const } : s),
+      }}};
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId]);
+
+  const startBrowseClass = useCallback((slotIndex: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      return { ...cur, players: { ...cur.players, [playerId]: {
+        ...p, slots: p.slots.map((s) => s.slot_index === slotIndex ? { ...s, browse_stage: "class" as const, browse_class: null } : s),
+      }}};
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId]);
+
+  const selectBrowseClass = useCallback((slotIndex: number, cls: string) => {
     if (!roomCode || !playerId) return;
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
       const slot = p.slots.find((s) => s.slot_index === slotIndex);
       if (!slot) return undefined;
-      return {
-        ...cur,
-        players: { ...cur.players, [playerId]: {
-          ...p,
-          slots: p.slots.map((s) =>
-            s.slot_index === slotIndex ? { ...s, selected_class: className, candidate_missions: null } : s,
-          ),
-        }},
-      };
+      const existing = slot.candidates_by_class?.[cls];
+      const candidates = existing && existing.length > 0 ? existing : buildCandidatePool(allMissions, p, slotIndex, cls);
+      return { ...cur, players: { ...cur.players, [playerId]: {
+        ...p, slots: p.slots.map((s) => s.slot_index === slotIndex ? {
+          ...s, browse_stage: "mission" as const, browse_class: cls,
+          candidates_by_class: { ...(s.candidates_by_class ?? {}), [cls]: candidates },
+        } : s),
+      }}};
     }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
-  }, [roomCode, playerId]);
+  }, [roomCode, playerId, allMissions]);
 
-  const generateCandidatesForSlot = useCallback((slotIndex: number) => {
+  const startBrowseSameClass = useCallback((slotIndex: number) => {
     if (!roomCode || !playerId) return;
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
       const slot = p.slots.find((s) => s.slot_index === slotIndex);
-      if (!slot || !slot.selected_class) return undefined;
-      
-      const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
-      const taken = new Set<number>([...(p.completed_ids ?? []), ...p.slots.map((s) => s.mission_id ?? -1)]);
-      const pool = allMissions.filter(
-        (mm) => mm.level === lvl && mm.cls === slot.selected_class && !taken.has(mm.id),
-      );
-      
-      // Генеруємо 4 кандидатів
-      const candidates: number[] = [];
-      const poolCopy = [...pool];
-      for (let i = 0; i < 4 && poolCopy.length > 0; i++) {
-        const idx = Math.floor(Math.random() * poolCopy.length);
-        candidates.push(poolCopy[idx].id);
-        poolCopy.splice(idx, 1);
-      }
-      
-      return {
-        ...cur,
-        players: { ...cur.players, [playerId]: {
-          ...p,
-          slots: p.slots.map((s) =>
-            s.slot_index === slotIndex ? { ...s, candidate_missions: candidates.length > 0 ? candidates : null } : s,
-          ),
-        }},
-      };
+      if (!slot) return undefined;
+      const currentMission = slot.mission_id != null ? allMissions.find((mm) => mm.id === slot.mission_id) : null;
+      if (!currentMission) return undefined;
+      const cls = currentMission.cls;
+      const existing = slot.candidates_by_class?.[cls];
+      const candidates = existing && existing.length > 0 ? existing : buildCandidatePool(allMissions, p, slotIndex, cls);
+      return { ...cur, players: { ...cur.players, [playerId]: {
+        ...p, slots: p.slots.map((s) => s.slot_index === slotIndex ? {
+          ...s, browse_stage: "mission" as const, browse_class: cls,
+          candidates_by_class: { ...(s.candidates_by_class ?? {}), [cls]: candidates },
+        } : s),
+      }}};
     }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
   }, [roomCode, playerId, allMissions]);
 
-  const replaceSlotMissions = useCallback((slotIndex: number, fullReplace: boolean): Promise<boolean> => {
+  const backToClassBrowse = useCallback((slotIndex: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      return { ...cur, players: { ...cur.players, [playerId]: {
+        ...p, slots: p.slots.map((s) => s.slot_index === slotIndex ? { ...s, browse_stage: "class" as const } : s),
+      }}};
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId]);
+
+  const cancelBrowse = useCallback((slotIndex: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      return { ...cur, players: { ...cur.players, [playerId]: {
+        ...p, slots: p.slots.map((s) => s.slot_index === slotIndex ? { ...s, browse_stage: null, browse_class: null } : s),
+      }}};
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId]);
+
+  const confirmMissionSelection = useCallback((slotIndex: number, missionId: number): Promise<boolean> => {
     if (!roomCode || !playerId) return Promise.resolve(false);
     return txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
-      if ((p.global_replacements_left ?? 0) <= 0) return undefined;
-      
       const slot = p.slots.find((s) => s.slot_index === slotIndex);
       if (!slot) return undefined;
-
+      const wasActive = slot.mission_id != null;
       const np = { ...p };
-      np.global_replacements_left = Math.max(0, (p.global_replacements_left ?? 0) - 1);
-
-      if (fullReplace) {
-        // Повна заміна — повертаємо до вибору класу
-        np.slots = p.slots.map((s) =>
-          s.slot_index === slotIndex ? { ...s, selected_class: null, candidate_missions: null, mission_id: null, current_progress: 0 } : s,
-        );
-      } else {
-        // Заміна вибраного класу — генеруємо нові кандидати
-        const slot = p.slots.find((s) => s.slot_index === slotIndex);
-        if (!slot || !slot.selected_class) return undefined;
-
-        const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
-        const taken = new Set<number>([...(p.completed_ids ?? []), ...p.slots.map((s) => s.mission_id ?? -1)]);
-        const pool = allMissions.filter(
-          (mm) => mm.level === lvl && mm.cls === slot.selected_class && !taken.has(mm.id),
-        );
-
-        const candidates: number[] = [];
-        const poolCopy = [...pool];
-        for (let i = 0; i < 4 && poolCopy.length > 0; i++) {
-          const idx = Math.floor(Math.random() * poolCopy.length);
-          candidates.push(poolCopy[idx].id);
-          poolCopy.splice(idx, 1);
-        }
-
-        np.slots = p.slots.map((s) =>
-          s.slot_index === slotIndex ? { ...s, candidate_missions: candidates.length > 0 ? candidates : null, mission_id: null, current_progress: 0 } : s,
-        );
+      if (wasActive) {
+        if ((p.global_replacements_left ?? 0) <= 0) return undefined;
+        np.global_replacements_left = Math.max(0, (p.global_replacements_left ?? 0) - 1);
       }
-
-      return {
-        ...cur,
-        players: { ...cur.players, [playerId]: np },
-      };
-    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); return r.ok; });
-  }, [roomCode, playerId, allMissions]);
-
-  const cancelSlotSelection = useCallback((slotIndex: number) => {
-    if (!roomCode || !playerId) return;
-    txSession(roomCode, (cur) => {
-      if (!cur) return undefined;
-      const p = cur.players?.[playerId]; if (!p) return undefined;
-      return {
-        ...cur,
-        players: { ...cur.players, [playerId]: {
-          ...p,
-          slots: p.slots.map((s) =>
-            s.slot_index === slotIndex ? { ...s, selected_class: null, candidate_missions: null } : s,
-          ),
-        }},
-      };
-    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
-  }, [roomCode, playerId]);
-
-  const selectMissionForSlot = useCallback((slotIndex: number, missionId: number) => {
-    if (!roomCode || !playerId) return;
-    txSession(roomCode, (cur) => {
-      if (!cur) return undefined;
-      const p = cur.players?.[playerId]; if (!p) return undefined;
-      return {
-        ...cur,
-        players: { ...cur.players, [playerId]: {
-          ...p,
-          slots: p.slots.map((s) =>
-            s.slot_index === slotIndex ? { ...s, mission_id: missionId, current_progress: 0, selected_class: null, candidate_missions: null } : s,
-          ),
-        }},
-      };
-    }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
+      np.slots = p.slots.map((s) => s.slot_index === slotIndex ? {
+        ...s, mission_id: missionId, current_progress: 0, browse_stage: null, browse_class: null,
+      } : s);
+      return { ...cur, players: { ...cur.players, [playerId]: np } };
+    }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); return r.ok; });
   }, [roomCode, playerId]);
 
   // ── Turn rotation / News round (host engine triggers news on round boundary) ──
@@ -842,11 +825,13 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     nextPlayer,
     updateSlotProgress,
     completeSlot,
-    selectClassForSlot,
-    generateCandidatesForSlot,
-    replaceSlotMissions,
-    selectMissionForSlot,
-    cancelSlotSelection,
+    startReplaceConfirm,
+    startBrowseClass,
+    selectBrowseClass,
+    startBrowseSameClass,
+    backToClassBrowse,
+    cancelBrowse,
+    confirmMissionSelection,
   }), [
     screen, prevScreen, user, totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, global_replacements_left, unlockedClasses,
@@ -856,7 +841,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
     takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
-    nextPlayer, updateSlotProgress, completeSlot, selectClassForSlot, generateCandidatesForSlot, replaceSlotMissions, selectMissionForSlot, cancelSlotSelection,
+    nextPlayer, updateSlotProgress, completeSlot, startReplaceConfirm, startBrowseClass, selectBrowseClass, startBrowseSameClass, backToClassBrowse, cancelBrowse, confirmMissionSelection,
   ]);
 
   return <KpkContext.Provider value={value}>{children}</KpkContext.Provider>;
