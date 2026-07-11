@@ -4,6 +4,7 @@ import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
 import type { Screen } from "@/lib/kpkData";
+import { Target, TrendingUp, Radar, BarChart3 } from "lucide-react";
 
 export function AnimatedItem({ children, index = 0, className = "" }: { children: ReactNode; index?: number; className?: string }) {
   return (
@@ -247,11 +248,11 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
   );
 }
 
-const NAV_ITEMS: { id: Screen; label: string; icon: string }[] = [
-  { id: "missions", label: "Місії", icon: "📜" },
-  { id: "upgrades", label: "Прокачки", icon: "📈" },
-  { id: "news", label: "Новини", icon: "📰" },
-  { id: "score", label: "Єбали", icon: "📊" },
+const NAV_ITEMS: { id: Screen; label: string; icon: typeof Target }[] = [
+  { id: "missions", label: "Місії", icon: Target },
+  { id: "upgrades", label: "Прокачки", icon: TrendingUp },
+  { id: "news", label: "Новини", icon: Radar },
+  { id: "score", label: "Бали", icon: BarChart3 },
 ];
 
 export function BottomNav() {
@@ -303,8 +304,8 @@ export function BottomNav() {
               fontSize: "0.95rem",
             }}
           >
-            <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>{item.icon}</span>
-            <span className="hud-mono" style={{ fontSize: "0.95rem", letterSpacing: "0.08em" }}>{item.label}</span>
+            <item.icon size={18} strokeWidth={1.75} />
+            <span className="hud-mono" style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>{item.label}</span>
           </button>
         );
       })}
