@@ -210,8 +210,9 @@ export function LoginScreen() {
   const topMode = mode === "create" || mode === "join_code" || mode === "join_player";
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center px-3 py-3">
-      <div className="w-full max-w-md sm:max-w-[560px] lg:max-w-[620px]">
+    <div className="fixed inset-0 overflow-y-auto">
+      <div className="flex min-h-full w-full items-center justify-center px-3 py-3">
+        <div className="w-full max-w-md sm:max-w-[560px] lg:max-w-[620px]">
         <div
           className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 sm:p-6 backdrop-blur-md"
           role="dialog"
@@ -533,6 +534,7 @@ export function LoginScreen() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
