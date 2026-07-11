@@ -70,7 +70,7 @@ export function MissionsScreen() {
           return (
             <AnimatedItem key={tier} index={tierIdx + 1} className="mb-6">
               <div
-                className="overflow-hidden rounded-2xl border border-[color:var(--hud-amber)]/20 border-l-4 bg-[color:var(--surface-3)]/80 shadow-[0_1px_0_0_rgba(245,184,64,0.08)]"
+                className="overflow-hidden border border-[color:var(--hud-amber)]/20 border-l-4 bg-[color:var(--surface-3)]/80 shadow-[0_1px_0_0_rgba(245,184,64,0.08)]"
                 style={{ borderLeftColor: tierColor }}
               >
                 <div className="border-b border-[color:var(--hud-amber)]/15 bg-[color:var(--surface-2)]/70 px-4 py-3">
@@ -281,13 +281,12 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
     return createPortal(
       <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6" onClick={onCancel}>
       <div
-        className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:p-8"
+        className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col overflow-hidden border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:p-8"
         onClick={(e) => e.stopPropagation()}
         style={{
           transform: mounted ? "translate(0,0) scale(1)" : initialTransform,
           transition: "transform 260ms cubic-bezier(0.2,0.8,0.2,1), opacity 260ms",
           opacity: mounted ? 1 : 0,
-          minWidth: "min(640px, 100vw)",
         }}
       >
         <h3 className="hud-title text-lg text-[color:var(--hud-amber)] mb-4">Вибрати клас (Рівень {tier})</h3>
@@ -374,7 +373,7 @@ function MissionSelectionModal({
                 <button
                   key={mid}
                   onClick={() => { onSelect(mid); sfx.confirm(); }}
-                  className="hud-panel flex h-full flex-col justify-between rounded-3xl border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5"
+                  className="hud-panel flex h-full flex-col justify-between border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5"
                 >
                   <div>
                     <div className="font-semibold text-lg mb-2">{m.name}</div>
