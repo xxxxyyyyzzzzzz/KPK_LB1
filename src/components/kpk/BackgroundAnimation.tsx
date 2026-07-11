@@ -56,8 +56,8 @@ export function BackgroundAnimation() {
 
       for (let i = 0; i < spawnRate - lastSpawnCount; i++) {
         particles.push({
-          x: Math.random() * canvas.clientWidth,
-          y: Math.random() * canvas.clientHeight,
+          x: Math.random() * canvas!.clientWidth,
+          y: Math.random() * canvas!.clientHeight,
           vx: (Math.random() - 0.5) * 2,
           vy: (Math.random() - 0.5) * 2,
           life: 1,
@@ -74,8 +74,8 @@ export function BackgroundAnimation() {
       if (!isRunning) return;
 
       // Clear canvas
-      ctx.fillStyle = 'transparent';
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      ctx!.fillStyle = 'transparent';
+      ctx!.clearRect(0, 0, canvas!.clientWidth, canvas!.clientHeight);
 
       // Spawn particles at controlled rate
       spawnParticles();
@@ -93,8 +93,8 @@ export function BackgroundAnimation() {
         }
 
         // Draw particle with opacity based on life
-        ctx.fillStyle = `rgba(255, 217, 122, ${p.life * 0.1})`;
-        ctx.fillRect(p.x, p.y, 2, 2);
+        ctx!.fillStyle = `rgba(255, 217, 122, ${p.life * 0.1})`;
+        ctx!.fillRect(p.x, p.y, 2, 2);
       }
 
       // Use managed RAF to ensure cleanup
