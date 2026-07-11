@@ -11,6 +11,7 @@ import { NewsScreen } from "@/components/kpk/NewsScreen";
 import { UpgradesScreen } from "@/components/kpk/UpgradesScreen";
 import { SessionLoadingScreen } from "@/components/kpk/SessionLoadingScreen";
 import { TimerScreen } from "@/components/kpk/TimerScreen";
+import { AppShell } from "@/components/kpk/ScreenShell";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,13 +63,17 @@ function KpkApp() {
       <div className="relative z-10 h-full w-full" style={{ isolation: 'isolate' }}>
         {screen === "login" && <LoginScreen />}
         {screen === "lobby" && <LobbyScreen />}
-        {screen === "main" && <MainMenu />}
-        {screen === "missions" && <MissionsScreen />}
-        {screen === "score" && <ScoreScreen />}
-        {screen === "news" && <NewsScreen />}
-        {screen === "upgrades" && <UpgradesScreen />}
-        {screen === "timer" && <TimerScreen />}
         {screen === "session-loading" && <SessionLoadingScreen />}
+        {['main', 'missions', 'score', 'news', 'upgrades', 'timer'].includes(screen) && (
+          <AppShell>
+            {screen === "main" && <MainMenu />}
+            {screen === "missions" && <MissionsScreen />}
+            {screen === "score" && <ScoreScreen />}
+            {screen === "news" && <NewsScreen />}
+            {screen === "upgrades" && <UpgradesScreen />}
+            {screen === "timer" && <TimerScreen />}
+          </AppShell>
+        )}
       </div>
 
       {showEndNewsModal && (

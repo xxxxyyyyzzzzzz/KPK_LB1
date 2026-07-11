@@ -1,8 +1,7 @@
 import { useKpk, fmtSession } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
 import { formatPoints } from "@/lib/utils";
-import { HudHeader, BottomNav, AnimatedItem } from "./ScreenShell";
-import { formatPoints } from "@/lib/utils";
+import { AnimatedItem, ScreenShell } from "./ScreenShell";
 
 export function MainMenu() {
   const { user, sessionSeconds, totalScore, level1, level2, level3, round, turn } = useKpk();
@@ -10,14 +9,8 @@ export function MainMenu() {
   const factionColor = user ? FACTIONS[user.faction] : "#fff";
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
-      <HudHeader title="КПК" />
-
-      <div
-        className="hud-scroll min-h-0 flex-1 overflow-y-auto px-[12px] py-6 sm:px-[12px] sm:py-8"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.2rem + 52px)" }}
-      >
-        <div className="w-full space-y-6">
+    <ScreenShell>
+      <div className="w-full space-y-6">
 
           {/* Оперативник */}
           <AnimatedItem index={0} className="flex items-center gap-4">
@@ -53,10 +46,7 @@ export function MainMenu() {
             </p>
           </AnimatedItem>
         </div>
-      </div>
-
-      <BottomNav />
-    </div>
+    </ScreenShell>
   );
 }
 

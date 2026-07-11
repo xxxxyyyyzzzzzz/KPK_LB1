@@ -1,10 +1,19 @@
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef, createContext, useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
 import type { Screen } from "@/lib/kpkData";
 import { ListTodo, TrendingUp, Radar, BarChart3 } from "lucide-react";
+
+export const SCREEN_TITLES: Partial<Record<Screen, string>> = {
+  main: "КПК",
+  missions: "Місії",
+  upgrades: "Прокачки",
+  news: "Новини",
+  score: "Бали",
+  timer: "Таймер",
+};
 
 export function AnimatedItem({ children, index = 0, className = "" }: { children: ReactNode; index?: number; className?: string }) {
   return (
@@ -313,16 +322,35 @@ export function BottomNav() {
   );
 }
 
-export function ScreenShell({ children, title }: { children: ReactNode; title: string }) {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const titleSentinelRef = useRef<HTMLDivElement | null>(null);
+const HeaderVisibilityContext = createContext<{
+  headerRef: React.RefObject<HTMLElement | null>;
+  setTitleVisible: (v: boolean) => void;
+} | null>(null);
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const { screen } = useKpk();
   const headerRef = useRef<HTMLElement | null>(null);
   const [titleVisible, setTitleVisible] = useState(true);
+  const title = SCREEN_TITLES[screen] ?? "";
+
+  return (
+    <HeaderVisibilityContext.Provider value={{ headerRef, setTitleVisible }}>
+      <HudHeader title={title} showStickyTitle={!titleVisible} headerRef={headerRef} />
+      {children}
+      <BottomNav />
+    </HeaderVisibilityContext.Provider>
+  );
+}
+
+export function ScreenShell({ children }: { children: ReactNode; title?: string }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const titleSentinelRef = useRef<HTMLDivElement | null>(null);
+  const ctx = useContext(HeaderVisibilityContext);
 
   useEffect(() => {
     const scrollEl = scrollRef.current;
-    const headerEl = headerRef.current;
-    if (!scrollEl || !headerEl) return;
+    const headerEl = ctx?.headerRef.current;
+    if (!scrollEl || !headerEl || !ctx) return;
 
     const titleElement = scrollEl.querySelector<HTMLElement>("h2.hud-title, div.hud-title, span.hud-title");
     const target = titleElement ?? titleSentinelRef.current;
@@ -331,7 +359,7 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
     const updateVisibility = () => {
       const titleRect = target.getBoundingClientRect();
       const headerRect = headerEl.getBoundingClientRect();
-      setTitleVisible(titleRect.bottom > headerRect.bottom + 1);
+      ctx.setTitleVisible(titleRect.bottom > headerRect.bottom + 1);
     };
 
     updateVisibility();
@@ -346,39 +374,33 @@ export function ScreenShell({ children, title }: { children: ReactNode; title: s
       cancelAnimationFrame(frame);
       scrollEl.removeEventListener("scroll", onScroll);
     };
-  }, []);
+  }, [ctx]);
 
   return (
-    <>
-      <HudHeader title={title} showStickyTitle={!titleVisible} headerRef={headerRef} />
-
-      <div
-        ref={scrollRef}
-        className="hud-scroll"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          WebkitOverflowScrolling: "touch",
-          paddingTop: HEADER_TOTAL_HEIGHT,
-          paddingBottom: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
-          paddingLeft: "env(safe-area-inset-left)",
-          paddingRight: "env(safe-area-inset-right)",
-          zIndex: 10,
-        }}
-      >
-        <div ref={titleSentinelRef} className="h-px" />
-        <div className="px-3 py-4 sm:px-6 sm:py-6" style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.05s both" }}>
-          {children}
-        </div>
+    <div
+      ref={scrollRef}
+      className="hud-scroll"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflowY: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch",
+        paddingTop: HEADER_TOTAL_HEIGHT,
+        paddingBottom: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+        zIndex: 10,
+      }}
+    >
+      <div ref={titleSentinelRef} className="h-px" />
+      <div className="px-3 py-4 sm:px-6 sm:py-6" style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.05s both" }}>
+        {children}
       </div>
-
-      <BottomNav />
-    </>
+    </div>
   );
 }
 
