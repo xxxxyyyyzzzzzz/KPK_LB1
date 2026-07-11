@@ -4,7 +4,7 @@ import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
 import type { Screen } from "@/lib/kpkData";
-import { Target, TrendingUp, Radar, BarChart3 } from "lucide-react";
+import { ListTodo, TrendingUp, Radar, BarChart3 } from "lucide-react";
 
 export function AnimatedItem({ children, index = 0, className = "" }: { children: ReactNode; index?: number; className?: string }) {
   return (
@@ -248,8 +248,8 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
   );
 }
 
-const NAV_ITEMS: { id: Screen; label: string; icon: typeof Target }[] = [
-  { id: "missions", label: "Місії", icon: Target },
+const NAV_ITEMS: { id: Screen; label: string; icon: typeof ListTodo }[] = [
+  { id: "missions", label: "Місії", icon: ListTodo },
   { id: "upgrades", label: "Прокачки", icon: TrendingUp },
   { id: "news", label: "Новини", icon: Radar },
   { id: "score", label: "Бали", icon: BarChart3 },
@@ -304,8 +304,8 @@ export function BottomNav() {
               fontSize: "0.95rem",
             }}
           >
-            <item.icon size={18} strokeWidth={1.75} />
-            <span className="hud-mono" style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>{item.label}</span>
+            <item.icon size={20} strokeWidth={1.75} />
+            <span className="hud-mono" style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>{item.label}</span>
           </button>
         );
       })}
