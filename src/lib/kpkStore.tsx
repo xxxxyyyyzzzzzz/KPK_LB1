@@ -433,7 +433,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         events: { ...cur.events, [`e_${ts}_${slotIndex}`]: {
           ts, player_id: pid, nickname: p.nickname,
           type: "mission_complete",
-          payload: { reason: `Виконано: ${m.name}`, reward: m.mainReward, mission_id: m.id, currency_bonus: currencyBonus },
+          payload: { reason: `Виконано: ${m.name}`, reward: m.mainReward, mission_id: m.id },
         }},
       };
     });
