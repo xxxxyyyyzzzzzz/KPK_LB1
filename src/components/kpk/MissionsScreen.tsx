@@ -15,6 +15,7 @@ export function MissionsScreen() {
     level2,
     level3,
     slots,
+    completedIds,
     getMission,
     global_replacements_left,
     unlockedClasses,
@@ -61,6 +62,15 @@ export function MissionsScreen() {
               </div>
             </div>
           </div>
+        </AnimatedItem>
+
+        <AnimatedItem index={1} className="mb-5">
+          <MissionClassProgress
+            unlockedClasses={unlockedClasses}
+            slots={slots}
+            completedIds={completedIds}
+            getMission={getMission}
+          />
         </AnimatedItem>
 
         {/* Блоки рівнів */}
@@ -117,6 +127,113 @@ export function MissionsScreen() {
         })}
       </div>
     </ScreenShell>
+  );
+}
+
+function getClassTierState(
+  cls: (typeof MISSION_CLASSES)[number],
+  tier: 1 | 2 | 3,
+  unlockedClasses: { "1": string[]; "2": string[]; "3": string[] },
+  slots: import("@/lib/sessionSchema").PlayerSlot[],
+  completedIds: number[],
+  getMission: (id: number | null) => { cls: string } | null,
+): { locked: boolean; activeCount: number } {
+  const unlockedForTier = unlockedClasses[String(tier) as "1" | "2" | "3"] ?? [];
+  if (!unlockedForTier.includes(cls)) return { locked: true, activeCount: 0 };
+  const activeCount = slots.filter((s) => {
+    if ((s.slot_index % 3) + 1 !== tier) return false;
+    if (s.mission_id == null || completedIds.includes(s.mission_id)) return false;
+    return getMission(s.mission_id)?.cls === cls;
+  }).length;
+  return { locked: false, activeCount };
+}
+
+function MissionClassProgress({
+  unlockedClasses,
+  slots,
+  completedIds,
+  getMission,
+}: {
+  unlockedClasses: { "1": string[]; "2": string[]; "3": string[] };
+  slots: import("@/lib/sessionSchema").PlayerSlot[];
+  completedIds: number[];
+  getMission: (id: number | null) => { cls: string } | null;
+}) {
+  const rowH = 24;
+  const topPad = 12;
+  const originX = 12;
+  const branchX = 34;
+  const nodeXs = [66, 158, 250];
+  const width = 300;
+  const height = topPad * 2 + (MISSION_CLASSES.length - 1) * rowH;
+  const originY = height / 2;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="w-full max-w-[300px] h-auto"
+      role="img"
+      aria-label="Прогрес доступних місій за класами"
+    >
+      {MISSION_CLASSES.map((cls, rowIdx) => {
+        const rowY = topPad + rowIdx * rowH;
+        const color = MISSION_CLASS_COLOR[cls];
+        const states = ([1, 2, 3] as const).map((tier) =>
+          getClassTierState(cls, tier, unlockedClasses, slots, completedIds, getMission),
+        );
+        return (
+          <g key={cls}>
+            <line x1={originX} y1={originY} x2={branchX} y2={rowY} stroke="var(--hud-amber)" strokeWidth={1.5} opacity={0.5} />
+            <line x1={branchX} y1={rowY} x2={nodeXs[0]} y2={rowY} stroke="var(--hud-amber)" strokeWidth={1.5} opacity={0.5} />
+            <line
+              x1={nodeXs[0]} y1={rowY} x2={nodeXs[1]} y2={rowY}
+              stroke="var(--hud-amber)"
+              strokeWidth={1.5}
+              opacity={states[1].locked ? 0.15 : 0.5}
+              style={{ transition: "opacity 0.6s ease" }}
+            />
+            <line
+              x1={nodeXs[1]} y1={rowY} x2={nodeXs[2]} y2={rowY}
+              stroke="var(--hud-amber)"
+              strokeWidth={1.5}
+              opacity={states[2].locked ? 0.15 : 0.5}
+              style={{ transition: "opacity 0.6s ease" }}
+            />
+            {nodeXs.map((nx, tierIdx) => {
+              const tier = (tierIdx + 1) as 1 | 2 | 3;
+              const st = states[tierIdx];
+              const fill = st.locked ? "var(--muted-foreground)" : color;
+              const opacity = st.locked ? 0.25 : st.activeCount > 0 ? 1 : 0.45;
+              return (
+                <g key={tier}>
+                  {st.activeCount === 2 && (
+                    <circle
+                      cx={nx + 3}
+                      cy={rowY - 3}
+                      r={5}
+                      fill={color}
+                      opacity={0.85}
+                      style={{ transition: "opacity 0.6s ease, fill 0.6s ease" }}
+                    />
+                  )}
+                  <circle
+                    cx={nx}
+                    cy={rowY}
+                    r={6}
+                    fill={fill}
+                    opacity={opacity}
+                    style={{ transition: "opacity 0.6s ease, fill 0.6s ease" }}
+                  >
+                    <title>{`${cls} · Рівень ${tier === 1 ? "I" : tier === 2 ? "II" : "III"}`}</title>
+                  </circle>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
