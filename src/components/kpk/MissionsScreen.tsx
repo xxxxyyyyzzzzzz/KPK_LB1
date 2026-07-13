@@ -65,7 +65,7 @@ export function MissionsScreen() {
         </AnimatedItem>
 
         <AnimatedItem index={1} className="mb-5">
-          <div className="hud-panel-corners-4 relative inline-block border border-[color:var(--hud-cyan)]/40 px-4 py-3">
+          <div className="hud-panel-corners-4 relative inline-block border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] px-4 py-3">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <MissionClassProgress
               unlockedClasses={unlockedClasses}

@@ -19,7 +19,7 @@ export function UpgradesScreen() {
               <span className="mx-2">·</span>L3: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
             </div>
           </div>
-          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 px-4 py-3">
+          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] px-5 py-4">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <UpgradeCategoryProgress />
           </div>
@@ -102,15 +102,16 @@ function UpgradeNode({ u }: { u: UpgradeDef }) {
 
 function UpgradeCategoryProgress() {
   const { upgrades, canPurchase } = useKpk();
-  const rowH = 26;
-  const topPad = 10;
+  const rowH = 50;
+  const topPad = 16;
   const originX = 12;
   const branchX = 34;
-  const nodeXs = [66, 158, 250];
-  const width = 300;
+  const nodeXs = [78, 190, 300];
+  const width = 340;
   const height = topPad * 2 + (UPGRADE_CATEGORIES.length - 1) * rowH;
   const originY = height / 2;
-  const forkOffset = 8;
+  const forkDX = 9;
+  const forkDY = 12;
   const forkStartOffset = 16;
 
   const all = Object.values(UPGRADES);
@@ -145,7 +146,7 @@ function UpgradeCategoryProgress() {
     <svg
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="xMidYMid meet"
-      className="w-full max-w-[300px] h-auto"
+      className="w-full max-w-[380px] h-auto"
       role="img"
       aria-label="Прогрес прокачок за категоріями"
     >
@@ -178,7 +179,7 @@ function UpgradeCategoryProgress() {
         );
       })}
 
-      {/* Шар 2: усі вузли, для ВСІХ рядків одразу — завжди поверх ліній */}
+      {/* Шар 2: усі вузли, для ВСІХ рядків одразу — завжди поверх ліній. Форк тепер ДІАГОНАЛЬНИЙ (зсув і по X, і по Y) */}
       {rows.map(({ cat, rowY, color, tierNodes }) =>
         tierNodes.map((nodes, tierIdx) => {
           const nx = nodeXs[tierIdx];
@@ -189,19 +190,20 @@ function UpgradeCategoryProgress() {
             return (
               <g key={`node-${cat}-${tier}`}>
                 {nodes.slice(0, 2).map((u, i) => {
-                  const dy = i === 0 ? -forkOffset : forkOffset;
+                  const dx = i === 0 ? -forkDX : forkDX;
+                  const dy = i === 0 ? -forkDY : forkDY;
                   const state = nodeState(u);
                   const fill = nodeFill(state, color);
                   return (
                     <g key={u.id}>
                       <line
-                        x1={forkX} y1={rowY} x2={nx} y2={rowY + dy}
+                        x1={forkX} y1={rowY} x2={nx + dx} y2={rowY + dy}
                         stroke={color}
                         strokeWidth={1.5}
                         style={{ transformOrigin: `${forkX}px ${rowY}px`, animation: "hud-fork-grow 0.5s ease both" }}
                       />
                       <circle
-                        cx={nx} cy={rowY + dy} r={6} fill={fill}
+                        cx={nx + dx} cy={rowY + dy} r={6} fill={fill}
                         style={{ transition: "fill 0.6s ease", animation: state === "available" ? "hud-node-pulse 2.4s ease-in-out infinite" : "none" }}
                       >
                         <title>{nodeTitle(u, state)}</title>
