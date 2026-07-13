@@ -507,6 +507,11 @@ a[role="button"] {
   to { stroke-dashoffset: -16; }
 }
 
+@keyframes hud-fork-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 @keyframes hud-blink {
   0%, 50% { 
     opacity: 1;
