@@ -159,7 +159,7 @@ function MissionClassProgress({
   completedIds: number[];
   getMission: (id: number | null) => { cls: string } | null;
 }) {
-  const rowH = 24;
+  const rowH = 28;
   const topPad = 12;
   const originX = 12;
   const branchX = 34;
@@ -167,8 +167,8 @@ function MissionClassProgress({
   const width = 300;
   const height = topPad * 2 + (MISSION_CLASSES.length - 1) * rowH;
   const originY = height / 2;
-  const forkOffset = 6;
-  const forkStartOffset = 12;
+  const forkOffset = 9;
+  const forkStartOffset = 16;
 
   const rows = MISSION_CLASSES.map((cls, rowIdx) => {
     const rowY = topPad + rowIdx * rowH;
