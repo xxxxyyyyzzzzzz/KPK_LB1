@@ -58,7 +58,7 @@ export function LobbyScreen() {
   }
 
   async function onStart() {
-    if (players.length < 2) {
+    if (players.length < 1) {
       sfx.deny();
       return;
     }
@@ -209,11 +209,11 @@ export function LobbyScreen() {
             {isHost ? (
               <button
                 onClick={onStart}
-                disabled={players.length < 2 || starting}
+                disabled={players.length < 1 || starting}
                 className="hud-btn hud-btn-lg flex-1 sm:flex-none sm:px-8"
                 aria-label="Розпочати гру"
               >
-                {starting ? "..." : players.length < 2 ? "⏳ ПОТРІБНО ≥2 ГРАВЦІВ" : "▶ РОЗПОЧАТИ ГРУ"}
+                {starting ? "..." : players.length < 1 ? "⏳ ПОТРІБНО ≥1 ГРАВЦЯ" : "▶ РОЗПОЧАТИ ГРУ"}
               </button>
             ) : (
               <span className="hud-mono text-center text-xs text-[color:var(--hud-cyan)] sm:text-right">
