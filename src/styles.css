@@ -498,6 +498,15 @@ a[role="button"] {
   }
 }
 
+@keyframes hud-node-pulse {
+  0%, 100% { filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 0px currentColor); }
+  50% { filter: drop-shadow(0 0 7px currentColor) drop-shadow(0 0 3px currentColor); }
+}
+
+@keyframes hud-line-flow {
+  to { stroke-dashoffset: -16; }
+}
+
 @keyframes hud-blink {
   0%, 50% { 
     opacity: 1;

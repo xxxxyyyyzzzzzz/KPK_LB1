@@ -168,6 +168,15 @@ function MissionClassProgress({
   const height = topPad * 2 + (MISSION_CLASSES.length - 1) * rowH;
   const originY = height / 2;
 
+  const rows = MISSION_CLASSES.map((cls, rowIdx) => {
+    const rowY = topPad + rowIdx * rowH;
+    const color = MISSION_CLASS_COLOR[cls];
+    const states = ([1, 2, 3] as const).map((tier) =>
+      getClassTierState(cls, tier, unlockedClasses, slots, completedIds, getMission),
+    );
+    return { cls, rowY, color, states };
+  });
+
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
@@ -176,63 +185,77 @@ function MissionClassProgress({
       role="img"
       aria-label="Прогрес доступних місій за класами"
     >
-      {MISSION_CLASSES.map((cls, rowIdx) => {
-        const rowY = topPad + rowIdx * rowH;
-        const color = MISSION_CLASS_COLOR[cls];
-        const states = ([1, 2, 3] as const).map((tier) =>
-          getClassTierState(cls, tier, unlockedClasses, slots, completedIds, getMission),
-        );
+      {/* Шар 1: усі лінії, для ВСІХ рядків одразу — завжди під вузлами */}
+      {rows.map(({ cls, rowY, color, states }) => {
+        const segColor = (locked: boolean) => (locked ? "var(--hud-amber)" : color);
+        const segOpacity = (locked: boolean) => (locked ? 0.15 : 0.6);
         return (
-          <g key={cls}>
-            <line x1={originX} y1={originY} x2={branchX} y2={rowY} stroke="var(--hud-amber)" strokeWidth={1.5} opacity={0.5} />
-            <line x1={branchX} y1={rowY} x2={nodeXs[0]} y2={rowY} stroke="var(--hud-amber)" strokeWidth={1.5} opacity={0.5} />
+          <g key={`lines-${cls}`}>
+            <line x1={originX} y1={originY} x2={branchX} y2={rowY} stroke={segColor(false)} strokeWidth={1.5} opacity={0.5} />
+            <line x1={branchX} y1={rowY} x2={nodeXs[0]} y2={rowY} stroke={segColor(false)} strokeWidth={1.5} opacity={0.5} />
             <line
               x1={nodeXs[0]} y1={rowY} x2={nodeXs[1]} y2={rowY}
-              stroke="var(--hud-amber)"
+              stroke={segColor(states[1].locked)}
               strokeWidth={1.5}
-              opacity={states[1].locked ? 0.15 : 0.5}
-              style={{ transition: "opacity 0.6s ease" }}
+              strokeDasharray={states[1].locked ? undefined : "4 4"}
+              opacity={segOpacity(states[1].locked)}
+              style={{
+                transition: "opacity 0.6s ease, stroke 0.6s ease",
+                animation: states[1].locked ? "none" : "hud-line-flow 1.2s linear infinite",
+              }}
             />
             <line
               x1={nodeXs[1]} y1={rowY} x2={nodeXs[2]} y2={rowY}
-              stroke="var(--hud-amber)"
+              stroke={segColor(states[2].locked)}
               strokeWidth={1.5}
-              opacity={states[2].locked ? 0.15 : 0.5}
-              style={{ transition: "opacity 0.6s ease" }}
+              strokeDasharray={states[2].locked ? undefined : "4 4"}
+              opacity={segOpacity(states[2].locked)}
+              style={{
+                transition: "opacity 0.6s ease, stroke 0.6s ease",
+                animation: states[2].locked ? "none" : "hud-line-flow 1.2s linear infinite",
+              }}
             />
-            {nodeXs.map((nx, tierIdx) => {
-              const tier = (tierIdx + 1) as 1 | 2 | 3;
-              const st = states[tierIdx];
-              const fill = st.locked ? "var(--muted-foreground)" : color;
-              const opacity = st.locked ? 0.25 : st.activeCount > 0 ? 1 : 0.45;
-              return (
-                <g key={tier}>
-                  {st.activeCount === 2 && (
-                    <circle
-                      cx={nx + 3}
-                      cy={rowY - 3}
-                      r={5}
-                      fill={color}
-                      opacity={0.85}
-                      style={{ transition: "opacity 0.6s ease, fill 0.6s ease" }}
-                    />
-                  )}
-                  <circle
-                    cx={nx}
-                    cy={rowY}
-                    r={6}
-                    fill={fill}
-                    opacity={opacity}
-                    style={{ transition: "opacity 0.6s ease, fill 0.6s ease" }}
-                  >
-                    <title>{`${cls} · Рівень ${tier === 1 ? "I" : tier === 2 ? "II" : "III"}`}</title>
-                  </circle>
-                </g>
-              );
-            })}
           </g>
         );
       })}
+
+      {/* Шар 2: усі вузли, для ВСІХ рядків одразу — завжди поверх ліній */}
+      {rows.map(({ cls, rowY, color, states }) =>
+        nodeXs.map((nx, tierIdx) => {
+          const tier = (tierIdx + 1) as 1 | 2 | 3;
+          const st = states[tierIdx];
+          const fill = st.locked ? "var(--muted-foreground)" : color;
+          const opacity = st.locked ? 0.25 : st.activeCount > 0 ? 1 : 0.45;
+          const isActive = !st.locked && st.activeCount > 0;
+          return (
+            <g key={`node-${cls}-${tier}`} style={{ color: fill }}>
+              {st.activeCount === 2 && (
+                <circle
+                  cx={nx + 3}
+                  cy={rowY - 3}
+                  r={5}
+                  fill={color}
+                  opacity={0.85}
+                  style={{ transition: "opacity 0.6s ease, fill 0.6s ease" }}
+                />
+              )}
+              <circle
+                cx={nx}
+                cy={rowY}
+                r={6}
+                fill={fill}
+                opacity={opacity}
+                style={{
+                  transition: "opacity 0.6s ease, fill 0.6s ease, r 0.3s ease",
+                  animation: isActive ? "hud-node-pulse 2.4s ease-in-out infinite" : "none",
+                }}
+              >
+                <title>{`${cls} · Рівень ${tier === 1 ? "I" : tier === 2 ? "II" : "III"}`}</title>
+              </circle>
+            </g>
+          );
+        }),
+      )}
     </svg>
   );
 }
