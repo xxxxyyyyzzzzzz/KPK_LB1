@@ -17,7 +17,7 @@ import {
 import { sfx } from "./sounds";
 import { generatePlayerId, generateRoomCode } from "./firebase";
 import { makePlayer, makeSession, type PlayerState, type PlayerSlot, type SessionState } from "./sessionSchema";
-import { readSession, txSession, useSession, writeSession } from "@/hooks/useSession";
+import { readSession, txSession, useSession, writeSession, pruneExpiredTestSessions } from "@/hooks/useSession";
 
 type User = { nickname: string; faction: string };
 
@@ -647,6 +647,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createGame = useCallback(async (u: User, opts?: { isTest?: boolean }): Promise<RoomResult> => {
+    pruneExpiredTestSessions().catch(() => {});
     let code = generateRoomCode();
     for (let i = 0; i < 5; i++) {
       const existing = await readSession(code);

@@ -1,7 +1,7 @@
 // Realtime sync hook: listens to /sessions/{roomCode} and returns the latest snapshot.
 // Falls back to a tiny in-memory pub/sub when Firebase is not configured (LOCAL_MODE).
 import { useEffect, useState } from "react";
-import { onValue, ref, set, get, update, runTransaction } from "firebase/database";
+import { onValue, ref, set, get, update, remove, runTransaction } from "firebase/database";
 import { getFirebase, LOCAL_MODE } from "@/lib/firebase";
 import type { SessionState } from "@/lib/sessionSchema";
 
@@ -111,4 +111,28 @@ export async function txSession(
     return sanitizeForFirebase(next);
   });
   return { ok: result.committed, value: (result.snapshot.val() as SessionState) ?? null };
+}
+
+export async function pruneExpiredTestSessions(): Promise<void> {
+  const cutoffMs = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  if (LOCAL_MODE) {
+    for (const [code, s] of localSessions) {
+      if (s.is_test && s.created_at && now - s.created_at > cutoffMs) {
+        localSessions.delete(code);
+      }
+    }
+    return;
+  }
+  const fb = getFirebase(); if (!fb) return;
+  const snap = await get(ref(fb.db, "sessions"));
+  const all = snap.val() as Record<string, SessionState> | null;
+  if (!all) return;
+  const deletions: Promise<void>[] = [];
+  for (const [code, s] of Object.entries(all)) {
+    if (s?.is_test && s.created_at && now - s.created_at > cutoffMs) {
+      deletions.push(remove(ref(fb.db, `sessions/${code}`)));
+    }
+  }
+  await Promise.all(deletions);
 }
