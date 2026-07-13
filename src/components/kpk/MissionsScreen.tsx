@@ -65,12 +65,15 @@ export function MissionsScreen() {
         </AnimatedItem>
 
         <AnimatedItem index={1} className="mb-5">
-          <MissionClassProgress
-            unlockedClasses={unlockedClasses}
-            slots={slots}
-            completedIds={completedIds}
-            getMission={getMission}
-          />
+          <div className="hud-panel-corners-4 relative inline-block border border-[color:var(--hud-cyan)]/40 px-4 py-3">
+            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+            <MissionClassProgress
+              unlockedClasses={unlockedClasses}
+              slots={slots}
+              completedIds={completedIds}
+              getMission={getMission}
+            />
+          </div>
         </AnimatedItem>
 
         {/* Блоки рівнів */}

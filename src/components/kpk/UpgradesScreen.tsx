@@ -1,10 +1,10 @@
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
-import { UPGRADES, UPGRADE_CATEGORIES, type UpgradeCategory, type UpgradeDef } from "@/lib/kpkData";
+import { UPGRADES, UPGRADE_CATEGORIES, UPGRADE_CATEGORY_COLOR, type UpgradeCategory, type UpgradeDef } from "@/lib/kpkData";
 import { formatPoints } from "@/lib/utils";
 import { useKpk } from "@/lib/kpkStore";
 
 export function UpgradesScreen() {
-  const { upgradePoints, upgrades, level1, level2, level3 } = useKpk();
+  const { upgrades, level1, level2, level3 } = useKpk();
   const purchased = upgrades.length;
   return (
     <ScreenShell title="Прокачки">
@@ -19,10 +19,9 @@ export function UpgradesScreen() {
               <span className="mx-2">·</span>L3: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
             </div>
           </div>
-          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 px-4 py-2">
+          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 px-4 py-3">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-            <div className="hud-label text-[0.6rem] text-[color:var(--hud-cyan)]">// Сума балів</div>
-            <div className="hud-title text-2xl text-[color:var(--hud-cyan)]">{formatPoints(upgradePoints)}</div>
+            <UpgradeCategoryProgress />
           </div>
         </AnimatedItem>
 
@@ -98,5 +97,138 @@ function UpgradeNode({ u }: { u: UpgradeDef }) {
         <div className="mt-1 hud-mono text-[0.55rem] text-[color:var(--hud-red)]/80 leading-tight">{check.reason}</div>
       )}
     </div>
+  );
+}
+
+function UpgradeCategoryProgress() {
+  const { upgrades, canPurchase } = useKpk();
+  const rowH = 26;
+  const topPad = 10;
+  const originX = 12;
+  const branchX = 34;
+  const nodeXs = [66, 158, 250];
+  const width = 300;
+  const height = topPad * 2 + (UPGRADE_CATEGORIES.length - 1) * rowH;
+  const originY = height / 2;
+  const forkOffset = 8;
+  const forkStartOffset = 16;
+
+  const all = Object.values(UPGRADES);
+
+  const nodeState = (u: UpgradeDef): "purchased" | "available" | "locked" => {
+    if (upgrades.includes(u.id)) return "purchased";
+    return canPurchase(u.id).ok ? "available" : "locked";
+  };
+
+  const nodeFill = (state: "purchased" | "available" | "locked", color: string) =>
+    state === "purchased" ? "var(--hud-green)" : state === "available" ? color : "var(--muted-foreground)";
+
+  const nodeTitle = (u: UpgradeDef, state: "purchased" | "available" | "locked") =>
+    `${u.name} · T${u.tier} · ${state === "purchased" ? "Куплено" : state === "available" ? "Доступно" : "Заблоковано"}`;
+
+  const rows = UPGRADE_CATEGORIES.map((cat, rowIdx) => {
+    const rowY = topPad + rowIdx * rowH;
+    const color = UPGRADE_CATEGORY_COLOR[cat];
+    const dimColor = `color-mix(in srgb, ${color} 45%, var(--muted-foreground) 55%)`;
+    const tierNodes = ([1, 2, 3] as const).map((tier) => all.filter((u) => u.category === cat && u.tier === tier));
+    return { cat, rowY, color, dimColor, tierNodes };
+  });
+
+  const segmentStyle = (nodes: UpgradeDef[], color: string, dimColor: string) => {
+    const states = nodes.map(nodeState);
+    const locked = states.length > 0 && states.every((s) => s === "locked");
+    const purchased = states.some((s) => s === "purchased");
+    return { locked, stroke: locked ? "var(--muted-foreground)" : purchased ? color : dimColor };
+  };
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="w-full max-w-[300px] h-auto"
+      role="img"
+      aria-label="Прогрес прокачок за категоріями"
+    >
+      {/* Шар 1: усі лінії, для ВСІХ рядків одразу — завжди під вузлами */}
+      {rows.map(({ cat, rowY, color, dimColor, tierNodes }) => {
+        const seg0 = segmentStyle(tierNodes[0], color, dimColor);
+        const seg1 = segmentStyle(tierNodes[1], color, dimColor);
+        const seg2 = segmentStyle(tierNodes[2], color, dimColor);
+        return (
+          <g key={`lines-${cat}`}>
+            <line x1={originX} y1={originY} x2={branchX} y2={rowY} stroke={seg0.stroke} strokeWidth={1.5} opacity={0.7} style={{ transition: "stroke 0.6s ease" }} />
+            <line x1={branchX} y1={rowY} x2={nodeXs[0]} y2={rowY} stroke={seg0.stroke} strokeWidth={1.5} opacity={0.7} style={{ transition: "stroke 0.6s ease" }} />
+            <line
+              x1={nodeXs[0]} y1={rowY} x2={nodeXs[1]} y2={rowY}
+              stroke={seg1.stroke}
+              strokeWidth={1.5}
+              strokeDasharray={seg1.locked ? undefined : "4 4"}
+              opacity={0.7}
+              style={{ transition: "stroke 0.6s ease", animation: seg1.locked ? "none" : "hud-line-flow 1.2s linear infinite" }}
+            />
+            <line
+              x1={nodeXs[1]} y1={rowY} x2={nodeXs[2]} y2={rowY}
+              stroke={seg2.stroke}
+              strokeWidth={1.5}
+              strokeDasharray={seg2.locked ? undefined : "4 4"}
+              opacity={0.7}
+              style={{ transition: "stroke 0.6s ease", animation: seg2.locked ? "none" : "hud-line-flow 1.2s linear infinite" }}
+            />
+          </g>
+        );
+      })}
+
+      {/* Шар 2: усі вузли, для ВСІХ рядків одразу — завжди поверх ліній */}
+      {rows.map(({ cat, rowY, color, tierNodes }) =>
+        tierNodes.map((nodes, tierIdx) => {
+          const nx = nodeXs[tierIdx];
+          const tier = tierIdx + 1;
+
+          if (nodes.length >= 2) {
+            const forkX = nx - forkStartOffset;
+            return (
+              <g key={`node-${cat}-${tier}`}>
+                {nodes.slice(0, 2).map((u, i) => {
+                  const dy = i === 0 ? -forkOffset : forkOffset;
+                  const state = nodeState(u);
+                  const fill = nodeFill(state, color);
+                  return (
+                    <g key={u.id}>
+                      <line
+                        x1={forkX} y1={rowY} x2={nx} y2={rowY + dy}
+                        stroke={color}
+                        strokeWidth={1.5}
+                        style={{ transformOrigin: `${forkX}px ${rowY}px`, animation: "hud-fork-grow 0.5s ease both" }}
+                      />
+                      <circle
+                        cx={nx} cy={rowY + dy} r={6} fill={fill}
+                        style={{ transition: "fill 0.6s ease", animation: state === "available" ? "hud-node-pulse 2.4s ease-in-out infinite" : "none" }}
+                      >
+                        <title>{nodeTitle(u, state)}</title>
+                      </circle>
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          }
+
+          const u = nodes[0];
+          if (!u) return null;
+          const state = nodeState(u);
+          const fill = nodeFill(state, color);
+          return (
+            <g key={`node-${cat}-${tier}`}>
+              <circle
+                cx={nx} cy={rowY} r={6} fill={fill}
+                style={{ transition: "fill 0.6s ease", animation: state === "available" ? "hud-node-pulse 2.4s ease-in-out infinite" : "none" }}
+              >
+                <title>{nodeTitle(u, state)}</title>
+              </circle>
+            </g>
+          );
+        }),
+      )}
+    </svg>
   );
 }

@@ -222,6 +222,14 @@ export function generateAllMissions(): Mission[] {
 export const UPGRADE_CATEGORIES = ["Захист", "Атака", "Лут", "Економіка", "Командування"] as const;
 export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
+export const UPGRADE_CATEGORY_COLOR: Record<UpgradeCategory, string> = {
+  Захист: "var(--mission-defense)",
+  Атака: "var(--mission-attack)",
+  Лут: "var(--mission-loot)",
+  Економіка: "var(--mission-economy)",
+  Командування: "var(--hud-cyan)",
+};
+
 export type UpgradeDef = {
   id: string;
   name: string;
