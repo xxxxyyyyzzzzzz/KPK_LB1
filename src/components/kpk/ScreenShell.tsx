@@ -208,7 +208,7 @@ function BurgerMenu() {
 
 const HEADER_CONTENT_H = 52; // висота контенту хедера в px
 const STATUS_BAR_INNER_HEIGHT = "1.5rem";
-const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
+export const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
 const HEADER_INNER_HEIGHT = `calc(12px + 0.5rem + ${HEADER_CONTENT_H}px)`;
 const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + ${HEADER_INNER_HEIGHT})`;

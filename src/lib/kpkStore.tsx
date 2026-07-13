@@ -711,7 +711,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     await txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
-      if (order.length < 2) return undefined;
+      if (order.length < 1) return undefined;
       return {
         ...cur,
         status: "active",

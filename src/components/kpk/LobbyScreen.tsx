@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useKpk } from "@/lib/kpkStore";
 import { FACTIONS } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
+import { STATUS_BAR_HEIGHT } from "./ScreenShell";
 
 const ORDINALS = ["Ходить першим", "Ходить другим", "Ходить третім", "Ходить четвертим"];
 
@@ -69,7 +70,10 @@ export function LobbyScreen() {
 
   return (
     <div className="fixed inset-0 overflow-y-auto">
-      <div className="min-h-full px-3 py-3 pb-3">
+      <div
+        className="min-h-full px-3 pb-3"
+        style={{ paddingTop: `calc(${STATUS_BAR_HEIGHT} + 0.75rem)` }}
+      >
         <div
           className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-amber)]/40 bg-[color:var(--surface-2)]/85 p-4 backdrop-blur-md"
           style={{ opacity: 0, animation: "hud-screen-in 0.45s cubic-bezier(0.2,0.8,0.2,1) 0.1s both" }}
