@@ -114,6 +114,8 @@ type KpkState = {
   backToClassBrowse: (slotIndex: number) => void;
   cancelBrowse: (slotIndex: number) => void;
   confirmMissionSelection: (slotIndex: number, missionId: number) => Promise<boolean>;
+  debugBypassTurnLock: boolean;
+  setDebugBypassTurnLock: (v: boolean) => void;
 };
 
 const KpkContext = createContext<KpkState | null>(null);
@@ -148,6 +150,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   const [sessionTimerRunning, setSessionTimerRunning] = useState(false);
+  const [debugBypassTurnLock, setDebugBypassTurnLock] = useState(false);
 
   const session = useSession(roomCode);
   const me: PlayerState | null = session && playerId ? session.players?.[playerId] ?? null : null;
@@ -296,9 +299,10 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   // ── Upgrades: pure validation helpers (used both for UI and inside tx) ──
   const upgradePoints = level1 + level2 + level3;
 
-  function validateUpgrade(p: PlayerState, id: string, currentRound: number): PurchaseResult {
+  function validateUpgrade(p: PlayerState, id: string, currentRound: number, ownTurnLocked: boolean): PurchaseResult {
     const u = UPGRADES[id];
     if (!u) return { ok: false, reason: "Невідома прокачка" };
+    if (ownTurnLocked) return { ok: false, reason: "Не можна купувати прокачки у свій хід" };
     if (p.upgrades?.[id]) return { ok: false, reason: "Вже куплено" };
     const owned = Object.keys(p.upgrades ?? {});
     const tierCountRegular = (t: 1 | 2 | 3) =>
@@ -323,8 +327,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
 
   const canPurchase = useCallback((id: string): PurchaseResult => {
     if (!me) return { ok: false, reason: "Немає сесії" };
-    return validateUpgrade(me, id, round);
-  }, [me, round]);
+    const ownTurnLocked = isMyTurn && !debugBypassTurnLock;
+    return validateUpgrade(me, id, round, ownTurnLocked);
+  }, [me, round, isMyTurn, debugBypassTurnLock]);
 
   const purchaseUpgrade = useCallback((id: string): PurchaseResult => {
     if (!roomCode || !playerId) { sfx.deny(); return { ok: false, reason: "Немає сесії" }; }
@@ -335,7 +340,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
-      const v = validateUpgrade(p, id, cur.round);
+      const ownTurnLocked = cur.active_player_id === playerId && !debugBypassTurnLock;
+      const v = validateUpgrade(p, id, cur.round, ownTurnLocked);
       if (!v.ok) return undefined;
       const u = UPGRADES[id];
       const np: PlayerState = {
@@ -364,7 +370,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       };
     }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
     return { ok: true };
-  }, [roomCode, playerId, canPurchase]);
+  }, [roomCode, playerId, canPurchase, debugBypassTurnLock]);
 
   const cancelUpgrade = useCallback((id: string) => {
     if (!roomCode || !playerId) { sfx.deny(); return; }
@@ -586,6 +592,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     return txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
+      if (cur.active_player_id === playerId && !debugBypassTurnLock) return undefined;
       const slot = p.slots.find((s) => s.slot_index === slotIndex);
       if (!slot) return undefined;
       const wasActive = slot.mission_id != null;
@@ -599,7 +606,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       } : s);
       return { ...cur, players: { ...cur.players, [playerId]: np } };
     }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); return r.ok; });
-  }, [roomCode, playerId]);
+  }, [roomCode, playerId, debugBypassTurnLock]);
 
   // ── Turn rotation / News round (host engine triggers news on round boundary) ──
   // Сценарій: гравці ходять по черзі за player_order; коли всі N гравців відіграли
@@ -874,6 +881,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     backToClassBrowse,
     cancelBrowse,
     confirmMissionSelection,
+    debugBypassTurnLock, setDebugBypassTurnLock,
   }), [
     screen, prevScreen, user, totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, global_replacements_left, unlockedClasses,
@@ -884,6 +892,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, startReplaceConfirm, startBrowseClass, selectBrowseClass, startBrowseSameClass, backToClassBrowse, cancelBrowse, confirmMissionSelection,
+    debugBypassTurnLock,
   ]);
 
   return <KpkContext.Provider value={value}>{children}</KpkContext.Provider>;

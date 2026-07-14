@@ -82,7 +82,7 @@ export function HudStatus() {
 }
 
 function BurgerMenu() {
-  const { roomCode, players, playerId, isHost, logout } = useKpk();
+  const { roomCode, players, playerId, isHost, logout, debugBypassTurnLock, setDebugBypassTurnLock } = useKpk();
   const [open, setOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const [muted, setMuted] = useState<boolean>(sfx.isMuted());
@@ -165,6 +165,18 @@ function BurgerMenu() {
                   aria-label={muted ? "Увімкнути звук" : "Вимкнути звук"}
                 >
                   {muted ? "🔇 Звук" : "🔊 Звук"}
+                </button>
+              </div>
+
+              <div style={{ opacity: 0, animation: "hud-screen-in 0.25s cubic-bezier(0.2,0.8,0.2,1) 0.08s both" }}>
+                <div className="hud-label text-[0.6rem] text-[color:var(--hud-red)] mb-2">// ТЕСТ</div>
+                <button
+                  onClick={() => { sfx.click(); setDebugBypassTurnLock(!debugBypassTurnLock); }}
+                  className="hud-btn hud-btn-ghost w-full"
+                  aria-pressed={debugBypassTurnLock}
+                  aria-label={debugBypassTurnLock ? "Вимкнути обхід обмеження ходу" : "Увімкнути обхід обмеження ходу"}
+                >
+                  {debugBypassTurnLock ? "☑ Дозволити поза чергою" : "☐ Дозволити поза чергою"}
                 </button>
               </div>
 
