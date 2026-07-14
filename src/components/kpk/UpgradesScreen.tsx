@@ -9,17 +9,17 @@ export function UpgradesScreen() {
   return (
     <ScreenShell title="Прокачки">
       <div className="w-full">
-        <AnimatedItem index={0} className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <AnimatedItem index={0} className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ДЕРЕВО ПРОКАЧОК</h2>
             <div className="mt-2 hud-mono text-xs text-[color:var(--muted-foreground)]">
               Куплено: <span className="text-[color:var(--hud-amber)]">{purchased}</span>
-              <span className="mx-2">·</span>L1: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
-              <span className="mx-2">·</span>L2: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
-              <span className="mx-2">·</span>L3: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
+              <span className="mx-2">·</span>I: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
+              <span className="mx-2">·</span>II: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
+              <span className="mx-2">·</span>III: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
             </div>
           </div>
-          <div className="hud-panel-corners-4 relative border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] px-5 py-4">
+          <div className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] px-5 py-4 sm:w-auto">
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <UpgradeCategoryProgress />
           </div>

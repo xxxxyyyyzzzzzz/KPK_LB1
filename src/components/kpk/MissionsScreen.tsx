@@ -46,16 +46,16 @@ export function MissionsScreen() {
             </div>
             <div className="flex gap-3">
               <div>
-                Всього: <span className="text-[color:var(--hud-amber)]">{formatPoints(totalScore)}</span>
+                Бали: <span className="text-[color:var(--hud-amber)]">{formatPoints(totalScore)}</span>
               </div>
               <div>
-                L1: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
+                I: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
               </div>
               <div>
-                L2: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
+                II: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
               </div>
               <div>
-                L3: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
+                III: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
               </div>
               <div className="border-l border-[color:var(--hud-amber)]/20 pl-3">
                 🔄 <span className="text-[color:var(--hud-amber)]">{global_replacements_left}</span>
@@ -542,8 +542,7 @@ function MissionSelectionModal({
                   </div>
                   <div className="flex flex-col gap-2 pt-3 text-[0.85rem] text-[color:var(--foreground)]">
                     <div className="hud-mono">Клас: <span className="font-semibold">{m.cls}</span></div>
-                    <div className="hud-mono">Рівень: <span className="font-semibold">{m.level}</span></div>
-                    <div className="hud-mono">Нагорода: <span className="font-semibold">+{formatPoints(m.mainReward)} pts</span></div>
+                    <div className="hud-mono">Бали: <span className="font-semibold">+{formatPoints(m.mainReward)} ({m.level === 1 ? "I" : m.level === 2 ? "II" : "III"})</span></div>
                     <div className="hud-mono">Кредити: <span className="font-semibold">+{m.currencyReward} ⛁</span></div>
                   </div>
                 </button>
