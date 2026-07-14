@@ -27,7 +27,13 @@ export const TURN_DURATION_SECONDS = 420;
 export const TOTAL_NEWS_ROUNDS = 4;
 export const TURNS_PER_NEWS_ROUND = 4;
 export const CURRENCY_COEFFICIENT = 0.33;
-export const TIER_LIMITS: Record<1 | 2 | 3, number> = { 1: 4, 2: 3, 3: 2 };
+export const TIER_LIMITS: Record<1 | 2 | 3, number> = { 1: 3, 2: 2, 3: 1 };
+
+export const LEVEL_COLOR: Record<1 | 2 | 3, string> = {
+  1: "var(--level-1)",
+  2: "var(--level-2)",
+  3: "var(--level-3)",
+};
 
 export type Screen =
   | "login" | "lobby" | "main" | "missions" | "score" | "news" | "upgrades" | "timer" | "session-loading";

@@ -14,9 +14,9 @@ export function UpgradesScreen() {
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 inline-block px-3 py-1">ДЕРЕВО ПРОКАЧОК</h2>
             <div className="mt-2 hud-mono text-xs text-[color:var(--muted-foreground)]">
               Куплено: <span className="text-[color:var(--hud-amber)]">{purchased}</span>
-              <span className="mx-2">·</span>I: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
-              <span className="mx-2">·</span>II: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
-              <span className="mx-2">·</span>III: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
+              <span className="mx-2">·</span>I: <span className="text-[color:var(--level-1)]">{formatPoints(level1)}</span>
+              <span className="mx-2">·</span>II: <span className="text-[color:var(--level-2)]">{formatPoints(level2)}</span>
+              <span className="mx-2">·</span>III: <span className="text-[color:var(--level-3)]">{formatPoints(level3)}</span>
             </div>
           </div>
           <div className="hud-panel-corners-4 relative w-full border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] px-5 py-4 sm:w-auto">
@@ -70,7 +70,7 @@ function Branch({ cat }: { cat: UpgradeCategory }) {
 }
 
 function UpgradeNode({ u }: { u: UpgradeDef }) {
-  const { upgrades, canPurchase, purchaseUpgrade } = useKpk();
+  const { upgrades, canPurchase, purchaseUpgrade, cancelUpgrade } = useKpk();
   const isPurchased = upgrades.includes(u.id);
   const check = isPurchased ? { ok: false, reason: "Куплено" } : canPurchase(u.id);
   const state: "purchased" | "available" | "locked" =
@@ -86,7 +86,14 @@ function UpgradeNode({ u }: { u: UpgradeDef }) {
       onClick={() => { if (state === "available") purchaseUpgrade(u.id); }}
     >
       {state === "purchased" && (
-        <span className="absolute -top-2 -right-2 hud-mono text-[0.6rem] bg-[color:var(--hud-green)] text-black px-1.5 py-0.5">✓</span>
+        <>
+          <span className="absolute -top-2 -right-2 hud-mono text-[0.6rem] bg-[color:var(--hud-green)] text-black px-1.5 py-0.5">✓</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); cancelUpgrade(u.id); }}
+            title="Анулювати (без повернення балів)"
+            className="absolute -top-2 -left-2 hud-mono text-[0.6rem] bg-[color:var(--hud-red)] text-black w-4 h-4 grid place-items-center leading-none"
+          >✕</button>
+        </>
       )}
       <p className="text-[0.75rem] leading-tight mb-2">{u.name}</p>
       <div className="flex justify-between items-end">

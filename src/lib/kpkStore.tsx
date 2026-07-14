@@ -71,6 +71,7 @@ type KpkState = {
   upgradePoints: number;
   canPurchase: (id: string) => PurchaseResult;
   purchaseUpgrade: (id: string) => PurchaseResult;
+  cancelUpgrade: (id: string) => void;
 
   // news
   news: NewsEntry[];
@@ -300,18 +301,19 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     if (!u) return { ok: false, reason: "Невідома прокачка" };
     if (p.upgrades?.[id]) return { ok: false, reason: "Вже куплено" };
     const owned = Object.keys(p.upgrades ?? {});
-    const tierCount = (t: 1 | 2 | 3) => owned.filter((x) => UPGRADES[x]?.tier === t).length;
+    const tierCountRegular = (t: 1 | 2 | 3) =>
+      owned.filter((x) => UPGRADES[x]?.tier === t && UPGRADES[x]?.category !== "Командування").length;
     const inCatTier = (cat: UpgradeCategory, t: 1 | 2 | 3) =>
       owned.some((x) => UPGRADES[x]?.category === cat && UPGRADES[x]?.tier === t);
-    const otherCatTier = (cat: UpgradeCategory, t: 1 | 2 | 3) =>
-      owned.some((x) => UPGRADES[x]?.tier === t && UPGRADES[x]?.category !== cat);
-    if (tierCount(u.tier) >= TIER_LIMITS[u.tier]) return { ok: false, reason: `Ліміт тіру ${u.tier}` };
-    if (inCatTier(u.category, u.tier)) return { ok: false, reason: "Гілка зайнята" };
     if (u.category === "Командування") {
       if (currentRound < u.tier) return { ok: false, reason: `Доступно з раунду ${u.tier}` };
-      if (!otherCatTier(u.category, u.tier)) return { ok: false, reason: `Потрібна прокачка T${u.tier} в іншій категорії` };
+      if (tierCountRegular(u.tier) < TIER_LIMITS[u.tier]) return { ok: false, reason: `Спершу заповніть ліміт тіру ${u.tier}` };
+      if (inCatTier(u.category, u.tier)) return { ok: false, reason: "Гілка зайнята" };
+      if (p.komanduvannya_changed_round === currentRound) return { ok: false, reason: "Вже змінено цієї новини" };
       return { ok: true };
     }
+    if (tierCountRegular(u.tier) >= TIER_LIMITS[u.tier]) return { ok: false, reason: `Ліміт тіру ${u.tier}` };
+    if (inCatTier(u.category, u.tier)) return { ok: false, reason: "Гілка зайнята" };
     if (u.tier >= 2 && !inCatTier(u.category, 1)) return { ok: false, reason: "Потрібна tier-1 у цій категорії" };
     if (u.tier === 3 && !inCatTier(u.category, 2)) return { ok: false, reason: "Потрібна tier-2 у цій категорії" };
     const score = u.tier === 1 ? p.level1_score : u.tier === 2 ? p.level2_score : p.level3_score;
@@ -339,6 +341,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       const np: PlayerState = {
         ...p,
         upgrades: { ...(p.upgrades ?? {}), [id]: true as const },
+        komanduvannya_changed_round: u.category === "Командування" ? cur.round : p.komanduvannya_changed_round,
         level1_score: p.level1_score - (u.tier === 1 ? u.cost : 0),
         level2_score: p.level2_score - (u.tier === 2 ? u.cost : 0),
         level3_score: p.level3_score - (u.tier === 3 ? u.cost : 0),
@@ -362,6 +365,44 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
     return { ok: true };
   }, [roomCode, playerId, canPurchase]);
+
+  const cancelUpgrade = useCallback((id: string) => {
+    if (!roomCode || !playerId) { sfx.deny(); return; }
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      const p = cur.players?.[playerId]; if (!p) return undefined;
+      const u = UPGRADES[id];
+      if (!u || !p.upgrades?.[id]) return undefined;
+      const owned = Object.keys(p.upgrades);
+      const toRemove = new Set<string>([id]);
+      if (u.category !== "Командування") {
+        for (const x of owned) {
+          const ux = UPGRADES[x];
+          if (ux && ux.category === u.category && ux.tier > u.tier) toRemove.add(x);
+        }
+      }
+      const newUpgrades = { ...p.upgrades };
+      let apDelta = { active_max: 0, active: 0, attack_max: 0, attack: 0 };
+      for (const rid of toRemove) {
+        delete newUpgrades[rid];
+        if (rid === "komanduvannya_2_3") { apDelta.active_max -= 1; apDelta.active -= 1; }
+        if (rid === "komanduvannya_2_1") { apDelta.attack_max -= 1; apDelta.attack -= 1; }
+      }
+      const np: PlayerState = {
+        ...p,
+        upgrades: newUpgrades,
+        komanduvannya_changed_round: u.category === "Командування" ? cur.round : p.komanduvannya_changed_round,
+        action_points: {
+          ...p.action_points,
+          active_max: Math.max(0, p.action_points.active_max + apDelta.active_max),
+          active: Math.max(0, p.action_points.active + apDelta.active),
+          attack_max: Math.max(0, p.action_points.attack_max + apDelta.attack_max),
+          attack: Math.max(0, p.action_points.attack + apDelta.attack),
+        },
+      };
+      return { ...cur, players: { ...cur.players, [playerId]: np } };
+    }).then((r) => { if (r.ok) sfx.click(); else sfx.deny(); });
+  }, [roomCode, playerId]);
 
   // ── Missions ──
   const pickNewMissionId = useCallback((level: 1 | 2 | 3, excludeIds: Set<number>) => {
@@ -773,7 +814,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     round, turn, sessionSeconds, sessionStartedAt, sessionTimerRunning, turnSeconds, turnRunning,
     ap, global_replacements_left, unlockedClasses,
     slots, completedIds, missionsByLevel, allMissions, getMission,
-    upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade,
+    upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade, cancelUpgrade,
     news, history,
     login: (u) => { createGame(u); },
     createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players,
@@ -837,7 +878,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     screen, prevScreen, user, totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, global_replacements_left, unlockedClasses,
     slots, completedIds, missionsByLevel, allMissions, getMission,
-    upgradesList, upgradePoints, canPurchase, purchaseUpgrade, news, history,
+    upgradesList, upgradePoints, canPurchase, purchaseUpgrade, cancelUpgrade, news, history,
     roomCode, playerId, isHost, players, sessionPlayers,
     activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
     takenFactions, createGame, joinGame, rejoinAs,

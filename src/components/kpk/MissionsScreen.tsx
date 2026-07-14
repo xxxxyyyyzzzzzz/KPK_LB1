@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
-import { MISSION_CLASS_COLOR, MISSION_CLASSES } from "@/lib/kpkData";
+import { MISSION_CLASS_COLOR, MISSION_CLASSES, LEVEL_COLOR } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
 import { formatPoints } from "@/lib/utils";
 import { sfx } from "@/lib/sounds";
@@ -49,13 +49,13 @@ export function MissionsScreen() {
                 Бали: <span className="text-[color:var(--hud-amber)]">{formatPoints(totalScore)}</span>
               </div>
               <div>
-                I: <span className="text-[color:var(--mission-defense)]">{formatPoints(level1)}</span>
+                I: <span className="text-[color:var(--level-1)]">{formatPoints(level1)}</span>
               </div>
               <div>
-                II: <span className="text-[color:var(--mission-loot)]">{formatPoints(level2)}</span>
+                II: <span className="text-[color:var(--level-2)]">{formatPoints(level2)}</span>
               </div>
               <div>
-                III: <span className="text-[color:var(--mission-economy)]">{formatPoints(level3)}</span>
+                III: <span className="text-[color:var(--level-3)]">{formatPoints(level3)}</span>
               </div>
               <div className="border-l border-[color:var(--hud-amber)]/20 pl-3">
                 🔄 <span className="text-[color:var(--hud-amber)]">{global_replacements_left}</span>
@@ -349,9 +349,10 @@ function SlotCard({
         const done = slot.current_progress >= m.target;
         return (
           <div
-            className={`hud-panel-corners-4 relative flex flex-col gap-2 border bg-[color:var(--surface-2)] p-3 transition-all ${
+            className={`hud-panel-corners-4 relative flex flex-col gap-2 border border-l-4 bg-[color:var(--surface-2)] p-3 transition-all ${
               done ? "mission-active-glow" : "border-[color:var(--hud-amber)]/25"
             }`}
+            style={{ borderLeftColor: LEVEL_COLOR[m.level as 1 | 2 | 3] }}
           >
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <div className="flex items-start justify-between gap-2">
@@ -534,7 +535,8 @@ function MissionSelectionModal({
                 <button
                   key={mid}
                   onClick={() => { onSelect(mid); sfx.confirm(); }}
-                  className="hud-panel flex h-full flex-col justify-between border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5"
+                  className="hud-panel flex h-full flex-col justify-between border border-l-4 border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5"
+                  style={{ borderLeftColor: LEVEL_COLOR[m.level as 1 | 2 | 3] }}
                 >
                   <div>
                     <div className="font-semibold text-lg mb-2">{m.name}</div>

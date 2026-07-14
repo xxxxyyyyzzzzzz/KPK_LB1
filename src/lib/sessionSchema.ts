@@ -38,6 +38,7 @@ export type PlayerState = {
   unlocked_classes: { "1": string[]; "2": string[]; "3": string[] };  // Розблоковані класи по рівнях
   // Прокачки
   upgrades: Record<string, true>;
+  komanduvannya_changed_round: number | null;
   // Слоти місій (індекс 0..5; рівень = (idx % 3) + 1)
   slots: Array<PlayerSlot>;
   completed_ids: number[];
@@ -111,6 +112,7 @@ export function makePlayer(nickname: string, faction: string): PlayerState {
       "3": [],  // Рівень 3: розблокуються після виконання місії рівня 2
     },
     upgrades: {},
+    komanduvannya_changed_round: null,
     slots: initialPlayerSlots(),
     completed_ids: [],
   };
