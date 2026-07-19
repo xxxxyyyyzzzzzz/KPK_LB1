@@ -688,7 +688,13 @@ export function KpkProvider({ children }: { children: ReactNode }) {
           } else {
             nextNewsIndex = (currentNewsIndex + 1) as 1 | 2 | 3 | 4;
             nextRoundInNews = 1;
-            nextOrder = [...order].sort(() => Math.random() - 0.5);
+            // Порядок гравців (хто за ким) встановлює хост і він незмінний —
+            // фізичне розміщення на карті. Перетасовуємо ЛИШЕ те, з кого з них
+            // починається новий цикл (ротація по колу), не сам порядок.
+            {
+              const rotateStart = Math.floor(Math.random() * order.length);
+              nextOrder = [...order.slice(rotateStart), ...order.slice(0, rotateStart)];
+            }
             news = generateNews(nextNewsIndex);
             newsSignalTs = Date.now();
             nextActive = nextOrder[0] ?? null;

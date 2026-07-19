@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
+import { TOTAL_NEWS_ROUNDS } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
 
 const BOTS = [
@@ -27,12 +28,24 @@ export function TimerScreen() {
 
   const playersCount = Math.max(1, players.length || 1);
   const isBotsTurn = turnInRound === playersCount + 1;
+  const isLastRoundOfNews = roundInNews === TOTAL_NEWS_ROUNDS;
   const currentPlayerIndex = players.findIndex((p) => p.id === activePlayerId);
   const nextTurnLabel = turnInRound < playersCount
     ? players[(currentPlayerIndex >= 0 ? currentPlayerIndex + 1 : 0) % playersCount]?.nickname ?? "—"
     : turnInRound === playersCount
       ? "Боти/Мутанти"
-      : players[0]?.nickname ?? "—";
+      : isLastRoundOfNews
+        ? "Нова новина"
+        : players[0]?.nickname ?? "—";
+
+  // Підпис кнопки передачі ходу — 4 стани:
+  // 1) останній гравець перед ботами (turnInRound === playersCount) → "Наступні боти"
+  // 2) хід ботів, НЕ останній раунд новини → "Наступний гравець"
+  // 3) хід ботів, останній раунд новини (далі буде нова новина) → "Наступна новина"
+  // 4) будь-який інший хід гравця → "Наступний гравець"
+  const advanceLabel = isBotsTurn
+    ? (isLastRoundOfNews ? "Наступна новина" : "Наступний гравець")
+    : (turnInRound === playersCount ? "Наступні боти" : "Наступний гравець");
 
   return (
     <ScreenShell title="Таймер">
@@ -111,9 +124,9 @@ export function TimerScreen() {
                 <button
                   className="hud-btn hud-btn-ghost min-w-[180px]"
                   onClick={nextPlayer}
-                  aria-label={isBotsTurn ? "Перейти до наступної новини" : "Передати хід наступному гравцю"}
+                  aria-label={`Далі: ${advanceLabel}`}
                 >
-                  {isBotsTurn ? "↦ Наступна новина" : "↦ Наступний гравець"}{isHost && !isMyTurn ? " (хост)" : ""}
+                  {`↦ ${advanceLabel}`}{isHost && !isMyTurn ? " (хост)" : ""}
                 </button>
               )}
             </div>
