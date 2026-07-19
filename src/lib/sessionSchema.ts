@@ -61,7 +61,8 @@ export type SessionState = {
   newsIndex: 1 | 2 | 3 | 4;
   roundInNews: 1 | 2 | 3 | 4;
   turnInRound: number; // 1..(playersCount + 1)
-  turn_seconds: number;
+  turn_end_at: number | null; // timestamp (мс), коли хід закінчиться, якщо зараз йде відлік; null — на паузі
+  turn_remaining_seconds: number; // "заморожений" залишок секунд на момент останньої паузи/старту ходу
   // backward compatibility for legacy sessions
   round?: 1 | 2 | 3 | 4;
   turn?: number;
@@ -132,7 +133,8 @@ export function makeSession(code: string, hostId: string, opts?: { isTest?: bool
     newsIndex: 1,
     roundInNews: 1,
     turnInRound: 1,
-    turn_seconds: TURN_DURATION_SECONDS,
+    turn_end_at: null,
+    turn_remaining_seconds: TURN_DURATION_SECONDS,
     turn_running: false,
     active_player_id: null,
     player_order: [],

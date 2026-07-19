@@ -111,9 +111,9 @@ export function TimerScreen() {
                 <button
                   className="hud-btn hud-btn-ghost min-w-[180px]"
                   onClick={nextPlayer}
-                  aria-label="Передати хід наступному гравцю"
+                  aria-label={isBotsTurn ? "Перейти до наступної новини" : "Передати хід наступному гравцю"}
                 >
-                  ↦ Наступний гравець{isHost && !isMyTurn ? " (хост)" : ""}
+                  {isBotsTurn ? "↦ Наступна новина" : "↦ Наступний гравець"}{isHost && !isMyTurn ? " (хост)" : ""}
                 </button>
               )}
             </div>

@@ -195,30 +195,48 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     setSessionTimerRunning((current) => !current);
   }, [sessionStartedAt]);
 
-  // ── HOST ENGINE: drive turn timer & news rounds for everyone ──
+  // ── TURN TIMER: кожен клієнт рахує локально від turn_end_at, хост для цього не потрібен ──
   const isHost = !!session && !!playerId && session.host_id === playerId;
 
+  const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => {
-    if (!isHost || !session || !roomCode) return;
-    if (!session.turn_running) return;
-    const id = setInterval(() => {
-      txSession(roomCode, (cur) => {
-        if (!cur || !cur.turn_running) return undefined;
-        const next = { ...cur, turn_seconds: Math.max(0, (cur.turn_seconds ?? 0) - 1) };
-        if (next.turn_seconds === 0) next.turn_running = false;
-        return next;
-      });
-    }, 1000);
+    if (!session?.turn_running) return;
+    setNowTick(Date.now());
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [isHost, session?.turn_running, roomCode]);
+  }, [session?.turn_running]);
+
+  const turnSeconds = session
+    ? (session.turn_running && session.turn_end_at
+        ? Math.max(0, Math.round((session.turn_end_at - nowTick) / 1000))
+        : (session.turn_remaining_seconds ?? TURN_DURATION_SECONDS))
+    : TURN_DURATION_SECONDS;
+  const turnRunning = session?.turn_running ?? false;
+
+  // Коли час ходу вичерпується — БУДЬ-ЯКИЙ клієнт (не лише хост) один раз пише
+  // turn_running:false у базу. Безпечно: txSession — справжня Firebase-транзакція
+  // з автоповтором; якщо кілька клієнтів спрацюють одночасно, пройде лише перший
+  // запис, решта побачать turn_running вже false і нічого не запишуть.
+  useEffect(() => {
+    if (!session?.turn_running || !session.turn_end_at || !roomCode) return;
+    const msLeft = session.turn_end_at - Date.now();
+    const id = setTimeout(() => {
+      txSession(roomCode, (cur) => {
+        if (!cur || !cur.turn_running || !cur.turn_end_at) return undefined;
+        if (cur.turn_end_at > Date.now()) return undefined;
+        return { ...cur, turn_running: false, turn_remaining_seconds: 0 };
+      });
+    }, Math.max(0, msLeft));
+    return () => clearTimeout(id);
+  }, [session?.turn_running, session?.turn_end_at, roomCode]);
 
   // SFX for timer transitions (local)
   useEffect(() => {
     if (!session) return;
-    if (session.turn_seconds === 30 && !warnRef.current) { warnRef.current = true; sfx.notify(); }
-    if (session.turn_seconds === 0) { sfx.alarm(); warnRef.current = false; }
-    if (session.turn_seconds > 0 && session.turn_seconds % 60 === 0) sfx.tick();
-  }, [session?.turn_seconds]);
+    if (turnSeconds === 30 && !warnRef.current) { warnRef.current = true; sfx.notify(); }
+    if (turnSeconds === 0) { sfx.alarm(); warnRef.current = false; }
+    if (turnSeconds > 0 && turnSeconds % 60 === 0) sfx.tick();
+  }, [turnSeconds, session]);
 
   const getMission = useCallback(
     (id: number | null) => (id == null ? null : allMissions.find((m) => m.id === id) ?? null),
@@ -254,8 +272,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const turnInRound = session?.turnInRound ?? 1;
   const round = newsIndex;
   const turn = ((roundInNews - 1) * (playersCount + 1)) + turnInRound;
-  const turnSeconds = session?.turn_seconds ?? TURN_DURATION_SECONDS;
-  const turnRunning = session?.turn_running ?? false;
+  /* turnSeconds/turnRunning are derived above from turn_end_at/turn_remaining_seconds */
   const history: HistoryEntry[] = useMemo(() => {
     const ev = session?.events ?? {};
     return Object.values(ev)
@@ -626,7 +643,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     warnRef.current = false;
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
-      const allowed = !cur.active_player_id || cur.active_player_id === playerId || cur.host_id === playerId;
+      const allowed = cur.active_player_id
+        ? (cur.active_player_id === playerId || cur.host_id === playerId)
+        : cur.host_id === playerId; // хід ботів (active_player_id === null) — далі передає лише хост
       if (!allowed) return undefined;
 
       const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
@@ -706,7 +725,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         turnInRound: nextTurn,
         player_order: nextOrder,
         active_player_id: nextActive,
-        turn_seconds: TURN_DURATION_SECONDS,
+        turn_end_at: null,
+        turn_remaining_seconds: TURN_DURATION_SECONDS,
         turn_running: false,
         news,
         news_signal_ts: newsSignalTs,
@@ -910,7 +930,16 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         if (!cur) return undefined;
         // Лише активний гравець може стартувати/паузити свій таймер.
         if (cur.active_player_id && cur.active_player_id !== playerId) return undefined;
-        return { ...cur, turn_running: !cur.turn_running };
+        if (cur.turn_running) {
+          // Пауза: заморожуємо залишок секунд на момент паузи.
+          const remaining = cur.turn_end_at
+            ? Math.max(0, Math.round((cur.turn_end_at - Date.now()) / 1000))
+            : (cur.turn_remaining_seconds ?? 0);
+          return { ...cur, turn_running: false, turn_end_at: null, turn_remaining_seconds: remaining };
+        }
+        // Відновлення: нова мить закінчення від залишку секунд.
+        const remaining = cur.turn_remaining_seconds ?? TURN_DURATION_SECONDS;
+        return { ...cur, turn_running: true, turn_end_at: Date.now() + remaining * 1000 };
       });
     },
     nextPlayer,
