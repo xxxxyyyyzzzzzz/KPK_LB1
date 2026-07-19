@@ -118,6 +118,9 @@ type KpkState = {
   confirmMissionSelection: (slotIndex: number, missionId: number) => Promise<boolean>;
   debugBypassTurnLock: boolean;
   setDebugBypassTurnLock: (v: boolean) => void;
+  isTestSession: boolean;
+  cheatGenerateNews: () => void;
+  cheatAddScore: (playerId: string, level: 1 | 2 | 3) => void;
 };
 
 const KpkContext = createContext<KpkState | null>(null);
@@ -155,6 +158,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const [debugBypassTurnLock, setDebugBypassTurnLock] = useState(false);
 
   const session = useSession(roomCode);
+  const isTestSession = !!session?.is_test;
   const me: PlayerState | null = session && playerId ? session.players?.[playerId] ?? null : null;
 
   const warnRef = useRef(false);
@@ -752,6 +756,36 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     }).then(() => sfx.confirm());
   }, [roomCode]);
 
+  const cheatGenerateNews = useCallback(() => {
+    if (!roomCode || !isTestSession) return;
+    txSession(roomCode, (cur) => {
+      if (!cur || !cur.is_test) return undefined;
+      const currentNewsIndex = (cur.newsIndex ?? cur.round ?? 1) as 1 | 2 | 3 | 4;
+      return { ...cur, news: generateNews(currentNewsIndex) };
+    }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
+  }, [roomCode, isTestSession]);
+
+  const cheatAddScore = useCallback((targetPlayerId: string, level: 1 | 2 | 3) => {
+    if (!roomCode || !isTestSession) return;
+    txSession(roomCode, (cur) => {
+      if (!cur || !cur.is_test) return undefined;
+      const p = cur.players?.[targetPlayerId]; if (!p) return undefined;
+      return {
+        ...cur,
+        players: {
+          ...cur.players,
+          [targetPlayerId]: {
+            ...p,
+            score: p.score + 1,
+            level1_score: p.level1_score + (level === 1 ? 1 : 0),
+            level2_score: p.level2_score + (level === 2 ? 1 : 0),
+            level3_score: p.level3_score + (level === 3 ? 1 : 0),
+          },
+        },
+      };
+    }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
+  }, [roomCode, isTestSession]);
+
   // ── Lobby / Room management ──
   const takenFactions = useCallback(async (code: string) => {
     const s = await readSession(code);
@@ -959,6 +993,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     cancelBrowse,
     confirmMissionSelection,
     debugBypassTurnLock, setDebugBypassTurnLock,
+    isTestSession, cheatGenerateNews, cheatAddScore,
   }), [
     screen, prevScreen, user, totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
     round, turn, sessionSeconds, turnSeconds, turnRunning, ap, global_replacements_left, unlockedClasses,
@@ -969,7 +1004,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, startReplaceConfirm, startBrowseClass, selectBrowseClass, startBrowseSameClass, backToClassBrowse, cancelBrowse, confirmMissionSelection,
-    debugBypassTurnLock,
+    debugBypassTurnLock, isTestSession, cheatGenerateNews, cheatAddScore,
   ]);
 
   return <KpkContext.Provider value={value}>{children}</KpkContext.Provider>;

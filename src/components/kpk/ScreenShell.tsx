@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, createContext, useContext, type ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef, createContext, useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
@@ -82,10 +82,34 @@ export function HudStatus() {
 }
 
 function BurgerMenu() {
-  const { roomCode, players, playerId, isHost, logout, debugBypassTurnLock, setDebugBypassTurnLock } = useKpk();
+  const {
+    roomCode,
+    players,
+    playerId,
+    isHost,
+    logout,
+    debugBypassTurnLock,
+    setDebugBypassTurnLock,
+    isTestSession,
+    allMissions,
+    cheatGenerateNews,
+    cheatAddScore,
+  } = useKpk();
   const [open, setOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const [muted, setMuted] = useState<boolean>(sfx.isMuted());
+  const [missionPoolOpen, setMissionPoolOpen] = useState(false);
+
+  const missionPoolGroups = useMemo(() => {
+    const classes = ["Атака", "Захист", "Економіка", "Лут"] as const;
+    return classes.map((cls) => {
+      const byLevel: Record<1 | 2 | 3, typeof allMissions> = { 1: [], 2: [], 3: [] };
+      for (const mission of allMissions) {
+        if (mission.cls === cls) byLevel[mission.level].push(mission);
+      }
+      return { cls, byLevel };
+    });
+  }, [allMissions]);
 
   return (
     <>
@@ -150,6 +174,31 @@ function BurgerMenu() {
                         style={{ background: FACTIONS[p.faction] ?? "#fff" }}
                       />
                       {p.nickname}
+                      {isTestSession && (
+                        <div className="ml-auto flex items-center gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); sfx.click(); cheatAddScore(p.id, 1); }}
+                            className="h-5 rounded border border-[color:var(--hud-amber)]/30 px-1.5 text-[0.55rem] text-[color:var(--hud-amber)]"
+                            aria-label={`Додати +1 бал ${p.nickname} рівень I`}
+                          >
+                            +I
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); sfx.click(); cheatAddScore(p.id, 2); }}
+                            className="h-5 rounded border border-[color:var(--hud-amber)]/30 px-1.5 text-[0.55rem] text-[color:var(--hud-amber)]"
+                            aria-label={`Додати +1 бал ${p.nickname} рівень II`}
+                          >
+                            +II
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); sfx.click(); cheatAddScore(p.id, 3); }}
+                            className="h-5 rounded border border-[color:var(--hud-amber)]/30 px-1.5 text-[0.55rem] text-[color:var(--hud-amber)]"
+                            aria-label={`Додати +1 бал ${p.nickname} рівень III`}
+                          >
+                            +III
+                          </button>
+                        </div>
+                      )}
                       {p.id === playerId && (
                         <span className="ml-auto text-[0.6rem] text-[color:var(--hud-green)]">● ВИ</span>
                       )}
@@ -168,17 +217,31 @@ function BurgerMenu() {
                 </button>
               </div>
 
-              <div style={{ opacity: 0, animation: "hud-screen-in 0.25s cubic-bezier(0.2,0.8,0.2,1) 0.08s both" }}>
-                <div className="hud-label text-[0.6rem] text-[color:var(--hud-red)] mb-2">// ТЕСТ</div>
-                <button
-                  onClick={() => { sfx.click(); setDebugBypassTurnLock(!debugBypassTurnLock); }}
-                  className="hud-btn hud-btn-ghost w-full"
-                  aria-pressed={debugBypassTurnLock}
-                  aria-label={debugBypassTurnLock ? "Вимкнути обхід обмеження ходу" : "Увімкнути обхід обмеження ходу"}
-                >
-                  {debugBypassTurnLock ? "☑ Дозволити поза чергою" : "☐ Дозволити поза чергою"}
-                </button>
-              </div>
+              {isTestSession && (
+                <div style={{ opacity: 0, animation: "hud-screen-in 0.25s cubic-bezier(0.2,0.8,0.2,1) 0.08s both" }}>
+                  <div className="hud-label text-[0.6rem] text-[color:var(--hud-red)] mb-2">// ТЕСТ</div>
+                  <button
+                    onClick={() => { sfx.click(); setDebugBypassTurnLock(!debugBypassTurnLock); }}
+                    className="hud-btn hud-btn-ghost w-full"
+                    aria-pressed={debugBypassTurnLock}
+                    aria-label={debugBypassTurnLock ? "Вимкнути обхід обмеження ходу" : "Увімкнути обхід обмеження ходу"}
+                  >
+                    {debugBypassTurnLock ? "☑ Дозволити поза чергою" : "☐ Дозволити поза чергою"}
+                  </button>
+                  <button
+                    onClick={() => { sfx.click(); setMissionPoolOpen(true); }}
+                    className="hud-btn hud-btn-ghost mt-2 w-full"
+                  >
+                    🗂 Переглянути всі місії
+                  </button>
+                  <button
+                    onClick={() => { sfx.click(); cheatGenerateNews(); }}
+                    className="hud-btn hud-btn-ghost mt-2 w-full"
+                  >
+                    ⟳ Нова новина (тест)
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={() => { sfx.click(); setOpen(false); setConfirmExit(true); }}
@@ -186,6 +249,65 @@ function BurgerMenu() {
               >
                 ↶ Вийти з сесії
               </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {missionPoolOpen && createPortal(
+        <div className="fixed inset-0 z-[100001] flex items-center justify-center bg-black/85 px-3 py-4 backdrop-blur-sm">
+          <div
+            className="hud-panel-corners-4 relative flex max-h-[86vh] w-full max-w-3xl flex-col border border-[color:var(--hud-amber)]/60 bg-[color:var(--surface-2)] p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="corner tl" />
+            <span className="corner tr" />
+            <span className="corner bl" />
+            <span className="corner br" />
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="hud-label text-[0.6rem] text-[color:var(--hud-amber)]">// ПУЛ МІСІЙ</div>
+                <div className="hud-title mt-1 text-lg text-[color:var(--hud-amber)]">Повний пул місій</div>
+              </div>
+              <button
+                onClick={() => setMissionPoolOpen(false)}
+                className="hud-mono text-xl leading-none text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-4 overflow-y-auto hud-scroll pr-1">
+              {missionPoolGroups.map(({ cls, byLevel }) => (
+                <div key={cls} className="mb-4 border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-1)]/70 p-3">
+                  <div className="hud-label text-[0.6rem] text-[color:var(--hud-amber)]">{cls}</div>
+                  {[1, 2, 3].map((level) => {
+                    const items = byLevel[level as 1 | 2 | 3];
+                    if (!items.length) return null;
+                    return (
+                      <div key={`${cls}-${level}`} className="mt-3">
+                        <div className="hud-mono text-[0.7rem] text-[color:var(--hud-cyan)]">Рівень {level}</div>
+                        <div className="mt-2 flex flex-col gap-2">
+                          {items.map((mission) => (
+                            <div key={mission.id} className="border border-[color:var(--hud-amber)]/15 bg-[color:var(--surface-3)]/60 p-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="hud-mono text-[0.72rem] text-[color:var(--hud-amber)]">{mission.name}</div>
+                                  <div className="mt-1 text-[0.6rem] text-[color:var(--muted-foreground)]">{mission.description}</div>
+                                </div>
+                                <div className="hud-mono shrink-0 text-right text-[0.62rem] text-[color:var(--muted-foreground)]">
+                                  <div>Ціль: {mission.target}</div>
+                                  <div>Нагорода: {mission.mainReward}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
         </div>,
