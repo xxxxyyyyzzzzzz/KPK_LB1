@@ -58,9 +58,13 @@ export type SessionState = {
   host_id: string;
   created_at: number;
   is_test?: boolean;
-  round: 1 | 2 | 3 | 4;
-  turn: number; // 1..N (індекс активного гравця у поточному ході)
+  newsIndex: 1 | 2 | 3 | 4;
+  roundInNews: 1 | 2 | 3 | 4;
+  turnInRound: number; // 1..(playersCount + 1)
   turn_seconds: number;
+  // backward compatibility for legacy sessions
+  round?: 1 | 2 | 3 | 4;
+  turn?: number;
   turn_running: boolean;
   active_player_id: string | null;
   player_order: string[];
@@ -125,8 +129,9 @@ export function makeSession(code: string, hostId: string, opts?: { isTest?: bool
     host_id: hostId,
     created_at: Date.now(),
     is_test: !!opts?.isTest,
-    round: 1,
-    turn: 1,
+    newsIndex: 1,
+    roundInNews: 1,
+    turnInRound: 1,
     turn_seconds: TURN_DURATION_SECONDS,
     turn_running: false,
     active_player_id: null,

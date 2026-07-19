@@ -3,7 +3,6 @@ import {
   DEFAULT_ACTION_POINTS,
   TURN_DURATION_SECONDS,
   TOTAL_NEWS_ROUNDS,
-  TURNS_PER_NEWS_ROUND,
   TIER_LIMITS,
   UPGRADES,
   MISSION_CLASSES,
@@ -45,9 +44,12 @@ type KpkState = {
   currency: number;
   currencyEarnedThisTurn: number;
 
-  // rounds
-  round: 1 | 2 | 3 | 4;
-  turn: number; // 1..TURNS_PER_NEWS_ROUND
+  // news / rounds / turns
+  newsIndex: 1 | 2 | 3 | 4;
+  roundInNews: 1 | 2 | 3 | 4;
+  turnInRound: number; // 1..(playersCount+1)
+  round: 1 | 2 | 3 | 4; // alias for backward compatibility
+  turn: number; // alias for backward compatibility
   sessionSeconds: number;
   sessionStartedAt: number | null;
   sessionTimerRunning: boolean;
@@ -231,10 +233,6 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const level3 = me?.level3_score ?? 0;
   const currency = me?.currency ?? 0;
   const currencyEarnedThisTurn = me?.currency_earned_this_turn ?? 0;
-  const round = (session?.round ?? 1) as 1 | 2 | 3 | 4;
-  const turn = session?.turn ?? 1;
-  const turnSeconds = session?.turn_seconds ?? TURN_DURATION_SECONDS;
-  const turnRunning = session?.turn_running ?? false;
   const news = session?.news ?? [];
   const upgradesList = Object.keys(me?.upgrades ?? {});
   const slots: PlayerSlot[] = me?.slots ?? [];
@@ -250,6 +248,14 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     attack: me.action_points.attack, attackMax: me.action_points.attack_max,
     build: me.action_points.build, buildMax: me.action_points.build_max,
   } : baseAP([]);
+  const newsIndex = (session?.newsIndex ?? session?.round ?? 1) as 1 | 2 | 3 | 4;
+  const roundInNews = (session?.roundInNews ?? 1) as 1 | 2 | 3 | 4;
+  const playersCount = Math.max(1, session?.player_order?.length ?? Object.keys(session?.players ?? {}).length);
+  const turnInRound = session?.turnInRound ?? 1;
+  const round = newsIndex;
+  const turn = ((roundInNews - 1) * (playersCount + 1)) + turnInRound;
+  const turnSeconds = session?.turn_seconds ?? TURN_DURATION_SECONDS;
+  const turnRunning = session?.turn_running ?? false;
   const history: HistoryEntry[] = useMemo(() => {
     const ev = session?.events ?? {};
     return Object.values(ev)
@@ -328,8 +334,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const canPurchase = useCallback((id: string): PurchaseResult => {
     if (!me) return { ok: false, reason: "Немає сесії" };
     const ownTurnLocked = isMyTurn && !debugBypassTurnLock;
-    return validateUpgrade(me, id, round, ownTurnLocked);
-  }, [me, round, isMyTurn, debugBypassTurnLock]);
+    return validateUpgrade(me, id, newsIndex, ownTurnLocked);
+  }, [me, newsIndex, isMyTurn, debugBypassTurnLock]);
 
   const purchaseUpgrade = useCallback((id: string): PurchaseResult => {
     if (!roomCode || !playerId) { sfx.deny(); return { ok: false, reason: "Немає сесії" }; }
@@ -341,13 +347,14 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
       const ownTurnLocked = cur.active_player_id === playerId && !debugBypassTurnLock;
-      const v = validateUpgrade(p, id, cur.round, ownTurnLocked);
+      const currentRound = (cur.newsIndex ?? cur.round ?? 1) as number;
+      const v = validateUpgrade(p, id, currentRound, ownTurnLocked);
       if (!v.ok) return undefined;
       const u = UPGRADES[id];
       const np: PlayerState = {
         ...p,
         upgrades: { ...(p.upgrades ?? {}), [id]: true as const },
-        komanduvannya_changed_round: u.category === "Командування" ? cur.round : p.komanduvannya_changed_round,
+        komanduvannya_changed_round: u.category === "Командування" ? currentRound : p.komanduvannya_changed_round,
         level1_score: p.level1_score - (u.tier === 1 ? u.cost : 0),
         level2_score: p.level2_score - (u.tier === 2 ? u.cost : 0),
         level3_score: p.level3_score - (u.tier === 3 ? u.cost : 0),
@@ -394,10 +401,11 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         if (rid === "komanduvannya_2_3") { apDelta.active_max -= 1; apDelta.active -= 1; }
         if (rid === "komanduvannya_2_1") { apDelta.attack_max -= 1; apDelta.attack -= 1; }
       }
+      const currentRound = (cur.newsIndex ?? cur.round ?? 1) as number;
       const np: PlayerState = {
         ...p,
         upgrades: newUpgrades,
-        komanduvannya_changed_round: u.category === "Командування" ? cur.round : p.komanduvannya_changed_round,
+        komanduvannya_changed_round: u.category === "Командування" ? currentRound : p.komanduvannya_changed_round,
         action_points: {
           ...p.action_points,
           active_max: Math.max(0, p.action_points.active_max + apDelta.active_max),
@@ -618,39 +626,62 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     warnRef.current = false;
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
-      // Дозволено лише активному гравцю або хосту
       const allowed = !cur.active_player_id || cur.active_player_id === playerId || cur.host_id === playerId;
       if (!allowed) return undefined;
+
       const order = cur.player_order?.length ? cur.player_order : Object.keys(cur.players ?? {});
       const playersCount = Math.max(1, order.length);
-      const totalTurns = TURNS_PER_NEWS_ROUND * playersCount;
-      const curIdx = cur.active_player_id ? order.indexOf(cur.active_player_id) : -1;
-      const nextIdx = (curIdx + 1) % playersCount;
-      const nextActive = order[nextIdx] ?? null;
-      const nextTurnNumber = (cur.turn ?? 0) + 1;
-      let nextRound = cur.round;
+      const currentNewsIndex = (cur.newsIndex ?? cur.round ?? 1) as 1 | 2 | 3 | 4;
+      const currentRoundInNews = (cur.roundInNews ??
+        (cur.turn != null ? (Math.floor(((cur.turn - 1) / playersCount)) + 1) as 1 | 2 | 3 | 4 : 1)) as 1 | 2 | 3 | 4;
+      const currentTurnInRound = cur.turnInRound ??
+        (cur.turn != null ? ((cur.turn - 1) % playersCount) + 1 : 1);
+      const currentIdx = cur.active_player_id ? order.indexOf(cur.active_player_id) : -1;
+      const nextTurnInRound = currentTurnInRound + 1;
+
+      let nextNewsIndex = currentNewsIndex;
+      let nextRoundInNews = currentRoundInNews;
+      let nextActive: string | null = null;
+      let nextTurn = nextTurnInRound;
       let news = cur.news;
-      let resetTurn = nextTurnNumber;
       let newsSignalTs = cur.news_signal_ts ?? 0;
       let awaitingAck = cur.awaiting_news_ack ?? false;
       let nextStatus: SessionState["status"] = cur.status;
+      let nextOrder = [...order];
 
-      const boundary = nextTurnNumber > totalTurns;
-      if (boundary) {
-        // Кінець ходу всіх гравців → «хід ботів/мутантів» (миттєвий).
-        if (cur.round >= TOTAL_NEWS_ROUNDS) {
-          // Це був хід мутантів 4-го раунду → кінець гри, чекаємо акноледж новин.
-          resetTurn = cur.turn;
-          awaitingAck = true;
-          nextStatus = "finished";
+      if (currentTurnInRound <= playersCount) {
+        if (nextTurnInRound <= playersCount) {
+          nextActive = order[(currentIdx + 1 + playersCount) % playersCount] ?? order[0] ?? null;
         } else {
-          nextRound = (cur.round + 1) as 1 | 2 | 3 | 4;
-          resetTurn = 1;
-          news = generateNews(nextRound);
-          newsSignalTs = Date.now();
+          nextActive = null; // ботів/мутантів хід
+        }
+      } else {
+        // Поточний хід був ходом ботів: переходити до нового раунду або новини
+        nextTurn = 1;
+        if (currentRoundInNews < TOTAL_NEWS_ROUNDS) {
+          nextRoundInNews = (currentRoundInNews + 1) as 1 | 2 | 3 | 4;
+          nextActive = order[0] ?? null;
+        } else {
+          if (currentNewsIndex >= TOTAL_NEWS_ROUNDS) {
+            nextStatus = "finished";
+            awaitingAck = true;
+            nextActive = null;
+          } else {
+            nextNewsIndex = (currentNewsIndex + 1) as 1 | 2 | 3 | 4;
+            nextRoundInNews = 1;
+            nextOrder = [...order].sort(() => Math.random() - 0.5);
+            news = generateNews(nextNewsIndex);
+            newsSignalTs = Date.now();
+            nextActive = nextOrder[0] ?? null;
+          }
         }
       }
-      // Reset AP, currency-earned-this-turn for ALL players, обнулити глобальний лічильник замін для новоактивного гравця
+
+      if (currentTurnInRound <= playersCount && nextTurnInRound > playersCount) {
+        // Ми тільки що перейшли на хід ботів
+        nextRoundInNews = currentRoundInNews;
+      }
+
       const players = { ...cur.players };
       for (const pid of Object.keys(players)) {
         const p = players[pid];
@@ -665,13 +696,16 @@ export function KpkProvider({ children }: { children: ReactNode }) {
           currency_earned_this_turn: 0,
         };
       }
+
       const ts = Date.now();
       return {
         ...cur,
         status: nextStatus,
-        round: nextRound,
-        turn: resetTurn,
-        active_player_id: awaitingAck ? cur.active_player_id : nextActive,
+        newsIndex: nextNewsIndex,
+        roundInNews: nextRoundInNews,
+        turnInRound: nextTurn,
+        player_order: nextOrder,
+        active_player_id: nextActive,
         turn_seconds: TURN_DURATION_SECONDS,
         turn_running: false,
         news,
@@ -680,8 +714,13 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         players,
         events: { ...cur.events, [`e_${ts}_turn`]: {
           ts, player_id: cur.active_player_id ?? "", nickname: players[cur.active_player_id ?? ""]?.nickname ?? "—",
-          type: boundary ? "news_round" : "turn_end",
-          payload: { reason: boundary ? (awaitingAck ? "Кінець перших новин" : `Раунд ${nextRound}: новини зони`) : "Кінець ходу", reward: 0 },
+          type: currentTurnInRound > playersCount ? "news_round" : "turn_end",
+          payload: {
+            reason: currentTurnInRound > playersCount
+              ? (awaitingAck ? "Кінець перших новин" : `Раунд ${nextRoundInNews}: новини зони`)
+              : "Кінець ходу",
+            reward: 0,
+          },
         }},
       };
     }).then(() => sfx.confirm());
@@ -765,8 +804,10 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         ...cur,
         status: "active",
         active_player_id: order[0],
-        turn: 1,
-        round: 1,
+        newsIndex: 1,
+        roundInNews: 1,
+        turnInRound: 1,
+        player_order: order,
         news: generateNews(1),
         session_started_at: cur.session_started_at ?? Date.now(),
         news_signal_ts: Date.now(),
@@ -822,7 +863,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     ap, global_replacements_left, unlockedClasses,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade, cancelUpgrade,
-    news, history,
+    newsIndex, roundInNews, turnInRound,
+    round, turn, news, history,
     login: (u) => { createGame(u); },
     createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players,
     sessionPlayers, activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
