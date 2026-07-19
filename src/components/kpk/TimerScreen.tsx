@@ -14,20 +14,25 @@ const BOTS = [
 
 export function TimerScreen() {
   const {
-    user, round, turn, sessionSeconds, sessionStartedAt, sessionTimerRunning,
+    user, newsIndex, roundInNews, turnInRound, sessionSeconds, sessionStartedAt, sessionTimerRunning,
     turnSeconds, turnRunning,
     toggleTurn, toggleSessionTimer, nextPlayer,
-    isMyTurn, isHost, activePlayerId, sessionPlayers,
+    isMyTurn, isHost, activePlayerId, players,
   } = useKpk();
   const [openBot, setOpenBot] = useState<string | null>(null);
   const ending = turnSeconds <= 30;
   const canAdvance = isMyTurn || isHost;
-  const activePlayer = sessionPlayers.find((p) => p.id === activePlayerId);
+  const activePlayer = players.find((p) => p.id === activePlayerId);
   const activeName = activePlayer?.nickname ?? user?.nickname ?? "—";
 
-  const playersCount = Math.max(1, sessionPlayers?.length ?? 1);
-  const totalTurns = playersCount * 4;
-  const isBotsTurn = (turn % 4) === 0;
+  const playersCount = Math.max(1, players.length || 1);
+  const isBotsTurn = turnInRound === playersCount + 1;
+  const currentPlayerIndex = players.findIndex((p) => p.id === activePlayerId);
+  const nextTurnLabel = turnInRound < playersCount
+    ? players[(currentPlayerIndex >= 0 ? currentPlayerIndex + 1 : 0) % playersCount]?.nickname ?? "—"
+    : turnInRound === playersCount
+      ? "Боти/Мутанти"
+      : players[0]?.nickname ?? "—";
 
   return (
     <ScreenShell title="Таймер">
@@ -35,7 +40,7 @@ export function TimerScreen() {
 
         <AnimatedItem index={0}>
           <div className="text-center hud-mono text-xs text-[color:var(--muted-foreground)]">
-            Новина {round} / Хід {turn} з {totalTurns}
+            Новина {newsIndex} з 4 · Раунд {roundInNews} з 4 · Хід {turnInRound} з {playersCount + 1}
           </div>
         </AnimatedItem>
 
@@ -83,6 +88,9 @@ export function TimerScreen() {
                   )}
                 </>
               )}
+              <div className="mt-2 hud-mono text-[0.7rem] text-[color:var(--muted-foreground)]">
+                Наступний хід: {nextTurnLabel}
+              </div>
             </h3>
             <div className={`hud-mono text-7xl sm:text-8xl tabular-nums tracking-wider my-4 ${ending ? "text-[color:var(--hud-red)]" : "text-[color:var(--hud-amber-glow)]"}`}>
               <span className={ending ? "hud-pulse-red" : "hud-timer-glow"}>

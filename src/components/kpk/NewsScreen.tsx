@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { useKpk } from "@/lib/kpkStore";
-import { TURNS_PER_NEWS_ROUND } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
@@ -33,21 +32,29 @@ const BOTS = [
 ];
 
 export function NewsScreen() {
-  const { round, news } = useKpk();
-  const { turn, sessionPlayers } = useKpk();
+  const { newsIndex, roundInNews, turnInRound, news, players } = useKpk();
   const [botMenuOpen, setBotMenuOpen] = useState(false);
-  const playersCount = Math.max(1, sessionPlayers?.length ?? 1);
-  const totalTurns = playersCount * TURNS_PER_NEWS_ROUND;
-  const isBotsTurn = (turn % TURNS_PER_NEWS_ROUND) === 0;
+  const playersCount = Math.max(1, players.length || 1);
+  const isBotsTurn = turnInRound === playersCount + 1;
 
   return (
     <ScreenShell title="Новини">
       <div className="w-full">
-        <AnimatedItem index={0} className="mb-4 flex items-center justify-between">
+        <AnimatedItem index={0} className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1">
             НОВИНИ ЗОНИ
           </h2>
-          <span className="hud-mono text-sm text-[color:var(--hud-cyan)]">Раунд {round}</span>
+          <div className="flex flex-col items-end gap-1 text-right">
+            <span className="hud-mono text-sm text-[color:var(--hud-cyan)]">
+              Новина {newsIndex} з 4 · Раунд {roundInNews} з 4
+            </span>
+            <span className="hud-label text-[0.62rem] text-[color:var(--muted-foreground)]">
+              Раундів до наступної новини: {4 - roundInNews + 1}
+            </span>
+            <span className="hud-label text-[0.62rem] text-[color:var(--muted-foreground)]">
+              Ходів до кінця раунду: {playersCount + 1 - turnInRound}
+            </span>
+          </div>
         </AnimatedItem>
 
         <AnimatedItem index={1} className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-5 space-y-3 min-h-[200px]">
