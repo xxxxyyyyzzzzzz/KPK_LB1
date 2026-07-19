@@ -279,34 +279,44 @@ function BurgerMenu() {
             </div>
             <div className="mt-4 overflow-y-auto hud-scroll pr-1">
               {missionPoolGroups.map(({ cls, byLevel }) => (
-                <div key={cls} className="mb-4 border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-1)]/70 p-3">
-                  <div className="hud-label text-[0.6rem] text-[color:var(--hud-amber)]">{cls}</div>
-                  {[1, 2, 3].map((level) => {
-                    const items = byLevel[level as 1 | 2 | 3];
-                    if (!items.length) return null;
-                    return (
-                      <div key={`${cls}-${level}`} className="mt-3">
-                        <div className="hud-mono text-[0.7rem] text-[color:var(--hud-cyan)]">Рівень {level}</div>
-                        <div className="mt-2 flex flex-col gap-2">
-                          {items.map((mission) => (
-                            <div key={mission.id} className="border border-[color:var(--hud-amber)]/15 bg-[color:var(--surface-3)]/60 p-2">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <div className="hud-mono text-[0.72rem] text-[color:var(--hud-amber)]">{mission.name}</div>
-                                  <div className="mt-1 text-[0.6rem] text-[color:var(--muted-foreground)]">{mission.description}</div>
-                                </div>
-                                <div className="hud-mono shrink-0 text-right text-[0.62rem] text-[color:var(--muted-foreground)]">
-                                  <div>Ціль: {mission.target}</div>
-                                  <div>Нагорода: {mission.mainReward}</div>
+                <details key={cls} className="mb-4 border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-1)]/70">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="hud-label text-[0.6rem] text-[color:var(--hud-amber)]">{cls}</div>
+                      <div className="hud-mono text-[0.6rem] text-[color:var(--muted-foreground)]">
+                        {Object.values(byLevel).flat().length} місій
+                      </div>
+                    </div>
+                    <div className="hud-mono text-[0.6rem] text-[color:var(--hud-cyan)]">▾</div>
+                  </summary>
+                  <div className="px-3 pb-3">
+                    {[1, 2, 3].map((level) => {
+                      const items = byLevel[level as 1 | 2 | 3];
+                      if (!items.length) return null;
+                      return (
+                        <div key={`${cls}-${level}`} className="mt-3">
+                          <div className="hud-mono text-[0.7rem] text-[color:var(--hud-cyan)]">Рівень {level}</div>
+                          <div className="mt-2 flex flex-col gap-2">
+                            {items.map((mission) => (
+                              <div key={mission.id} className="border border-[color:var(--hud-amber)]/15 bg-[color:var(--surface-3)]/60 p-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <div className="hud-mono text-[0.72rem] text-[color:var(--hud-amber)]">{mission.name}</div>
+                                    <div className="mt-1 text-[0.6rem] text-[color:var(--muted-foreground)]">{mission.description}</div>
+                                  </div>
+                                  <div className="hud-mono shrink-0 text-right text-[0.62rem] text-[color:var(--muted-foreground)]">
+                                    <div>Ціль: {mission.target}</div>
+                                    <div>Нагорода: {mission.mainReward}</div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                </details>
               ))}
             </div>
           </div>

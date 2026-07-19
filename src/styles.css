@@ -87,6 +87,11 @@
   --hud-cyan: #6cf0ff;
   --hud-red: #ff5a4a;
   --hud-green: #6cff9c;
+  --hud-orange: #ff8c42;
+  --hud-crimson: #b8241a;
+  --hud-blue: #66adff;
+  --hud-violet: #c77dff;
+  --hud-teal: #4fd1c5;
   --hud-grid: rgba(245, 184, 64, 0.08);
   --surface-1: #0d1117;
   --surface-2: #141a22;
