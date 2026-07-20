@@ -512,6 +512,23 @@ a[role="button"] {
   50% { filter: drop-shadow(0 0 7px currentColor) drop-shadow(0 0 3px currentColor); }
 }
 
+@keyframes hud-wheel-breathing {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.98);
+    filter: blur(0px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+    filter: blur(1px);
+  }
+}
+
+.hud-wheel-breathing {
+  animation: hud-wheel-breathing 5.2s ease-in-out infinite;
+}
+
 @keyframes hud-line-flow {
   to { stroke-dashoffset: -16; }
 }
