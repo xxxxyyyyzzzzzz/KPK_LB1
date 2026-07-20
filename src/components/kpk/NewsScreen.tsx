@@ -46,7 +46,7 @@ const ENTITY_COLORS: Record<string, string> = {
 };
 
 export function NewsScreen() {
-  const { newsIndex, roundInNews, turnInRound, news, players, cheatGenerateNews, isTestSession } = useKpk();
+  const { newsIndex, roundInNews, turnInRound, news, players, cheatGenerateNews, isTestSession, useLegacyNewsSpawn } = useKpk();
   const [botMenuOpen, setBotMenuOpen] = useState(false);
   const [previewNews, setPreviewNews] = useState<NewsEntry[] | null>(null);
   const [previewRound, setPreviewRound] = useState<1 | 2 | 3 | 4 | null>(null);
@@ -183,7 +183,7 @@ export function NewsScreen() {
                           sfx.click();
                           const nextRound = round as 1 | 2 | 3 | 4;
                           setPreviewRound(nextRound);
-                          setPreviewNews(generateNews(nextRound));
+                          setPreviewNews(generateNews(nextRound, useLegacyNewsSpawn));
                         }}
                         className="hud-btn hud-btn-ghost"
                       >

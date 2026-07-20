@@ -90,6 +90,8 @@ function BurgerMenu() {
     logout,
     debugBypassTurnLock,
     setDebugBypassTurnLock,
+    useLegacyNewsSpawn,
+    setUseLegacyNewsSpawn,
     isTestSession,
     allMissions,
     cheatGenerateNews,
@@ -227,6 +229,14 @@ function BurgerMenu() {
                     aria-label={debugBypassTurnLock ? "Вимкнути обхід обмеження ходу" : "Увімкнути обхід обмеження ходу"}
                   >
                     {debugBypassTurnLock ? "☑ Дозволити поза чергою" : "☐ Дозволити поза чергою"}
+                  </button>
+                  <button
+                    onClick={() => { sfx.click(); setUseLegacyNewsSpawn(!useLegacyNewsSpawn); }}
+                    className="hud-btn hud-btn-ghost mt-2 w-full"
+                    aria-pressed={useLegacyNewsSpawn}
+                    aria-label={useLegacyNewsSpawn ? "Вимкнути старий спавн новин" : "Увімкнути старий спавн новин"}
+                  >
+                    {useLegacyNewsSpawn ? "☑ Старий спавн новин" : "☐ Старий спавн новин"}
                   </button>
                   <button
                     onClick={() => { sfx.click(); setMissionPoolOpen(true); }}

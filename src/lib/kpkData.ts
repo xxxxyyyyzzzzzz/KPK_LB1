@@ -284,7 +284,7 @@ export const UPGRADES: Record<string, UpgradeDef> = {
 
 // ───────── NEWS (5) ─────────
 type NewsRule = { quantity?: string; zone?: string; chance: number };
-export const NEWS_RULES: Record<1 | 2 | 3 | 4, Record<string, NewsRule>> = {
+export const OLD_NEWS_RULES: Record<1 | 2 | 3 | 4, Record<string, NewsRule>> = {
   1: {
     "Мутанти 1": { quantity: "8-16", zone: "5x5", chance: 100 },
     "Мутанти 2": { quantity: "4-8", zone: "3x3", chance: 100 },
@@ -335,6 +335,57 @@ export const NEWS_RULES: Record<1 | 2 | 3 | 4, Record<string, NewsRule>> = {
   },
 };
 
+export const NEW_NEWS_RULES: Record<1 | 2 | 3 | 4, Record<string, NewsRule>> = {
+  1: {
+    "Мутанти 1": { quantity: "8-12", zone: "5x5", chance: 100 },
+    "Мутанти 2": { quantity: "4-8", zone: "3x3", chance: 100 },
+    "Мутанти 3": { quantity: "1-2", zone: "1x1", chance: 66 },
+    "Нанокс": { quantity: "2-4", zone: "any", chance: 25 },
+    "Воля": { quantity: "2-4", zone: "any", chance: 50 },
+    "Обовʼязок": { quantity: "2-4", zone: "any", chance: 50 },
+    "Псі-випромінювач": { quantity: "1", zone: "3x3", chance: 33 },
+    "Аномалії": { quantity: "1-3", zone: "any", chance: 100 },
+    "Викид": { chance: 50 },
+    "Транспорт нанокс": { quantity: "0", zone: "any", chance: 0 },
+  },
+  2: {
+    "Мутанти 1": { quantity: "4-12", zone: "5x5", chance: 100 },
+    "Мутанти 2": { quantity: "4-8", zone: "3x3", chance: 100 },
+    "Мутанти 3": { quantity: "1-4", zone: "3x3", chance: 100 },
+    "Нанокс": { quantity: "2-4", zone: "any", chance: 50 },
+    "Воля": { quantity: "2-4", zone: "any", chance: 75 },
+    "Обовʼязок": { quantity: "2-4", zone: "any", chance: 75 },
+    "Псі-випромінювач": { quantity: "1", zone: "3x3", chance: 50 },
+    "Аномалії": { quantity: "2-4", zone: "any", chance: 100 },
+    "Викид": { chance: 50 },
+    "Транспорт нанокс": { quantity: "1-2", zone: "any", chance: 33 },
+  },
+  3: {
+    "Мутанти 1": { quantity: "4-8", zone: "5x5", chance: 100 },
+    "Мутанти 2": { quantity: "8-12", zone: "5x5", chance: 100 },
+    "Мутанти 3": { quantity: "1-4", zone: "3x3", chance: 100 },
+    "Нанокс": { quantity: "2-4", zone: "any", chance: 50 },
+    "Воля": { quantity: "2-5", zone: "any", chance: 75 },
+    "Обовʼязок": { quantity: "2-5", zone: "any", chance: 75 },
+    "Псі-випромінювач": { quantity: "2", zone: "3x3", chance: 50 },
+    "Аномалії": { quantity: "2-4", zone: "any", chance: 100 },
+    "Викид": { chance: 50 },
+    "Транспорт нанокс": { quantity: "1-2", zone: "any", chance: 33 },
+  },
+  4: {
+    "Мутанти 1": { quantity: "0", zone: "5x5", chance: 0 },
+    "Мутанти 2": { quantity: "8-12", zone: "5x5", chance: 100 },
+    "Мутанти 3": { quantity: "2-4", zone: "3x3", chance: 100 },
+    "Нанокс": { quantity: "4-6", zone: "any", chance: 100 },
+    "Воля": { quantity: "2-3", zone: "any", chance: 40 },
+    "Обовʼязок": { quantity: "2-3", zone: "any", chance: 40 },
+    "Псі-випромінювач": { quantity: "1", zone: "3x3", chance: 50 },
+    "Аномалії": { quantity: "3-6", zone: "any", chance: 100 },
+    "Викид": { chance: 50 },
+    "Транспорт нанокс": { quantity: "1-3", zone: "any", chance: 66 },
+  },
+};
+
 export type NewsEntry = { entity: string; count: number; zone?: string; note?: string; coords?: string[] };
 
 function rollQty(q: string): number {
@@ -364,10 +415,11 @@ function parseA1Coord(coord: string): { x: number; y: number } {
   return { x: x - 1, y: row - 1 };
 }
 
-export function generateNews(round: 1 | 2 | 3 | 4): NewsEntry[] {
-  const rules = NEWS_RULES[round];
+export function generateNews(round: 1 | 2 | 3 | 4, useLegacyNewsSpawn = false): NewsEntry[] {
+  const rules = useLegacyNewsSpawn ? OLD_NEWS_RULES[round] : NEW_NEWS_RULES[round];
   const out: NewsEntry[] = [];
   const occupiedCoords = new Set<string>();
+  const entitySpawnCoords: Record<string, Array<[number, number]>> = {};
   for (const [entity, rule] of Object.entries(rules)) {
     const hit = Math.random() * 100 < rule.chance;
     if (!hit) continue;
@@ -375,12 +427,23 @@ export function generateNews(round: 1 | 2 | 3 | 4): NewsEntry[] {
     if (!rule.quantity) continue;
     const q = rollQty(rule.quantity);
     if (q <= 0) continue;
+    const isMirrored = entity === "Мутанти 1" || entity === "Мутанти 2" || (!useLegacyNewsSpawn && entity === "Аномалії");
+    const applySpacing = useLegacyNewsSpawn ? true : entity !== "Аномалії";
+    const currentEntityCoords = entitySpawnCoords[entity] ?? [];
+    const shouldCluster = !useLegacyNewsSpawn && ["Нанокс", "Воля", "Обовʼязок", "Псі-випромінювач", "Транспорт нанокс"].includes(entity);
+    const anchorCoords = shouldCluster
+      ? (entity === "Транспорт нанокс" ? entitySpawnCoords["Нанокс"] : currentEntityCoords)
+      : undefined;
     const coords = generateEntityCoords(
       q,
       rule.zone as NewsZone,
       occupiedCoords,
-      entity === "Мутанти 1" || entity === "Мутанти 2",
+      isMirrored,
+      applySpacing,
+      anchorCoords,
+      currentEntityCoords,
     );
+    entitySpawnCoords[entity] = currentEntityCoords;
     for (const coord of coords) {
       const { x, y } = parseA1Coord(coord);
       occupiedCoords.add(`${x},${y}`);

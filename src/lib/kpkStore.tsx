@@ -118,6 +118,8 @@ type KpkState = {
   confirmMissionSelection: (slotIndex: number, missionId: number) => Promise<boolean>;
   debugBypassTurnLock: boolean;
   setDebugBypassTurnLock: (v: boolean) => void;
+  useLegacyNewsSpawn: boolean;
+  setUseLegacyNewsSpawn: (v: boolean) => void;
   isTestSession: boolean;
   cheatGenerateNews: () => void;
   cheatAddScore: (playerId: string, level: 1 | 2 | 3) => void;
@@ -158,6 +160,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const [debugBypassTurnLock, setDebugBypassTurnLock] = useState(false);
 
   const session = useSession(roomCode);
+  const useLegacyNewsSpawn = session?.use_legacy_news_spawn ?? false;
   const isTestSession = !!session?.is_test;
   const me: PlayerState | null = session && playerId ? session.players?.[playerId] ?? null : null;
 
@@ -198,6 +201,11 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     }
     setSessionTimerRunning((current) => !current);
   }, [sessionStartedAt]);
+
+  const setUseLegacyNewsSpawn = useCallback((value: boolean) => {
+    if (!roomCode) return;
+    txSession(roomCode, (cur) => cur ? ({ ...cur, use_legacy_news_spawn: value }) : undefined);
+  }, [roomCode]);
 
   // ── TURN TIMER: кожен клієнт рахує локально від turn_end_at, хост для цього не потрібен ──
   const isHost = !!session && !!playerId && session.host_id === playerId;
@@ -699,7 +707,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
               const rotateStart = Math.floor(Math.random() * order.length);
               nextOrder = [...order.slice(rotateStart), ...order.slice(0, rotateStart)];
             }
-            news = generateNews(nextNewsIndex);
+            news = generateNews(nextNewsIndex, cur.use_legacy_news_spawn ?? false);
             newsSignalTs = Date.now();
             nextActive = nextOrder[0] ?? null;
           }
@@ -761,7 +769,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     txSession(roomCode, (cur) => {
       if (!cur || !cur.is_test) return undefined;
       const currentNewsIndex = (cur.newsIndex ?? cur.round ?? 1) as 1 | 2 | 3 | 4;
-      return { ...cur, news: generateNews(currentNewsIndex) };
+      return { ...cur, news: generateNews(currentNewsIndex, cur.use_legacy_news_spawn ?? false) };
     }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
   }, [roomCode, isTestSession]);
 
@@ -868,7 +876,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         roundInNews: 1,
         turnInRound: 1,
         player_order: order,
-        news: generateNews(1),
+        news: generateNews(1, cur.use_legacy_news_spawn ?? false),
         session_started_at: cur.session_started_at ?? Date.now(),
         news_signal_ts: Date.now(),
         awaiting_news_ack: false,
@@ -993,6 +1001,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     cancelBrowse,
     confirmMissionSelection,
     debugBypassTurnLock, setDebugBypassTurnLock,
+    useLegacyNewsSpawn, setUseLegacyNewsSpawn,
     isTestSession, cheatGenerateNews, cheatAddScore,
   }), [
     screen, prevScreen, user, totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
@@ -1004,7 +1013,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, startReplaceConfirm, startBrowseClass, selectBrowseClass, startBrowseSameClass, backToClassBrowse, cancelBrowse, confirmMissionSelection,
-    debugBypassTurnLock, isTestSession, cheatGenerateNews, cheatAddScore,
+    debugBypassTurnLock, isTestSession, useLegacyNewsSpawn, setUseLegacyNewsSpawn, cheatGenerateNews, cheatAddScore,
   ]);
 
   return <KpkContext.Provider value={value}>{children}</KpkContext.Provider>;

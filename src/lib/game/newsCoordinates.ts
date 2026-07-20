@@ -2,6 +2,9 @@ export type NewsZone = "5x5" | "3x3" | "1x1" | "any" | undefined;
 
 const GRID_SIZE = 25;
 const SECTOR_SIZE = 5;
+const CLUSTER_NEAR_CHANCE = 75;
+const CLUSTER_NEAR_DISTANCE_MIN = 4;
+const CLUSTER_NEAR_DISTANCE_MAX = 6;
 
 const EXCLUDED_SECTORS = new Set(["1,1", "5,1", "1,5", "5,5"]);
 
@@ -66,6 +69,20 @@ function getZoneCoords(zone: NewsZone): Array<[number, number]> {
   return ZONE_SECTORS[zone].flatMap(([sectorCol, sectorRow]) => getCoordsForSector(sectorCol, sectorRow));
 }
 
+function removeCellFromPool(
+  pool: Array<[number, number]>,
+  poolSet: Set<string>,
+  x: number,
+  y: number,
+): void {
+  const key = toCoordKey(x, y);
+  poolSet.delete(key);
+  const index = pool.findIndex(([px, py]) => px === x && py === y);
+  if (index >= 0) {
+    pool.splice(index, 1);
+  }
+}
+
 function removeNearbyCells(
   pool: Array<[number, number]>,
   poolSet: Set<string>,
@@ -76,12 +93,7 @@ function removeNearbyCells(
     for (let dy = -2; dy <= 2; dy += 1) {
       const nx = Math.min(GRID_SIZE - 1, Math.max(0, x + dx));
       const ny = Math.min(GRID_SIZE - 1, Math.max(0, y + dy));
-      const key = toCoordKey(nx, ny);
-      poolSet.delete(key);
-      const index = pool.findIndex(([px, py]) => px === nx && py === ny);
-      if (index >= 0) {
-        pool.splice(index, 1);
-      }
+      removeCellFromPool(pool, poolSet, nx, ny);
     }
   }
 }
@@ -91,6 +103,9 @@ export function generateEntityCoords(
   zone: NewsZone,
   occupiedCoords: Set<string>,
   isMirrored: boolean,
+  applySpacing = true,
+  clusterAnchorCoords?: Array<[number, number]>,
+  entityPlacedCoords: Array<[number, number]> = [],
 ): string[] {
   const pool = getZoneCoords(zone).filter(([x, y]) => !occupiedCoords.has(toCoordKey(x, y)));
   const poolSet = new Set(pool.map(([x, y]) => toCoordKey(x, y)));
@@ -129,7 +144,11 @@ export function generateEntityCoords(
       if (isValidGroup) {
         result.push(...group);
         for (const [x, y] of group) {
-          removeNearbyCells(pool, poolSet, x, y);
+          if (applySpacing) {
+            removeNearbyCells(pool, poolSet, x, y);
+          } else {
+            removeCellFromPool(pool, poolSet, x, y);
+          }
         }
       }
     }
@@ -137,17 +156,45 @@ export function generateEntityCoords(
     return result.slice(0, quantity).map(([x, y]) => toA1(x, y));
   }
 
-  const shuffledPool = [...pool];
-  for (let i = shuffledPool.length - 1; i > 0; i -= 1) {
-    const swapIndex = Math.floor(Math.random() * (i + 1));
-    [shuffledPool[i], shuffledPool[swapIndex]] = [shuffledPool[swapIndex], shuffledPool[i]];
-  }
-
   const result: Array<[number, number]> = [];
-  for (const [x, y] of shuffledPool) {
-    if (result.length >= quantity) break;
-    result.push([x, y]);
-    removeNearbyCells(pool, poolSet, x, y);
+  const shouldCluster = Boolean(clusterAnchorCoords && clusterAnchorCoords.length > 0);
+
+  for (let index = 0; index < quantity; index += 1) {
+    let selectedPoint: [number, number] | null = null;
+
+    if (index > 0 && shouldCluster) {
+      const roll = Math.random() * 100;
+      if (roll < CLUSTER_NEAR_CHANCE) {
+        const anchor = clusterAnchorCoords[Math.floor(Math.random() * clusterAnchorCoords.length)];
+        if (anchor) {
+          const candidates = pool.filter(([x, y]) => {
+            const dx = Math.abs(anchor[0] - x);
+            const dy = Math.abs(anchor[1] - y);
+            const distance = Math.max(dx, dy);
+            return distance >= CLUSTER_NEAR_DISTANCE_MIN && distance <= CLUSTER_NEAR_DISTANCE_MAX;
+          });
+          if (candidates.length > 0) {
+            selectedPoint = candidates[Math.floor(Math.random() * candidates.length)] ?? null;
+          }
+        }
+      }
+    }
+
+    if (!selectedPoint) {
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      selectedPoint = pool[randomIndex] ?? null;
+    }
+
+    if (!selectedPoint) break;
+
+    result.push(selectedPoint);
+    entityPlacedCoords.push(selectedPoint);
+
+    if (applySpacing) {
+      removeNearbyCells(pool, poolSet, selectedPoint[0], selectedPoint[1]);
+    } else {
+      removeCellFromPool(pool, poolSet, selectedPoint[0], selectedPoint[1]);
+    }
   }
 
   return result.map(([x, y]) => toA1(x, y));

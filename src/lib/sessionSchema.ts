@@ -58,6 +58,7 @@ export type SessionState = {
   host_id: string;
   created_at: number;
   is_test?: boolean;
+  use_legacy_news_spawn?: boolean;
   newsIndex: 1 | 2 | 3 | 4;
   roundInNews: 1 | 2 | 3 | 4;
   turnInRound: number; // 1..(playersCount + 1)
@@ -130,6 +131,7 @@ export function makeSession(code: string, hostId: string, opts?: { isTest?: bool
     host_id: hostId,
     created_at: Date.now(),
     is_test: !!opts?.isTest,
+    use_legacy_news_spawn: false,
     newsIndex: 1,
     roundInNews: 1,
     turnInRound: 1,
