@@ -4,6 +4,7 @@ import { useKpk } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { generateNews, type NewsEntry } from "@/lib/kpkData";
+import { MAP_WALLS } from "@/lib/game/mapWalls";
 
 const BOTS = [
   {
@@ -33,6 +34,7 @@ const BOTS = [
 ];
 
 const GRID_SIZE = 25;
+const SECTOR_SIZE = 5;
 const ENTITY_COLORS: Record<string, string> = {
   "Мутанти 1": "var(--hud-red)",
   "Мутанти 2": "var(--hud-orange)",
@@ -129,29 +131,8 @@ export function NewsScreen() {
           {isTestSession && (
             <div className="mt-4 border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-1)]/60 p-3">
               <div className="hud-label mb-2 text-[0.6rem] text-[color:var(--hud-amber)]">// КАРТА СПАВНУ</div>
-              <div className="overflow-x-auto">
-                <div
-                  className="grid gap-[1px] border border-[color:var(--hud-amber)]/30 bg-[color:var(--hud-amber)]/15 p-[1px]"
-                  style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(16px, 18px))` }}
-                >
-                  {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, idx) => {
-                    const row = Math.floor(idx / GRID_SIZE);
-                    const col = idx % GRID_SIZE;
-                    const coord = `${String.fromCharCode(65 + col)}${row + 1}`;
-                    const assignment = spawnMapCells.get(coord.toUpperCase());
-                    return (
-                      <div
-                        key={coord}
-                        className="h-[16px] w-[16px] border border-[color:var(--hud-amber)]/10 sm:h-[18px] sm:w-[18px]"
-                        style={{
-                          backgroundColor: assignment ? assignment.color : "rgba(255,255,255,0.03)",
-                          boxShadow: assignment ? `inset 0 0 0 1px ${assignment.color}` : undefined,
-                        }}
-                        title={assignment ? `${coord}: ${assignment.entity}` : coord}
-                      />
-                    );
-                  })}
-                </div>
+              <div className="mx-auto max-w-[520px]">
+                <SpawnMapSvg spawnMapCells={spawnMapCells} />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {Object.entries(ENTITY_COLORS).map(([entity, color]) => (
@@ -250,5 +231,84 @@ export function NewsScreen() {
         </AnimatedItem>
       </div>
     </ScreenShell>
+  );
+}
+
+function SpawnMapSvg({ spawnMapCells }: { spawnMapCells: Map<string, { entity: string; color: string }> }) {
+  const CELL = 20;
+  const SIZE = GRID_SIZE * CELL;
+  const sectorsPerSide = GRID_SIZE / SECTOR_SIZE;
+
+  return (
+    <svg
+      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      className="w-full h-auto"
+      role="img"
+      aria-label="Карта спавну 25×25 зі стінами та зонами"
+    >
+      {/* Легка підсвітка зон 5×5 у шаховому порядку */}
+      {Array.from({ length: sectorsPerSide }, (_, sr) =>
+        Array.from({ length: sectorsPerSide }, (_, sc) => {
+          if ((sr + sc) % 2 !== 0) return null;
+          return (
+            <rect
+              key={`sector-${sr}-${sc}`}
+              x={sc * SECTOR_SIZE * CELL}
+              y={sr * SECTOR_SIZE * CELL}
+              width={SECTOR_SIZE * CELL}
+              height={SECTOR_SIZE * CELL}
+              fill="var(--hud-amber)"
+              opacity={0.06}
+            />
+          );
+        }),
+      )}
+
+      {/* Тонка сітка клітинок */}
+      {Array.from({ length: GRID_SIZE + 1 }, (_, i) => (
+        <line key={`gv-${i}`} x1={i * CELL} y1={0} x2={i * CELL} y2={SIZE} stroke="var(--hud-amber)" strokeOpacity={0.12} strokeWidth={1} />
+      ))}
+      {Array.from({ length: GRID_SIZE + 1 }, (_, i) => (
+        <line key={`gh-${i}`} x1={0} y1={i * CELL} x2={SIZE} y2={i * CELL} stroke="var(--hud-amber)" strokeOpacity={0.12} strokeWidth={1} />
+      ))}
+
+      {/* Межі зон 5×5 — трохи виразніші за звичайну сітку */}
+      {Array.from({ length: sectorsPerSide + 1 }, (_, i) => (
+        <line key={`sv-${i}`} x1={i * SECTOR_SIZE * CELL} y1={0} x2={i * SECTOR_SIZE * CELL} y2={SIZE} stroke="var(--hud-amber)" strokeOpacity={0.28} strokeWidth={1} />
+      ))}
+      {Array.from({ length: sectorsPerSide + 1 }, (_, i) => (
+        <line key={`sh-${i}`} x1={0} y1={i * SECTOR_SIZE * CELL} x2={SIZE} y2={i * SECTOR_SIZE * CELL} stroke="var(--hud-amber)" strokeOpacity={0.28} strokeWidth={1} />
+      ))}
+
+      {/* Мітки спавну сутностей */}
+      {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, idx) => {
+        const row = Math.floor(idx / GRID_SIZE);
+        const col = idx % GRID_SIZE;
+        const coord = `${String.fromCharCode(65 + col)}${row + 1}`;
+        const assignment = spawnMapCells.get(coord.toUpperCase());
+        if (!assignment) return null;
+        return (
+          <rect
+            key={`m-${coord}`}
+            x={col * CELL + 2}
+            y={row * CELL + 2}
+            width={CELL - 4}
+            height={CELL - 4}
+            fill={assignment.color}
+            opacity={0.85}
+          >
+            <title>{`${coord}: ${assignment.entity}`}</title>
+          </rect>
+        );
+      })}
+
+      {/* Стіни з файлу карти (товщені лінії) */}
+      {MAP_WALLS.hWalls.map(([r, c], i) => (
+        <line key={`hw-${i}`} x1={c * CELL} y1={r * CELL} x2={(c + 1) * CELL} y2={r * CELL} stroke="var(--hud-red)" strokeWidth={3} strokeLinecap="round" />
+      ))}
+      {MAP_WALLS.vWalls.map(([r, c], i) => (
+        <line key={`vw-${i}`} x1={c * CELL} y1={r * CELL} x2={c * CELL} y2={(r + 1) * CELL} stroke="var(--hud-red)" strokeWidth={3} strokeLinecap="round" />
+      ))}
+    </svg>
   );
 }
