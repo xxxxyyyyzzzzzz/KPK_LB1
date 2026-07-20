@@ -441,9 +441,9 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
   if (typeof document === "undefined" || !document.body) return null;
   try {
     return createPortal(
-      <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6" onClick={onCancel}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6" onClick={onCancel}>
       <div
-        className="mx-auto flex h-full max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col overflow-hidden border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:p-8"
+        className="mx-auto flex max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col overflow-y-auto border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-1)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:p-8"
         onClick={(e) => e.stopPropagation()}
         style={{
           transform: mounted ? "translate(0,0) scale(1)" : initialTransform,

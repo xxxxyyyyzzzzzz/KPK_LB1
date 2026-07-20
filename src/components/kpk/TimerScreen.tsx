@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
+import { EmptySlotsWarningModal } from "./EmptySlotsWarningModal";
+import { CurrencyPayoutModal } from "./CurrencyPayoutModal";
 import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
 import { TOTAL_NEWS_ROUNDS } from "@/lib/kpkData";
 import { sfx } from "@/lib/sounds";
@@ -18,9 +20,11 @@ export function TimerScreen() {
     user, newsIndex, roundInNews, turnInRound, sessionSeconds, sessionStartedAt, sessionTimerRunning,
     turnSeconds, turnRunning,
     toggleTurn, toggleSessionTimer, nextPlayer,
-    isMyTurn, isHost, activePlayerId, players,
+    isMyTurn, isHost, activePlayerId, players, slots, unlockedClasses, currencyEarnedThisTurn,
   } = useKpk();
   const [openBot, setOpenBot] = useState<string | null>(null);
+  const [showEmptySlotsModal, setShowEmptySlotsModal] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const ending = turnSeconds <= 30;
   const canAdvance = isMyTurn || isHost;
   const activePlayer = players.find((p) => p.id === activePlayerId);
@@ -46,6 +50,37 @@ export function TimerScreen() {
   const advanceLabel = isBotsTurn
     ? (isLastRoundOfNews ? "Наступна новина" : "Наступний гравець")
     : (turnInRound === playersCount ? "Наступні боти" : "Наступний гравець");
+
+  const emptySlotCount = useMemo(() => {
+    return slots.filter((slot) => slot.mission_id == null && unlockedClasses[String(slot.tier) as "1" | "2" | "3"]?.includes(slot.class ?? "")).length;
+  }, [slots, unlockedClasses]);
+
+  const handleAdvance = () => {
+    if (showEmptySlotsModal) return;
+    if (emptySlotCount > 0) {
+      setShowEmptySlotsModal(true);
+      return;
+    }
+    if (currencyEarnedThisTurn > 0) {
+      setShowCurrencyModal(true);
+      return;
+    }
+    nextPlayer();
+  };
+
+  const handleForceAdvance = () => {
+    setShowEmptySlotsModal(false);
+    if (currencyEarnedThisTurn > 0) {
+      setShowCurrencyModal(true);
+      return;
+    }
+    nextPlayer();
+  };
+
+  const handleConfirmCurrency = () => {
+    setShowCurrencyModal(false);
+    nextPlayer();
+  };
 
   return (
     <ScreenShell title="Таймер">
@@ -123,7 +158,7 @@ export function TimerScreen() {
               {canAdvance && (
                 <button
                   className="hud-btn hud-btn-ghost min-w-[180px]"
-                  onClick={nextPlayer}
+                  onClick={handleAdvance}
                   aria-label={`Далі: ${advanceLabel}`}
                 >
                   {`↦ ${advanceLabel}`}{isHost && !isMyTurn ? " (хост)" : ""}
@@ -166,6 +201,20 @@ export function TimerScreen() {
         )}
 
       </div>
+      <EmptySlotsWarningModal
+        open={showEmptySlotsModal}
+        emptySlotCount={emptySlotCount}
+        onGoToMissions={() => { setShowEmptySlotsModal(false); }}
+        onForceAdvance={handleForceAdvance}
+        onClose={() => setShowEmptySlotsModal(false)}
+      />
+      <CurrencyPayoutModal
+        open={showCurrencyModal}
+        amount={currencyEarnedThisTurn}
+        onConfirm={handleConfirmCurrency}
+        onCancel={() => setShowCurrencyModal(false)}
+        onClose={() => setShowCurrencyModal(false)}
+      />
     </ScreenShell>
   );
 }
