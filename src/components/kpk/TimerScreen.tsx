@@ -52,7 +52,11 @@ export function TimerScreen() {
     : (turnInRound === playersCount ? "Наступні боти" : "Наступний гравець");
 
   const emptySlotCount = useMemo(() => {
-    return slots.filter((slot) => slot.mission_id == null && unlockedClasses[String(slot.tier) as "1" | "2" | "3"]?.includes(slot.class ?? "")).length;
+    return slots.filter((slot) => {
+      const tier = ((slot.slot_index % 3) + 1) as 1 | 2 | 3;
+      const unlockedForTier = unlockedClasses[String(tier) as "1" | "2" | "3"] ?? [];
+      return slot.mission_id == null && unlockedForTier.length > 0;
+    }).length;
   }, [slots, unlockedClasses]);
 
   const handleAdvance = () => {

@@ -73,8 +73,8 @@ export function UpgradeWheel() {
       const positions = tierNodes.length === 1
         ? [{ x: 0, y: 0, labelOffsetX: 0, labelOffsetY: 0 }]
         : tierNodes.length === 2
-          ? [{ x: -22, y: -10, labelOffsetX: -18, labelOffsetY: -10 }, { x: 22, y: 10, labelOffsetX: 18, labelOffsetY: 10 }]
-          : [{ x: -30, y: -6, labelOffsetX: -24, labelOffsetY: -10 }, { x: 0, y: 12, labelOffsetX: 0, labelOffsetY: 16 }, { x: 30, y: -6, labelOffsetX: 24, labelOffsetY: -10 }];
+          ? [{ x: -34, y: -8, labelOffsetX: -24, labelOffsetY: -10 }, { x: 34, y: 8, labelOffsetX: 24, labelOffsetY: 10 }]
+          : [{ x: -44, y: -10, labelOffsetX: -28, labelOffsetY: -10 }, { x: 0, y: 16, labelOffsetX: 0, labelOffsetY: 18 }, { x: 44, y: -10, labelOffsetX: 28, labelOffsetY: -10 }];
 
       const previousTierNodes = nodes.filter((u) => u.tier === (tier === 1 ? 0 : tier - 1));
       const purchasedPrev = previousTierNodes.filter((u) => upgrades.includes(u.id));
@@ -230,7 +230,7 @@ export function UpgradeWheel() {
           layoutId={activeNode ? activeNode.id : "hub"}
           initial={false}
           animate={{ scale: activeNode ? 1 : 1, opacity: 1 }}
-          className="hud-panel-corners-4 w-full border border-[color:var(--hud-amber)]/25 bg-[color:var(--surface-3)]/85 p-4 shadow-[0_0_20px_rgba(0,0,0,0.25)]"
+          className="hud-panel-corners-4 w-full border border-[color:var(--hud-amber)]/25 bg-[color:var(--surface-3)]/90 p-4 shadow-[0_0_20px_rgba(0,0,0,0.25)]"
         >
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           <div className="mb-3 flex items-center justify-between">
