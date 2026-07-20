@@ -8,8 +8,6 @@ const TIER_LIMITS = { 1: 3, 2: 2, 3: 1 } as const;
 
 type NodeState = "purchased" | "available" | "locked";
 
-type NodePosition = { x: number; y: number; labelOffsetX: number; labelOffsetY: number };
-
 function getNodeState(upgrades: string[], canPurchase: (id: string) => { ok: boolean; reason?: string }, u: UpgradeDef): { state: NodeState; reason?: string } {
   if (upgrades.includes(u.id)) return { state: "purchased" };
   const check = canPurchase(u.id);
@@ -21,7 +19,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function UpgradeWheel() {
-  const { user, upgrades, canPurchase, purchaseUpgrade, cancelUpgrade } = useKpk();
+  const { user, upgrades, canPurchase, purchaseUpgrade } = useKpk();
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -67,7 +65,7 @@ export function UpgradeWheel() {
     return nodesByBranch;
   }, []);
 
-  const renderNodes = (category: UpgradeCategory, color: string, nodes: UpgradeDef[]) => {
+  const renderNodes = (category: UpgradeCategory, color: string, nodes: UpgradeDef[], branchAngle: number) => {
     const tierGroups = [1, 2, 3] as const;
     return tierGroups.flatMap((tier) => {
       const tierNodes = nodes.filter((u) => u.tier === tier);
@@ -85,18 +83,20 @@ export function UpgradeWheel() {
 
       return tierNodes.map((u, idx) => {
         const pos = positions[idx] ?? positions[positions.length - 1];
-        const angle = (category === "Командування" ? 0 : 0) + (tier === 1 ? 0 : 0);
+        const angleRad = (branchAngle * Math.PI) / 180;
+        const rotatedOffsetX = pos.x * Math.cos(angleRad) - pos.y * Math.sin(angleRad);
+        const rotatedOffsetY = pos.x * Math.sin(angleRad) + pos.y * Math.cos(angleRad);
         const radius = TIER_RADIUSES[tier];
-        const baseX = Math.cos((angle * Math.PI) / 180) * radius + pos.x;
-        const baseY = Math.sin((angle * Math.PI) / 180) * radius + pos.y;
+        const baseX = Math.cos(angleRad) * radius + rotatedOffsetX;
+        const baseY = Math.sin(angleRad) * radius + rotatedOffsetY;
 
         let offsetX = 0;
         let offsetY = 0;
         if (anchorUsed && tier > 1 && tierNodes.length > 0) {
           const anchorTier = anchorNode.tier;
           const anchorRadius = TIER_RADIUSES[anchorTier];
-          const anchorX = Math.cos((angle * Math.PI) / 180) * anchorRadius;
-          const anchorY = Math.sin((angle * Math.PI) / 180) * anchorRadius;
+          const anchorX = Math.cos(angleRad) * anchorRadius;
+          const anchorY = Math.sin(angleRad) * anchorRadius;
           const towardX = anchorX - baseX;
           const towardY = anchorY - baseY;
           const mag = Math.hypot(towardX, towardY) || 1;
@@ -173,11 +173,11 @@ export function UpgradeWheel() {
   const activeNodeState = activeNode ? getNodeState(upgrades, canPurchase, activeNode) : null;
 
   return (
-    <div className="hud-panel-corners-4 relative overflow-hidden rounded-2xl border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-4 sm:p-5">
+    <div className="hud-panel-corners-4 hud-grid-bg relative overflow-hidden border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-4 sm:p-5">
       <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-      <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,rgba(245,184,64,0.08),transparent_70%)] hud-wheel-breathing" />
-      <div className="relative z-10 flex flex-col gap-4 lg:flex-row">
-        <div className="flex-1">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,184,64,0.08),transparent_70%)] hud-wheel-breathing" />
+      <div className="relative z-10 flex flex-col gap-4">
+        <div className="w-full">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <div className="hud-label text-[0.6rem]">Глобальний ліміт ярусів</div>
             <div className="hud-mono text-[0.7rem] text-[color:var(--muted-foreground)]">
@@ -218,7 +218,7 @@ export function UpgradeWheel() {
               </g>
               <g>
                 {branchData.map((branch) => {
-                  const groupNodes = renderNodes(branch.category, branch.color, branch.nodes);
+                  const groupNodes = renderNodes(branch.category, branch.color, branch.nodes, branch.branchAngle);
                   return <g key={branch.category}>{groupNodes}</g>;
                 })}
               </g>
@@ -230,8 +230,9 @@ export function UpgradeWheel() {
           layoutId={activeNode ? activeNode.id : "hub"}
           initial={false}
           animate={{ scale: activeNode ? 1 : 1, opacity: 1 }}
-          className="w-full max-w-[320px] self-stretch rounded-2xl border border-[color:var(--hud-amber)]/25 bg-[color:var(--surface-3)]/85 p-4 shadow-[0_0_20px_rgba(0,0,0,0.25)]"
+          className="hud-panel-corners-4 w-full border border-[color:var(--hud-amber)]/25 bg-[color:var(--surface-3)]/85 p-4 shadow-[0_0_20px_rgba(0,0,0,0.25)]"
         >
+          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           <div className="mb-3 flex items-center justify-between">
             <div className="hud-label text-[0.6rem]">Опис</div>
             {activeNode ? (
