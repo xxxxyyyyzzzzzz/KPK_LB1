@@ -19,7 +19,8 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function UpgradeWheel() {
-  const { user, upgrades, canPurchase, purchaseUpgrade } = useKpk();
+  const { user, canPurchase, purchaseUpgrade } = useKpk();
+  const displayUpgrades: string[] = [];
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -48,12 +49,8 @@ export function UpgradeWheel() {
 
   const tierCounts = useMemo(() => {
     const counts = { 1: 0, 2: 0, 3: 0 } as Record<1 | 2 | 3, number>;
-    for (const id of upgrades) {
-      const tier = UPGRADES[id]?.tier;
-      if (tier) counts[tier] += 1;
-    }
     return counts;
-  }, [upgrades]);
+  }, []);
 
   const branchData = useMemo(() => {
     const nodesByBranch: Array<{ category: UpgradeCategory; color: string; nodes: UpgradeDef[]; branchAngle: number }> = [];
@@ -77,7 +74,7 @@ export function UpgradeWheel() {
           : [{ x: -44, y: -10, labelOffsetX: -28, labelOffsetY: -10 }, { x: 0, y: 16, labelOffsetX: 0, labelOffsetY: 18 }, { x: 44, y: -10, labelOffsetX: 28, labelOffsetY: -10 }];
 
       const previousTierNodes = nodes.filter((u) => u.tier === (tier === 1 ? 0 : tier - 1));
-      const purchasedPrev = previousTierNodes.filter((u) => upgrades.includes(u.id));
+      const purchasedPrev = previousTierNodes.filter((u) => displayUpgrades.includes(u.id));
       const anchorNode = purchasedPrev[0];
       const anchorUsed = purchasedPrev.length === 1 && anchorNode;
 
@@ -105,7 +102,7 @@ export function UpgradeWheel() {
           offsetY = towardY * push;
         }
 
-        const nodeState = getNodeState(upgrades, canPurchase, u);
+        const nodeState = getNodeState(displayUpgrades, () => ({ ok: true }), u);
         const state = nodeState.state;
         const size = state === "available" ? 16 : 15;
         const isSelected = activeNodeId === u.id;
@@ -170,7 +167,7 @@ export function UpgradeWheel() {
 
   const hubLabel = user?.faction || "Угрупування";
   const activeNode = activeNodeId ? Object.values(UPGRADES).find((u) => u.id === activeNodeId) ?? null : null;
-  const activeNodeState = activeNode ? getNodeState(upgrades, canPurchase, activeNode) : null;
+  const activeNodeState = activeNode ? getNodeState(displayUpgrades, () => ({ ok: true }), activeNode) : null;
 
   return (
     <div className="hud-panel-corners-4 hud-grid-bg relative overflow-hidden border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-4 sm:p-5">
