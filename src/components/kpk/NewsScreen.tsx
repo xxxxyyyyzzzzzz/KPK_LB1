@@ -88,43 +88,7 @@ export function NewsScreen() {
           </div>
         </AnimatedItem>
 
-        {isTestSession && (
-          <AnimatedItem index={1} className="mb-4">
-            <div className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-4">
-              <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-              <div className="hud-label text-[0.6rem] text-[color:var(--hud-red)]">// ТЕСТОВІ КНОПКИ</div>
-              {previewRound != null && (
-                <div className="mt-2 hud-mono text-[0.65rem] text-[color:var(--hud-cyan)]">
-                  Прев'ю за правилами новини {previewRound}
-                </div>
-              )}
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  onClick={() => { sfx.click(); setPreviewRound(null); setPreviewNews(null); cheatGenerateNews(); }}
-                  className="hud-btn hud-btn-ghost"
-                >
-                  ⟳ Нова новина (тест)
-                </button>
-                {[1, 2, 3, 4].map((round) => (
-                  <button
-                    key={round}
-                    onClick={() => {
-                      sfx.click();
-                      const nextRound = round as 1 | 2 | 3 | 4;
-                      setPreviewRound(nextRound);
-                      setPreviewNews(generateNews(nextRound));
-                    }}
-                    className="hud-btn hud-btn-ghost"
-                  >
-                    Новина {round}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </AnimatedItem>
-        )}
-
-        <AnimatedItem index={2} className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-5 space-y-3 min-h-[200px]">
+        <AnimatedItem index={1} className="hud-panel-corners-4 relative border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-5 space-y-3 min-h-[200px]">
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           {displayNews.length === 0 && (
             <div className="hud-mono text-xs text-[color:var(--muted-foreground)]">// Тиша в ефірі...</div>
@@ -197,12 +161,44 @@ export function NewsScreen() {
                   </div>
                 ))}
               </div>
+              {isTestSession && (
+                <div className="mt-4 border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-1)]/60 p-3">
+                  <div className="hud-label mb-2 text-[0.6rem] text-[color:var(--hud-red)]">// ТЕСТОВІ КНОПКИ</div>
+                  {previewRound != null && (
+                    <div className="mb-2 hud-mono text-[0.65rem] text-[color:var(--hud-cyan)]">
+                      Прев'ю за правилами новини {previewRound}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => { sfx.click(); setPreviewRound(null); setPreviewNews(null); cheatGenerateNews(); }}
+                      className="hud-btn hud-btn-ghost"
+                    >
+                      ⟳ Нова новина (тест)
+                    </button>
+                    {[1, 2, 3, 4].map((round) => (
+                      <button
+                        key={round}
+                        onClick={() => {
+                          sfx.click();
+                          const nextRound = round as 1 | 2 | 3 | 4;
+                          setPreviewRound(nextRound);
+                          setPreviewNews(generateNews(nextRound));
+                        }}
+                        className="hud-btn hud-btn-ghost"
+                      >
+                        Новина {round}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </AnimatedItem>
 
         {/* Розгортуване меню з інформацією про ботів */}
-        <AnimatedItem index={3} className="mt-6">
+        <AnimatedItem index={2} className="mt-6">
           <Collapsible open={botMenuOpen} onOpenChange={setBotMenuOpen}>
           <CollapsibleTrigger asChild>
             <button
@@ -247,7 +243,7 @@ export function NewsScreen() {
           </Collapsible>
         </AnimatedItem>
 
-        <AnimatedItem index={4} className="mt-4">
+        <AnimatedItem index={3} className="mt-4">
           <p className="hud-mono text-center text-xs text-[color:var(--muted-foreground)]">
             // Ознайомтесь з новинами зони перед початком ходів
           </p>
