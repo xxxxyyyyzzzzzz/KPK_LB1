@@ -121,10 +121,13 @@ export function LoginScreen() {
   }
 
   async function submitCreate() {
-    if (!nickname.trim()) { setErr(humanError("Введіть нікнейм")); sfx.deny(); return; }
+    if (!nickname.trim() && !isTestMode) { setErr(humanError("Введіть нікнейм")); sfx.deny(); return; }
     if (!faction) { setErr(humanError("Оберіть угрупування")); sfx.deny(); return; }
     setErr(""); setBusy(true);
-    const r = await createGame({ nickname: nickname.trim().toUpperCase(), faction }, { isTest: isTestMode });
+    const finalNickname = nickname.trim()
+      ? nickname.trim().toUpperCase()
+      : "TEST_" + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const r = await createGame({ nickname: finalNickname, faction }, { isTest: isTestMode });
     setBusy(false);
     if (!r.ok) setErr(humanError(r.reason));
   }
@@ -460,14 +463,16 @@ export function LoginScreen() {
             <div className={`transition-opacity duration-150 ease-out ${panelClassName("create")}`}>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="nickname-create" className="hud-label mb-1.5 block">Позивний оперативника</label>
+                  <label htmlFor="nickname-create" className="hud-label mb-1.5 block">
+                    Позивний оперативника{isTestMode ? " (необов'язково)" : ""}
+                  </label>
                   <input
                     id="nickname-create"
                     name="nickname"
                     autoComplete="off"
                     aria-label="Позивний оперативника"
                     className="hud-input"
-                    placeholder="введіть позивний..."
+                    placeholder={isTestMode ? "порожньо — згенерується автоматично" : "введіть позивний..."}
                     value={nickname}
                     onChange={(e) => setNick(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && submitCreate()}

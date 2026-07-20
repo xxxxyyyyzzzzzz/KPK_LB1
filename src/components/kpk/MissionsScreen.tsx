@@ -543,8 +543,10 @@ function MissionSelectionModal({
                     <div className="hud-mono text-sm leading-6 text-[color:var(--muted-foreground)] mb-4">{m.description}</div>
                   </div>
                   <div className="flex flex-col gap-2 pt-3 text-[0.85rem] text-[color:var(--foreground)]">
-                    <div className="hud-mono">Клас: <span className="font-semibold">{m.cls}</span></div>
-                    <div className="hud-mono">Бали: <span className="font-semibold">+{formatPoints(m.mainReward)} ({m.level === 1 ? "I" : m.level === 2 ? "II" : "III"})</span></div>
+                    <div className="hud-mono">Бали: <span className="font-semibold">+{formatPoints(m.mainReward)}</span></div>
+                    <div className="hud-mono">
+                      {m.level === 1 ? "I" : m.level === 2 ? "II" : "III"}: <span className="font-semibold">+{formatPoints(m.levelReward)}</span>
+                    </div>
                     <div className="hud-mono">Кредити: <span className="font-semibold">+{m.currencyReward} ⛁</span></div>
                   </div>
                 </button>
