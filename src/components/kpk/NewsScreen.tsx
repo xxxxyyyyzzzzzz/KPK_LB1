@@ -304,10 +304,10 @@ function SpawnMapSvg({ spawnMapCells }: { spawnMapCells: Map<string, { entity: s
 
       {/* Стіни з файлу карти (товщені лінії) */}
       {MAP_WALLS.hWalls.map(([r, c], i) => (
-        <line key={`hw-${i}`} x1={c * CELL} y1={r * CELL} x2={(c + 1) * CELL} y2={r * CELL} stroke="var(--hud-red)" strokeWidth={3} strokeLinecap="round" />
+        <line key={`hw-${i}`} x1={c * CELL} y1={r * CELL} x2={(c + 1) * CELL} y2={r * CELL} stroke="var(--hud-red)" strokeWidth={1.5} strokeLinecap="round" />
       ))}
       {MAP_WALLS.vWalls.map(([r, c], i) => (
-        <line key={`vw-${i}`} x1={c * CELL} y1={r * CELL} x2={c * CELL} y2={(r + 1) * CELL} stroke="var(--hud-red)" strokeWidth={3} strokeLinecap="round" />
+        <line key={`vw-${i}`} x1={c * CELL} y1={r * CELL} x2={c * CELL} y2={(r + 1) * CELL} stroke="var(--hud-red)" strokeWidth={1.5} strokeLinecap="round" />
       ))}
     </svg>
   );
