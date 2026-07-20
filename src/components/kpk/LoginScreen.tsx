@@ -48,6 +48,7 @@ export function LoginScreen() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
+  const [isTestMode, setIsTestMode] = useState(false);
   const [pendingMode, setPendingMode] = useState<Mode | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const transitionTimeoutRef = useRef<number | null>(null);
@@ -123,7 +124,7 @@ export function LoginScreen() {
     if (!nickname.trim()) { setErr(humanError("Введіть нікнейм")); sfx.deny(); return; }
     if (!faction) { setErr(humanError("Оберіть угрупування")); sfx.deny(); return; }
     setErr(""); setBusy(true);
-    const r = await createGame({ nickname: nickname.trim().toUpperCase(), faction });
+    const r = await createGame({ nickname: nickname.trim().toUpperCase(), faction }, { isTest: isTestMode });
     setBusy(false);
     if (!r.ok) setErr(humanError(r.reason));
   }
@@ -186,6 +187,7 @@ export function LoginScreen() {
     setErr("");
     setNick("");
     setFaction("");
+    setIsTestMode(false);
     if (mode === "join_player") {
       setConnectedCode(null);
       switchMode("join_code");
@@ -255,22 +257,6 @@ export function LoginScreen() {
                   }}
                   aria-label="Приєднатися до існуючої сесії"
                 >⇆ ПРИЄДНАТИСЯ ДО ГРИ</button>
-                <button
-                  onClick={async () => {
-                    sfx.click();
-                    setErr(""); setBusy(true);
-                    const factionsList = Object.keys(FACTIONS);
-                    const testNick = "TEST_" + Math.random().toString(36).slice(2, 6).toUpperCase();
-                    const testFaction = factionsList[Math.floor(Math.random() * factionsList.length)];
-                    const r = await createGame({ nickname: testNick, faction: testFaction }, { isTest: true });
-                    setBusy(false);
-                    if (!r.ok) setErr(humanError(r.reason));
-                  }}
-                  disabled={busy}
-                  className="hud-btn hud-btn-ghost w-full text-sm"
-                  aria-label="Створити тестову гру (не зберігається в історії)"
-                  title="Окрема сесія з прапором isTest — не показуватиметься в історії"
-                >🧪 ТЕСТОВА ГРА</button>
                 <p className="hud-mono pt-2 text-center text-[0.7rem] text-[color:var(--muted-foreground)]">
                   До 4 гравців · унікальне угрупування для кожного
                 </p>
@@ -511,6 +497,32 @@ export function LoginScreen() {
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+                <div>
+                  <div className="hud-label mb-1.5">Тип сесії</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      aria-pressed={!isTestMode}
+                      onClick={() => { sfx.click(); setIsTestMode(false); }}
+                      className={`hud-mono min-h-11 border px-3 py-2.5 text-sm transition-all ${
+                        !isTestMode
+                          ? "border-[color:var(--hud-amber)] bg-[color:var(--hud-amber)]/10"
+                          : "border-[color:var(--hud-amber)]/25 hover:border-[color:var(--hud-amber)]/60"
+                      }`}
+                    >Звичайна гра</button>
+                    <button
+                      type="button"
+                      aria-pressed={isTestMode}
+                      onClick={() => { sfx.click(); setIsTestMode(true); }}
+                      className={`hud-mono min-h-11 border px-3 py-2.5 text-sm transition-all ${
+                        isTestMode
+                          ? "border-[color:var(--hud-red)] bg-[color:var(--hud-red)]/10 text-[color:var(--hud-red)]"
+                          : "border-[color:var(--hud-amber)]/25 hover:border-[color:var(--hud-amber)]/60"
+                      }`}
+                      title="Не зберігається в історії, вмикає тестові функції в бургер-меню"
+                    >🧪 Тестова гра</button>
                   </div>
                 </div>
                 <div className="flex gap-2">
