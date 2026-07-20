@@ -356,7 +356,17 @@ function SlotCard({
           >
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
             <div className="flex items-start justify-between gap-2">
-              <span className="text-sm font-medium leading-tight">{m.name}</span>
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-3)] px-2 py-0.5 hud-mono text-[0.62rem] uppercase tracking-[0.2em]" style={{ color }}>
+                    {m.cls}
+                  </span>
+                  <span className="hud-mono text-[0.6rem] uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">
+                    L{m.level}
+                  </span>
+                </div>
+                <span className="text-sm font-medium leading-tight">{m.name}</span>
+              </div>
               <button
                 disabled={!canReplace}
                 onClick={() => { captureOrigin(); onStartReplaceConfirm(); }}
@@ -364,21 +374,21 @@ function SlotCard({
                 className="grid h-6 w-6 shrink-0 place-items-center border border-[color:var(--hud-amber)]/40 text-[color:var(--hud-amber)] hover:bg-[color:var(--hud-amber)]/10 disabled:opacity-30"
               >⟲</button>
             </div>
-            <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] leading-snug">{m.description}</div>
-            <div className="flex items-center justify-between">
-              <span className="hud-mono text-[0.65rem] uppercase tracking-widest" style={{ color }}>{m.cls}</span>
-              <span className="hud-mono text-xs tabular-nums">{slot.current_progress}/{m.target}</span>
+            <div className="hud-mono text-[0.65rem] leading-snug text-[color:var(--muted-foreground)]">{m.description}</div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="hud-mono text-[0.6rem] uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">Прогрес</span>
+              <span className="hud-mono text-xs tabular-nums text-[color:var(--foreground)]">{slot.current_progress}/{m.target}</span>
             </div>
-            <div className="h-1 w-full bg-[color:var(--surface-3)]">
-              <div className="h-full transition-all" style={{ width: `${pct}%`, background: color, boxShadow: `0 0 6px ${color}` }} />
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[color:var(--surface-3)]">
+              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color, boxShadow: `0 0 8px ${color}` }} />
             </div>
             <div className="flex gap-2 pt-1">
               <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(-1)}>−</button>
               <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(+1)}>+</button>
-              <button className="hud-btn flex-1 !py-1 !text-[0.65rem]" disabled={!done} onClick={onComplete}>✓ Виплатити</button>
             </div>
+            <button className={`hud-btn w-full !py-1 !text-[0.65rem] ${done ? "bg-[color:var(--hud-green)]/15 text-[color:var(--hud-green)]" : ""}`} disabled={!done} onClick={onComplete}>✓ Виплатити</button>
             <div className="border-t border-dashed border-[color:var(--hud-amber)]/20 pt-1 hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
-              Нагорода: +{formatPoints(m.mainReward)} · +{formatPoints(m.levelReward)} L{m.level} · +{m.currencyReward} ⛁
+              Нагорода: +{formatPoints(m.mainReward)} · +{formatPoints(m.levelReward)} · +{m.currencyReward} ⛁
             </div>
           </div>
         );
