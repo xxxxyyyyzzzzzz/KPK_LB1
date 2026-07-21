@@ -109,7 +109,7 @@ export function UpgradeWheel() {
         const state = nodeState.state;
         const size = state === "locked" ? 15 : 17;
         const isSelected = activeNodeId === u.id;
-        const fill = state === "purchased" ? color : state === "available" ? "rgba(7, 10, 14, 0.88)" : "rgba(4, 6, 10, 0.96)";
+        const fill = state === "purchased" ? `url(#grad-${category})` : state === "available" ? "url(#grad-available)" : "url(#grad-locked)";
         const stroke = state === "available" ? "var(--hud-amber)" : state === "purchased" ? color : "rgba(120, 113, 108, 0.45)";
         const dash = state === "available" ? "6 5" : undefined;
         const icon = state === "purchased" ? "✓" : state === "available" ? "●" : "🔒";
@@ -201,6 +201,20 @@ export function UpgradeWheel() {
           >
             <svg viewBox="-320 -320 640 640" className="h-full w-full touch-none" role="img" aria-label="Радіальне дерево прокачок">
               <defs>
+                {branchData.map((branch) => (
+                  <radialGradient key={branch.category} id={`grad-${branch.category}`} cx="35%" cy="30%" r="70%">
+                    <stop offset="0%" style={{ stopColor: branch.color, stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: branch.color, stopOpacity: 0.55 }} />
+                  </radialGradient>
+                ))}
+                <radialGradient id="grad-available" cx="35%" cy="30%" r="70%">
+                  <stop offset="0%" style={{ stopColor: "var(--hud-amber)", stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: "var(--hud-amber)", stopOpacity: 0.5 }} />
+                </radialGradient>
+                <radialGradient id="grad-locked" cx="35%" cy="30%" r="70%">
+                  <stop offset="0%" style={{ stopColor: "var(--surface-3)", stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: "var(--surface-1)", stopOpacity: 1 }} />
+                </radialGradient>
                 <filter id="hubGlow" x="-50%" y="-50%" width="200%" height="200%">
                   <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="rgba(245,184,64,0.8)" floodOpacity="0.8" />
                 </filter>
