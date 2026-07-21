@@ -87,7 +87,7 @@ type KpkState = {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
-  players: { id: string; nickname: string; faction: string }[];
+  players: { id: string; nickname: string; faction: string; completed_ids?: number[] }[];
   sessionPlayers: {
     id: string; nickname: string; faction: string;
     score: number; level1: number; level2: number; level3: number; currency: number;
@@ -118,6 +118,7 @@ type KpkState = {
   confirmMissionSelection: (slotIndex: number, missionId: number) => Promise<boolean>;
   debugBypassTurnLock: boolean;
   setDebugBypassTurnLock: (v: boolean) => void;
+  debugAdjustScore: (targetPlayerId: string, field: "score" | "level1_score" | "level2_score" | "level3_score" | "currency", delta: number) => void;
   useLegacyNewsSpawn: boolean;
   setUseLegacyNewsSpawn: (v: boolean) => void;
   isTestSession: boolean;
@@ -304,6 +305,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       id,
       nickname: session.players[id]?.nickname ?? "—",
       faction: session.players[id]?.faction ?? "",
+      completed_ids: session.players[id]?.completed_ids ?? [],
     }));
   }, [session]);
 
@@ -887,9 +889,24 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   }, [roomCode]);
 
   const reorderPlayers = useCallback(async (order: string[]) => {
-    if (!roomCode) return;
-    await txSession(roomCode, (cur) => cur ? ({ ...cur, player_order: order, active_player_id: order[0] ?? cur.active_player_id }) : undefined);
-  }, [roomCode]);
+    if (!roomCode || !playerId) return;
+    await txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      if (cur.host_id !== playerId) return undefined;
+      return { ...cur, player_order: order, active_player_id: order[0] ?? cur.active_player_id };
+    });
+  }, [roomCode, playerId]);
+
+  const debugAdjustScore = useCallback((targetPlayerId: string, field: "score" | "level1_score" | "level2_score" | "level3_score" | "currency", delta: number) => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      if (cur.host_id !== playerId) return undefined;
+      const p = cur.players?.[targetPlayerId]; if (!p) return undefined;
+      const next = Math.max(0, (p[field] ?? 0) + delta);
+      return { ...cur, players: { ...cur.players, [targetPlayerId]: { ...p, [field]: next } } };
+    });
+  }, [roomCode, playerId]);
 
   const ackNews = useCallback(() => {
     if (!roomCode) return;
@@ -1000,7 +1017,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     backToClassBrowse,
     cancelBrowse,
     confirmMissionSelection,
-    debugBypassTurnLock, setDebugBypassTurnLock,
+    debugBypassTurnLock, setDebugBypassTurnLock, debugAdjustScore,
     useLegacyNewsSpawn, setUseLegacyNewsSpawn,
     isTestSession, cheatGenerateNews, cheatAddScore,
   }), [
@@ -1013,7 +1030,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
     nextPlayer, updateSlotProgress, completeSlot, startReplaceConfirm, startBrowseClass, selectBrowseClass, startBrowseSameClass, backToClassBrowse, cancelBrowse, confirmMissionSelection,
-    debugBypassTurnLock, isTestSession, useLegacyNewsSpawn, setUseLegacyNewsSpawn, cheatGenerateNews, cheatAddScore,
+    debugBypassTurnLock, isTestSession, useLegacyNewsSpawn, setUseLegacyNewsSpawn, cheatGenerateNews, cheatAddScore, debugAdjustScore,
   ]);
 
   return <KpkContext.Provider value={value}>{children}</KpkContext.Provider>;

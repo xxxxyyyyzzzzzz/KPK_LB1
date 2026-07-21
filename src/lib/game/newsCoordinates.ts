@@ -161,11 +161,12 @@ export function generateEntityCoords(
 
   for (let index = 0; index < quantity; index += 1) {
     let selectedPoint: [number, number] | null = null;
+    const safeClusterAnchorCoords = clusterAnchorCoords ?? [];
 
     if (index > 0 && shouldCluster) {
       const roll = Math.random() * 100;
       if (roll < CLUSTER_NEAR_CHANCE) {
-        const anchor = clusterAnchorCoords[Math.floor(Math.random() * clusterAnchorCoords.length)];
+        const anchor = safeClusterAnchorCoords[Math.floor(Math.random() * safeClusterAnchorCoords.length)];
         if (anchor) {
           const candidates = pool.filter(([x, y]) => {
             const dx = Math.abs(anchor[0] - x);

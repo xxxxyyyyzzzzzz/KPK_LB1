@@ -5,6 +5,9 @@ import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
 import type { Screen } from "@/lib/kpkData";
 import { ListTodo, TrendingUp, Radar, BarChart3 } from "lucide-react";
+import LobbyPlayersPanel from "./LobbyPlayersPanel";
+import CompletedMissionsModal from "./CompletedMissionsModal";
+import ScoreAdminModal from "./ScoreAdminModal";
 
 export const SCREEN_TITLES: Partial<Record<Screen, string>> = {
   main: "КПК",
@@ -101,6 +104,9 @@ function BurgerMenu() {
   const [confirmExit, setConfirmExit] = useState(false);
   const [muted, setMuted] = useState<boolean>(sfx.isMuted());
   const [missionPoolOpen, setMissionPoolOpen] = useState(false);
+  const [reorderOpen, setReorderOpen] = useState(false);
+  const [completedMissionsOpen, setCompletedMissionsOpen] = useState(false);
+  const [scoreAdminOpen, setScoreAdminOpen] = useState(false);
 
   const missionPoolGroups = useMemo(() => {
     const classes = ["Атака", "Захист", "Економіка", "Лут"] as const;
@@ -219,6 +225,30 @@ function BurgerMenu() {
                 </button>
               </div>
 
+              {isHost && (
+                <div style={{ opacity: 0, animation: "hud-screen-in 0.25s cubic-bezier(0.2,0.8,0.2,1) 0.07s both" }}>
+                  <div className="hud-label text-[0.6rem] text-[color:var(--hud-amber)] mb-2">// ХОСТ</div>
+                  <button
+                    onClick={() => { sfx.click(); setReorderOpen(true); }}
+                    className="hud-btn hud-btn-ghost w-full"
+                  >
+                    👥 Порядок гравців
+                  </button>
+                  <button
+                    onClick={() => { sfx.click(); setCompletedMissionsOpen(true); }}
+                    className="hud-btn hud-btn-ghost mt-2 w-full"
+                  >
+                    📋 Виконані місії
+                  </button>
+                  <button
+                    onClick={() => { sfx.click(); setScoreAdminOpen(true); }}
+                    className="hud-btn hud-btn-ghost mt-2 w-full"
+                  >
+                    🎯 Керування балами
+                  </button>
+                </div>
+              )}
+
               {isTestSession && (
                 <div style={{ opacity: 0, animation: "hud-screen-in 0.25s cubic-bezier(0.2,0.8,0.2,1) 0.08s both" }}>
                   <div className="hud-label text-[0.6rem] text-[color:var(--hud-red)] mb-2">// ТЕСТ</div>
@@ -333,6 +363,10 @@ function BurgerMenu() {
         </div>,
         document.body
       )}
+
+      {reorderOpen && <LobbyPlayersPanel onClose={() => setReorderOpen(false)} />}
+      {completedMissionsOpen && <CompletedMissionsModal onClose={() => setCompletedMissionsOpen(false)} />}
+      {scoreAdminOpen && <ScoreAdminModal onClose={() => setScoreAdminOpen(false)} />}
 
       {confirmExit && createPortal(
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setConfirmExit(false)}>
