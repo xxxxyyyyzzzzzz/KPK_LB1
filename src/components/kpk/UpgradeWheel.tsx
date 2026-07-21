@@ -19,8 +19,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function UpgradeWheel() {
-  const { user, canPurchase, purchaseUpgrade } = useKpk();
-  const displayUpgrades: string[] = [];
+  const { user, upgrades, canPurchase, purchaseUpgrade } = useKpk();
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -49,8 +48,12 @@ export function UpgradeWheel() {
 
   const tierCounts = useMemo(() => {
     const counts = { 1: 0, 2: 0, 3: 0 } as Record<1 | 2 | 3, number>;
+    for (const id of upgrades) {
+      const tier = UPGRADES[id]?.tier;
+      if (tier) counts[tier] += 1;
+    }
     return counts;
-  }, []);
+  }, [upgrades]);
 
   const branchData = useMemo(() => {
     const nodesByBranch: Array<{ category: UpgradeCategory; color: string; nodes: UpgradeDef[]; branchAngle: number }> = [];
@@ -74,7 +77,7 @@ export function UpgradeWheel() {
           : [{ x: -44, y: -10, labelOffsetX: -28, labelOffsetY: -10 }, { x: 0, y: 16, labelOffsetX: 0, labelOffsetY: 18 }, { x: 44, y: -10, labelOffsetX: 28, labelOffsetY: -10 }];
 
       const previousTierNodes = nodes.filter((u) => u.tier === (tier === 1 ? 0 : tier - 1));
-      const purchasedPrev = previousTierNodes.filter((u) => displayUpgrades.includes(u.id));
+      const purchasedPrev = previousTierNodes.filter((u) => upgrades.includes(u.id));
       const anchorNode = purchasedPrev[0];
       const anchorUsed = purchasedPrev.length === 1 && anchorNode;
 
@@ -102,14 +105,15 @@ export function UpgradeWheel() {
           offsetY = towardY * push;
         }
 
-        const nodeState = getNodeState(displayUpgrades, () => ({ ok: true }), u);
+        const nodeState = getNodeState(upgrades, canPurchase, u);
         const state = nodeState.state;
-        const size = state === "available" ? 16 : 15;
+        const size = state === "locked" ? 15 : 17;
         const isSelected = activeNodeId === u.id;
-        const fill = state === "purchased" ? color : state === "available" ? "rgba(7, 10, 14, 0.72)" : "rgba(7, 10, 14, 0.72)";
-        const stroke = state === "available" ? "var(--hud-amber)" : state === "purchased" ? color : color;
-        const dash = state === "available" ? "5 4" : undefined;
+        const fill = state === "purchased" ? color : state === "available" ? "rgba(7, 10, 14, 0.88)" : "rgba(4, 6, 10, 0.96)";
+        const stroke = state === "available" ? "var(--hud-amber)" : state === "purchased" ? color : "rgba(120, 113, 108, 0.45)";
+        const dash = state === "available" ? "6 5" : undefined;
         const icon = state === "purchased" ? "✓" : state === "available" ? "●" : "🔒";
+        const showCostLabel = state !== "locked";
         return (
           <motion.g
             key={u.id}
@@ -132,11 +136,11 @@ export function UpgradeWheel() {
             <motion.circle
               cx={0}
               cy={0}
-              r={size + 5}
+              r={size + 6}
               fill="transparent"
-              stroke={state === "available" ? "rgba(245, 184, 64, 0.35)" : "transparent"}
-              strokeWidth={state === "available" ? 1.5 : 0}
-              strokeDasharray={state === "available" ? "7 7" : undefined}
+              stroke={state === "available" ? "rgba(245, 184, 64, 0.42)" : state === "purchased" ? `${color}66` : "transparent"}
+              strokeWidth={state === "available" ? 1.8 : state === "purchased" ? 1.4 : 0}
+              strokeDasharray={state === "available" ? "8 6" : undefined}
               animate={{ rotate: state === "available" ? 360 : 0 }}
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
               style={{ transformOrigin: "center" }}
@@ -147,18 +151,20 @@ export function UpgradeWheel() {
               r={size}
               fill={fill}
               stroke={stroke}
-              strokeWidth={state === "locked" ? 1.5 : state === "available" ? 2 : 2}
+              strokeWidth={state === "locked" ? 1.4 : 2.2}
               strokeDasharray={dash}
-              animate={state === "available" ? { scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] } : { scale: 1, opacity: 1 }}
+              animate={state === "available" ? { scale: [1, 1.05, 1], opacity: [0.84, 1, 0.84] } : { scale: 1, opacity: 1 }}
               transition={state === "available" ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
             />
             <circle cx={0} cy={0} r={size - 4} fill={state === "purchased" ? color : "transparent"} />
             <text x={0} y={0} textAnchor="middle" dominantBaseline="central" className="fill-[color:var(--foreground)] text-[0.62rem] font-semibold">
               {icon}
             </text>
-            <text x={pos.labelOffsetX} y={pos.labelOffsetY} textAnchor="middle" className="fill-[color:var(--foreground)] text-[0.54rem] opacity-80" style={{ fontFamily: "var(--font-mono)" }}>
-              {u.cost}
-            </text>
+            {showCostLabel && (
+              <text x={pos.labelOffsetX} y={pos.labelOffsetY} textAnchor="middle" className="fill-[color:var(--hud-amber)] text-[0.48rem] font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
+                {u.cost}
+              </text>
+            )}
           </motion.g>
         );
       });
@@ -167,7 +173,7 @@ export function UpgradeWheel() {
 
   const hubLabel = user?.faction || "Угрупування";
   const activeNode = activeNodeId ? Object.values(UPGRADES).find((u) => u.id === activeNodeId) ?? null : null;
-  const activeNodeState = activeNode ? getNodeState(displayUpgrades, () => ({ ok: true }), activeNode) : null;
+  const activeNodeState = activeNode ? getNodeState(upgrades, canPurchase, activeNode) : null;
 
   return (
     <div className="hud-panel-corners-4 hud-grid-bg relative overflow-hidden border border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] p-4 sm:p-5">
@@ -194,10 +200,15 @@ export function UpgradeWheel() {
             }}
           >
             <svg viewBox="-320 -320 640 640" className="h-full w-full touch-none" role="img" aria-label="Радіальне дерево прокачок">
+              <defs>
+                <filter id="hubGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="rgba(245,184,64,0.8)" floodOpacity="0.8" />
+                </filter>
+              </defs>
               <g>
-                <circle cx={0} cy={0} r={92} fill="rgba(255,255,255,0.03)" stroke="rgba(245,184,64,0.25)" strokeDasharray="5 5" />
-                <circle cx={0} cy={0} r={158} fill="transparent" stroke="rgba(245,184,64,0.15)" strokeDasharray="4 6" />
-                <circle cx={0} cy={0} r={224} fill="transparent" stroke="rgba(245,184,64,0.12)" strokeDasharray="4 6" />
+                <circle cx={0} cy={0} r={92} fill="rgba(255,255,255,0.03)" stroke="rgba(245,184,64,0.3)" strokeWidth={1.4} strokeDasharray="5 5" />
+                <circle cx={0} cy={0} r={158} fill="transparent" stroke="rgba(245,184,64,0.2)" strokeWidth={1.15} strokeDasharray="4 6" />
+                <circle cx={0} cy={0} r={224} fill="transparent" stroke="rgba(245,184,64,0.14)" strokeWidth={1} strokeDasharray="4 6" />
                 {branchData.map((branch) => {
                   const angleRad = (branch.branchAngle * Math.PI) / 180;
                   const x = Math.cos(angleRad) * 280;
@@ -207,9 +218,9 @@ export function UpgradeWheel() {
                 <text x={0} y={-6} textAnchor="middle" className="fill-[color:var(--foreground)] text-[0.6rem] uppercase" style={{ fontFamily: "var(--font-display)" }}>
                   {hubLabel}
                 </text>
-                <circle cx={0} cy={0} r={36} fill="rgba(245,184,64,0.16)" stroke="rgba(245,184,64,0.55)" strokeWidth={1.5} />
-                <circle cx={0} cy={0} r={28} fill="rgba(255,255,255,0.05)" stroke="rgba(245,184,64,0.35)" strokeWidth={1.5} />
-                <text x={0} y={2} textAnchor="middle" className="fill-[color:var(--hud-amber)] text-[0.7rem]" style={{ fontFamily: "var(--font-display)" }}>
+                <circle cx={0} cy={0} r={40} fill="rgba(245,184,64,0.18)" stroke="rgba(245,184,64,0.85)" strokeWidth={2.2} filter="url(#hubGlow)" />
+                <circle cx={0} cy={0} r={30} fill="rgba(255,255,255,0.06)" stroke="rgba(245,184,64,0.55)" strokeWidth={1.8} />
+                <text x={0} y={2} textAnchor="middle" className="fill-[color:var(--hud-amber)] text-[0.74rem]" style={{ fontFamily: "var(--font-display)", filter: "url(#hubGlow)" }}>
                   ★
                 </text>
               </g>
