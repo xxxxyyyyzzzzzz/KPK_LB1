@@ -51,10 +51,10 @@ type KpkState = {
   turnInRound: number; // 1..(playersCount+1)
   round: 1 | 2 | 3 | 4; // alias for backward compatibility
   turn: number; // alias for backward compatibility
-  sessionSeconds: number;
+  // sessionSeconds and turnSeconds moved to TimerTickContext to avoid
+  // forcing whole-app re-renders on each tick
   sessionStartedAt: number | null;
   sessionTimerRunning: boolean;
-  turnSeconds: number;
   turnRunning: boolean;
 
   // ap / replacements
