@@ -364,9 +364,9 @@ function BurgerMenu() {
         document.body
       )}
 
-      {reorderOpen && <LobbyPlayersPanel onClose={() => setReorderOpen(false)} />}
-      {completedMissionsOpen && <CompletedMissionsModal onClose={() => setCompletedMissionsOpen(false)} />}
-      {scoreAdminOpen && <ScoreAdminModal onClose={() => setScoreAdminOpen(false)} />}
+      {reorderOpen && createPortal(<LobbyPlayersPanel onClose={() => setReorderOpen(false)} />, document.body)}
+      {completedMissionsOpen && createPortal(<CompletedMissionsModal onClose={() => setCompletedMissionsOpen(false)} />, document.body)}
+      {scoreAdminOpen && createPortal(<ScoreAdminModal onClose={() => setScoreAdminOpen(false)} />, document.body)}
 
       {confirmExit && createPortal(
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setConfirmExit(false)}>

@@ -3,6 +3,7 @@ import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { useKpk } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { ChevronRight } from "lucide-react";
 import { generateNews, type NewsEntry } from "@/lib/kpkData";
 import { MAP_WALLS } from "@/lib/game/mapWalls";
 
@@ -113,23 +114,11 @@ export function NewsScreen() {
                 }
               </div>
               {!n.note && n.coords && n.coords.length > 0 && (
-                <details className="mt-3">
-                  <summary className="cursor-pointer list-none text-[color:var(--hud-cyan)]">
-                    {n.entity} (×{n.count})
-                  </summary>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {n.coords.map((coord) => (
-                      <span key={`${n.entity}-${coord}`} className="rounded border border-[color:var(--hud-cyan)]/25 bg-[color:var(--surface-1)] px-2 py-1 text-[0.65rem] text-[color:var(--hud-cyan)]">
-                        {coord}
-                      </span>
-                    ))}
-                  </div>
-                </details>
+                <NewsCoordsDetails entry={n} />
               )}
             </div>
           ))}
-          {isTestSession && (
-            <div className="mt-4 border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-1)]/60 p-3">
+          <div className="mt-4 border border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-1)]/60 p-3">
               <div className="hud-label mb-2 text-[0.6rem] text-[color:var(--hud-amber)]">// КАРТА СПАВНУ</div>
               <div className="mx-auto max-w-[520px]">
                 <SpawnMapSvg spawnMapCells={spawnMapCells} />
@@ -175,7 +164,6 @@ export function NewsScreen() {
                 </div>
               )}
             </div>
-          )}
         </AnimatedItem>
 
         {/* Розгортуване меню з інформацією про ботів */}
@@ -231,6 +219,35 @@ export function NewsScreen() {
         </AnimatedItem>
       </div>
     </ScreenShell>
+  );
+}
+
+function NewsCoordsDetails({ entry }: { entry: NewsEntry }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      className="mt-3 rounded border border-[color:var(--hud-cyan)]/25 bg-[color:var(--surface-1)]/70 p-3"
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-[color:var(--hud-cyan)]">
+        <ChevronRight
+          className="h-4 w-4 transition-transform duration-200"
+          style={{ transform: open ? "rotate(90deg)" : undefined }}
+        />
+        <span>{entry.entity} (×{entry.count})</span>
+      </summary>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {entry.coords?.map((coord) => (
+          <span
+            key={`${entry.entity}-${coord}`}
+            className="rounded border border-[color:var(--hud-cyan)]/25 bg-[color:var(--surface-1)] px-2 py-1 text-[0.65rem] text-[color:var(--hud-cyan)]"
+          >
+            {coord}
+          </span>
+        ))}
+      </div>
+    </details>
   );
 }
 

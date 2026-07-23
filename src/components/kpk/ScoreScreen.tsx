@@ -81,7 +81,12 @@ export function ScoreScreen() {
                     <div className="hud-mono text-xs text-[color:var(--foreground)] truncate">{h.nickname}</div>
                     <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] truncate">{h.reason}</div>
                   </div>
-                  <span className="hud-mono text-sm tabular-nums text-[color:var(--hud-green)]">+{formatPoints(h.reward as number)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="hud-mono text-sm tabular-nums text-[color:var(--hud-green)]">+{formatPoints(h.reward as number)}</span>
+                    {h.currency > 0 && (
+                      <span className="hud-mono text-sm tabular-nums text-[color:var(--hud-cyan)]">+{h.currency} ⛁</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

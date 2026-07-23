@@ -26,7 +26,7 @@ type ActionPoints = {
   build: number; buildMax: number;
 };
 
-type HistoryEntry = { nickname: string; reason: string; reward: number };
+type HistoryEntry = { nickname: string; reason: string; reward: number; currency: number };
 
 type PurchaseResult = { ok: boolean; reason?: string };
 
@@ -108,7 +108,7 @@ type KpkState = {
   toggleTurn: () => void;
   nextPlayer: () => void;
   updateSlotProgress: (slotIndex: number, delta: number) => void;
-  completeSlot: (slotIndex: number) => void;
+  completeSlot: (slotIndex: number) => Promise<{ ok: boolean; reason?: string }>;
   startReplaceConfirm: (slotIndex: number) => void;
   startBrowseClass: (slotIndex: number) => void;
   selectBrowseClass: (slotIndex: number, cls: string) => void;
@@ -295,6 +295,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         nickname: e.nickname,
         reason: String((e.payload as any).reason ?? e.type),
         reward: Number((e.payload as any).reward ?? 0),
+        currency: Number((e.payload as any).currency ?? 0),
       }));
   }, [session?.events]);
 
@@ -485,8 +486,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       const np: PlayerState = {
         ...p,
         score: p.score + m.mainReward,
-        currency: p.currency,
-        currency_earned_this_turn: p.currency_earned_this_turn,
+        currency: p.currency + m.currencyReward,
+        currency_earned_this_turn: p.currency_earned_this_turn + m.currencyReward,
         level1_score: p.level1_score + (m.level === 1 ? m.levelReward : 0),
         level2_score: p.level2_score + (m.level === 2 ? m.levelReward : 0),
         level3_score: p.level3_score + (m.level === 3 ? m.levelReward : 0),
@@ -516,16 +517,18 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         events: { ...cur.events, [`e_${ts}_${slotIndex}`]: {
           ts, player_id: pid, nickname: p.nickname,
           type: "mission_complete",
-          payload: { reason: `Виконано: ${m.name}`, reward: m.mainReward, mission_id: m.id },
+          payload: { reason: `Виконано: ${m.name}`, reward: m.mainReward, currency: m.currencyReward, mission_id: m.id },
         }},
       };
     });
     return { ok: result.ok };
   }, [allMissions]);
 
-  const completeSlot = useCallback((slotIndex: number) => {
-    if (!roomCode || !playerId) return;
-    completeMissionTx(roomCode, playerId, slotIndex).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
+  const completeSlot = useCallback(async (slotIndex: number) => {
+    if (!roomCode || !playerId) return { ok: false, reason: "missing_context" };
+    const r = await completeMissionTx(roomCode, playerId, slotIndex);
+    if (r.ok) sfx.confirm(); else sfx.deny();
+    return r;
   }, [roomCode, playerId, completeMissionTx]);
 
   function buildCandidatePool(allMissions: Mission[], p: PlayerState, slotIndex: number, cls: string): number[] {

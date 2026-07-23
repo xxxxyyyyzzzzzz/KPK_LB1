@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { MISSION_CLASS_COLOR, MISSION_CLASSES, LEVEL_COLOR } from "@/lib/kpkData";
 import { useKpk } from "@/lib/kpkStore";
 import { formatPoints } from "@/lib/utils";
 import { sfx } from "@/lib/sounds";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
+import { CurrencyPayoutModal } from "./CurrencyPayoutModal";
 
 export function MissionsScreen() {
   const {
@@ -29,6 +29,16 @@ export function MissionsScreen() {
     cancelBrowse,
     confirmMissionSelection,
   } = useKpk();
+  const [payoutOpen, setPayoutOpen] = useState(false);
+  const [lastCompletedReward, setLastCompletedReward] = useState(0);
+
+  const handleCompleteSlot = async (slotIndex: number, reward: number) => {
+    const result = await completeSlot(slotIndex);
+    if (result?.ok) {
+      setLastCompletedReward(reward);
+      setPayoutOpen(true);
+    }
+  };
 
   return (
     <ScreenShell title="Місії">
@@ -117,7 +127,7 @@ export function MissionsScreen() {
                             onCancelBrowse={() => cancelBrowse(s.slot_index)}
                             onConfirmMissionSelection={(missionId) => confirmMissionSelection(s.slot_index, missionId)}
                             onUpdateProgress={(delta) => updateSlotProgress(s.slot_index, delta)}
-                            onComplete={() => completeSlot(s.slot_index)}
+                            onComplete={() => handleCompleteSlot(s.slot_index, m?.currencyReward ?? 0)}
                             canReplace={global_replacements_left > 0}
                           />
                         </div>
@@ -129,6 +139,13 @@ export function MissionsScreen() {
           );
         })}
       </div>
+      <CurrencyPayoutModal
+        open={payoutOpen}
+        amount={lastCompletedReward}
+        onConfirm={() => setPayoutOpen(false)}
+        onCancel={() => setPayoutOpen(false)}
+        onClose={() => setPayoutOpen(false)}
+      />
     </ScreenShell>
   );
 }
