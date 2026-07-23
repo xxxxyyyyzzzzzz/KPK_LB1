@@ -14,6 +14,7 @@ import {
   type NewsEntry,
 } from "./kpkData";
 import { sfx } from "./sounds";
+import { useServerTimeOffset } from "@/hooks/useServerTimeOffset";
 import { generatePlayerId, generateRoomCode } from "./firebase";
 import { makePlayer, makeSession, type PlayerState, type PlayerSlot, type SessionState } from "./sessionSchema";
 import { readSession, txSession, useSession, writeSession, pruneExpiredTestSessions } from "@/hooks/useSession";
@@ -127,6 +128,16 @@ type KpkState = {
 };
 
 const KpkContext = createContext<KpkState | null>(null);
+const TimerTickContext = createContext<{ turnSeconds: number; sessionSeconds: number }>({ turnSeconds: 0, sessionSeconds: 0 });
+export function useTimerTick() { return useContext(TimerTickContext); }
+
+const MAX_EVENTS = 30;
+function pruneEvents(events: Record<string, any> | undefined): Record<string, any> {
+  const entries = Object.entries(events ?? {});
+  if (entries.length <= MAX_EVENTS) return events ?? {};
+  entries.sort((a, b) => (b[1].ts ?? 0) - (a[1].ts ?? 0));
+  return Object.fromEntries(entries.slice(0, MAX_EVENTS));
+}
 
 const slotLevel = (i: number) => ((i % 3) + 1) as 1 | 2 | 3;
 
@@ -165,6 +176,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   const isTestSession = !!session?.is_test;
   const me: PlayerState | null = session && playerId ? session.players?.[playerId] ?? null : null;
 
+  const serverTimeOffset = useServerTimeOffset();
+  const serverNow = () => Date.now() + serverTimeOffset;
+
   const warnRef = useRef(false);
 
   // session timer
@@ -172,16 +186,16 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     if (!session?.session_started_at) return;
     if (sessionStartedAt !== session.session_started_at) {
       setSessionStartedAt(session.session_started_at);
-      setSessionSeconds(Math.floor((Date.now() - session.session_started_at) / 1000));
+      setSessionSeconds(Math.floor((serverNow() - session.session_started_at) / 1000));
       setSessionTimerRunning(true);
     }
   }, [session?.session_started_at, sessionStartedAt]);
 
   useEffect(() => {
     if (!sessionStartedAt || !sessionTimerRunning) return;
-    setSessionSeconds(Math.floor((Date.now() - sessionStartedAt) / 1000));
+    setSessionSeconds(Math.floor((serverNow() - sessionStartedAt) / 1000));
     const id = setInterval(() => {
-      setSessionSeconds(Math.floor((Date.now() - sessionStartedAt) / 1000));
+      setSessionSeconds(Math.floor((serverNow() - sessionStartedAt) / 1000));
     }, 1000);
     return () => clearInterval(id);
   }, [sessionStartedAt, sessionTimerRunning]);
@@ -194,7 +208,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
 
   const toggleSessionTimer = useCallback(() => {
     if (!sessionStartedAt) {
-      const now = Date.now();
+      const now = serverNow();
       setSessionStartedAt(now);
       setSessionSeconds(0);
       setSessionTimerRunning(true);
@@ -211,13 +225,20 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   // ── TURN TIMER: кожен клієнт рахує локально від turn_end_at, хост для цього не потрібен ──
   const isHost = !!session && !!playerId && session.host_id === playerId;
 
-  const [nowTick, setNowTick] = useState(Date.now());
+  const [nowTick, setNowTick] = useState(serverNow());
   useEffect(() => {
     if (!session?.turn_running) return;
-    setNowTick(Date.now());
-    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    setNowTick(serverNow());
+    const id = setInterval(() => setNowTick(serverNow()), 1000);
     return () => clearInterval(id);
-  }, [session?.turn_running]);
+  }, [session?.turn_running, serverTimeOffset]);
+
+  // When returning from background, immediately refresh nowTick using server time
+  useEffect(() => {
+    const onVis = () => { if (typeof document !== 'undefined' && document.visibilityState === 'visible') setNowTick(serverNow()); };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis); };
+  }, [serverTimeOffset]);
 
   const turnSeconds = session
     ? (session.turn_running && session.turn_end_at
@@ -232,16 +253,16 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   // запис, решта побачать turn_running вже false і нічого не запишуть.
   useEffect(() => {
     if (!session?.turn_running || !session.turn_end_at || !roomCode) return;
-    const msLeft = session.turn_end_at - Date.now();
+    const msLeft = session.turn_end_at - serverNow();
     const id = setTimeout(() => {
       txSession(roomCode, (cur) => {
         if (!cur || !cur.turn_running || !cur.turn_end_at) return undefined;
-        if (cur.turn_end_at > Date.now()) return undefined;
+        if (cur.turn_end_at > serverNow()) return undefined;
         return { ...cur, turn_running: false, turn_remaining_seconds: 0 };
       });
     }, Math.max(0, msLeft));
     return () => clearTimeout(id);
-  }, [session?.turn_running, session?.turn_end_at, roomCode]);
+  }, [session?.turn_running, session?.turn_end_at, roomCode, serverTimeOffset]);
 
   // SFX for timer transitions (local)
   useEffect(() => {
@@ -402,7 +423,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       return {
         ...cur,
         players: { ...cur.players, [playerId]: np },
-        events: { ...cur.events, [`e_${ts}_${id}`]: {
+        events: { ...pruneEvents(cur.events), [`e_${ts}_${id}`]: {
           ts, player_id: playerId, nickname: p.nickname,
           type: "upgrade", payload: { reason: `Прокачка: ${UPGRADES[id].name}`, upgrade_id: id, reward: 0 },
         }},
@@ -514,7 +535,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       return {
         ...cur,
         players: { ...cur.players, [pid]: np },
-        events: { ...cur.events, [`e_${ts}_${slotIndex}`]: {
+        events: { ...pruneEvents(cur.events), [`e_${ts}_${slotIndex}`]: {
           ts, player_id: pid, nickname: p.nickname,
           type: "mission_complete",
           payload: { reason: `Виконано: ${m.name}`, reward: m.mainReward, currency: m.currencyReward, mission_id: m.id },
@@ -755,7 +776,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         news_signal_ts: newsSignalTs,
         awaiting_news_ack: awaitingAck,
         players,
-        events: { ...cur.events, [`e_${ts}_turn`]: {
+        events: { ...pruneEvents(cur.events), [`e_${ts}_turn`]: {
           ts, player_id: cur.active_player_id ?? "", nickname: players[cur.active_player_id ?? ""]?.nickname ?? "—",
           type: currentTurnInRound > playersCount ? "news_round" : "turn_end",
           payload: {
@@ -948,7 +969,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     screen, prevScreen, user,
     totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
     newsIndex, roundInNews, turnInRound,
-    round, turn, sessionSeconds, sessionStartedAt, sessionTimerRunning, turnSeconds, turnRunning,
+    round, turn, /* sessionSeconds, */ sessionStartedAt, sessionTimerRunning, /* turnSeconds, */ turnRunning,
     ap, global_replacements_left, unlockedClasses,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgrades: upgradesList, upgradePoints, canPurchase, purchaseUpgrade, cancelUpgrade,
@@ -1001,13 +1022,13 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         if (cur.turn_running) {
           // Пауза: заморожуємо залишок секунд на момент паузи.
           const remaining = cur.turn_end_at
-            ? Math.max(0, Math.round((cur.turn_end_at - Date.now()) / 1000))
+            ? Math.max(0, Math.round((cur.turn_end_at - serverNow()) / 1000))
             : (cur.turn_remaining_seconds ?? 0);
           return { ...cur, turn_running: false, turn_end_at: null, turn_remaining_seconds: remaining };
         }
         // Відновлення: нова мить закінчення від залишку секунд.
         const remaining = cur.turn_remaining_seconds ?? TURN_DURATION_SECONDS;
-        return { ...cur, turn_running: true, turn_end_at: Date.now() + remaining * 1000 };
+        return { ...cur, turn_running: true, turn_end_at: serverNow() + remaining * 1000 };
       });
     },
     nextPlayer,
@@ -1025,7 +1046,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     isTestSession, cheatGenerateNews, cheatAddScore,
   }), [
     screen, prevScreen, user, totalScore, level1, level2, level3, currency, currencyEarnedThisTurn,
-    round, turn, sessionSeconds, turnSeconds, turnRunning, ap, global_replacements_left, unlockedClasses,
+    round, turn, /* sessionSeconds, turnSeconds, */ turnRunning, ap, global_replacements_left, unlockedClasses,
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, cancelUpgrade, news, history,
     roomCode, playerId, isHost, players, sessionPlayers,
@@ -1036,7 +1057,13 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     debugBypassTurnLock, isTestSession, useLegacyNewsSpawn, setUseLegacyNewsSpawn, cheatGenerateNews, cheatAddScore, debugAdjustScore,
   ]);
 
-  return <KpkContext.Provider value={value}>{children}</KpkContext.Provider>;
+  return (
+    <KpkContext.Provider value={value}>
+      <TimerTickContext.Provider value={{ turnSeconds, sessionSeconds }}>
+        {children}
+      </TimerTickContext.Provider>
+    </KpkContext.Provider>
+  );
 }
 
 export function useKpk() {

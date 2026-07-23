@@ -13,7 +13,8 @@ function getCtx(): AudioContext | null {
       return null;
     }
   }
-  if (ctx?.state === "suspended") ctx.resume();
+  // Do not eagerly resume here; callers should call `unlock` or
+  // visibility handlers may resume when appropriate.
   return ctx;
 }
 
@@ -27,6 +28,7 @@ type Tone = {
 
 function play(tones: Tone[]) {
   if (muted) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
   const c = getCtx();
   if (!c) return;
   const now = c.currentTime;
@@ -51,7 +53,15 @@ function play(tones: Tone[]) {
 }
 
 export const sfx = {
-  unlock() { getCtx(); },
+  unlock() {
+    // Ensure context exists and try to resume if suspended.
+    if (!ctx) getCtx();
+    try {
+      if (ctx && ctx.state === "suspended") {
+        void ctx.resume();
+      }
+    } catch { /* ignore */ }
+  },
   setMuted(v: boolean) { muted = v; },
   isMuted() { return muted; },
   hover() { play([{ freq: 880, duration: 0.04, type: "sine", gain: 0.025 }]); },
@@ -79,4 +89,17 @@ export function installGlobalSfx() {
   };
   document.addEventListener("pointerdown", onPointerDown, { passive: true });
   document.addEventListener("pointerenter", onPointerEnter, { passive: true, capture: true });
+
+  // When tab becomes visible, try to unlock/resume audio context.
+  const onVis = () => { if (document.visibilityState === "visible") sfx.unlock(); };
+  document.addEventListener("visibilitychange", onVis);
+}
+
+// Also try to resume the context when the document becomes visible (module-level)
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      try { if (ctx && ctx.state === 'suspended') void ctx.resume(); } catch {};
+    }
+  });
 }
