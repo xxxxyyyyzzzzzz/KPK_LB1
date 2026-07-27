@@ -6,31 +6,33 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Add HDR glow touch support to buttons
- * On touchstart: add hdr-active class for dramatic glow
- * On touchend: keep glow visible for 300ms then fade
- * Mimics iPhone haptic feedback feel
+ * Add HDR glow touch support to buttons.
+ * On touchstart: add hdr-active class for dramatic glow.
+ * On touchend: keep glow visible for 300ms then fade.
  */
 export function attachHdrTouchGlow(button: HTMLElement) {
   if (!button) return;
 
   let touchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  button.addEventListener('touchstart', () => {
+  const onStart = () => {
     if (touchTimer) clearTimeout(touchTimer);
-    button.classList.add('hdr-active');
-  });
-
-  button.addEventListener('touchend', () => {
+    button.classList.add("hdr-active");
+  };
+  const onEnd = () => {
     touchTimer = setTimeout(() => {
-      button.classList.remove('hdr-active');
+      button.classList.remove("hdr-active");
       touchTimer = null;
     }, 300);
-  });
+  };
 
-  // Cleanup function for unmounting
+  button.addEventListener("touchstart", onStart);
+  button.addEventListener("touchend", onEnd);
+
   return () => {
     if (touchTimer) clearTimeout(touchTimer);
+    button.removeEventListener("touchstart", onStart);
+    button.removeEventListener("touchend", onEnd);
   };
 }
 

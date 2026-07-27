@@ -1069,7 +1069,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
 export function useKpk() {
   const v = useContext(KpkContext);
   if (!v) throw new Error("useKpk must be used inside KpkProvider");
-  return v;
+  const tick = useContext(TimerTickContext);
+  return { ...v, sessionSeconds: tick.sessionSeconds, turnSeconds: tick.turnSeconds };
 }
 
 export function fmtClock(s: number) {

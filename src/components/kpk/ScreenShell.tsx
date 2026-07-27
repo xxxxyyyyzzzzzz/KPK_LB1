@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, createContext, useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useKpk, fmtClock, fmtSession } from "@/lib/kpkStore";
+import { useKpk, fmtClock } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
 import type { Screen } from "@/lib/kpkData";
@@ -62,27 +62,6 @@ function HeaderTimer() {
   );
 }
 
-export function HudStatus() {
-  const { sessionSeconds } = useKpk();
-  return (
-    <div
-      className="pointer-events-none hud-status-strip fixed inset-x-0 top-0 z-50 flex items-center justify-between hud-mono text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--hud-amber)]/70 bg-[color:var(--surface-2)] border-b border-[color:var(--hud-amber)]/20"
-      style={{
-        boxSizing: "border-box",
-        height: STATUS_BAR_HEIGHT,
-        minHeight: STATUS_BAR_HEIGHT,
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "0.1rem",
-        paddingLeft: "max(0.75rem, env(safe-area-inset-left))",
-        paddingRight: "max(0.75rem, env(safe-area-inset-right))",
-      }}
-    >
-      <span>● REC · ZONE-7</span>
-      <span className="hud-blink">SIGNAL OK</span>
-      <span className="tabular-nums">{fmtSession(sessionSeconds)}</span>
-    </div>
-  );
-}
 
 function BurgerMenu() {
   const {
@@ -395,7 +374,7 @@ function BurgerMenu() {
 }
 
 const HEADER_CONTENT_H = 52; // висота контенту хедера в px
-const STATUS_BAR_INNER_HEIGHT = "1.5rem";
+const STATUS_BAR_INNER_HEIGHT = "0rem";
 export const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
 const HEADER_INNER_HEIGHT = `calc(12px + 0.5rem + ${HEADER_CONTENT_H}px)`;
