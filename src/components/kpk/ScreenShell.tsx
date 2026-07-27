@@ -373,11 +373,12 @@ function BurgerMenu() {
   );
 }
 
-const HEADER_CONTENT_H = 52; // висота контенту хедера в px
+const HEADER_CONTENT_H = 40; // висота контенту хедера в px (12px+8px padding + 40px = 60px total)
 const STATUS_BAR_INNER_HEIGHT = "0rem";
 export const STATUS_BAR_HEIGHT = `calc(env(safe-area-inset-top) + ${STATUS_BAR_INNER_HEIGHT})`;
 const HEADER_OFFSET = STATUS_BAR_HEIGHT;
 const HEADER_INNER_HEIGHT = `calc(12px + 0.5rem + ${HEADER_CONTENT_H}px)`;
+const BOTTOM_NAV_HEIGHT = 65; // px, висота нижньої панелі (незалежна від хедера)
 const HEADER_TOTAL_HEIGHT = `calc(${HEADER_OFFSET} + ${HEADER_INNER_HEIGHT})`;
 
 export function HudHeader({ title, showStickyTitle, headerRef }: { title: string; showStickyTitle: boolean; headerRef?: React.RefObject<HTMLElement | null> }) {
@@ -448,7 +449,7 @@ export function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
         paddingLeft: "calc(6px + env(safe-area-inset-left))",
         paddingRight: "calc(6px + env(safe-area-inset-right))",
-        height: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
+        height: `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
       }}
     >
       {NAV_ITEMS.map((item) => {
@@ -557,7 +558,7 @@ export function ScreenShell({ children }: { children: ReactNode; title?: string 
         overflowX: "hidden",
         WebkitOverflowScrolling: "touch",
         paddingTop: HEADER_TOTAL_HEIGHT,
-        paddingBottom: `calc(${HEADER_INNER_HEIGHT} + env(safe-area-inset-bottom))`,
+        paddingBottom: `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
         zIndex: 10,
