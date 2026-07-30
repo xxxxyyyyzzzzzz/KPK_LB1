@@ -169,33 +169,32 @@ function getClassTierState(
   return { locked: false, activeCount };
 }
 
-function LockGlyph({ nx, rowY }: { nx: number; rowY: number }) {
-  return (
-    <g style={{ pointerEvents: "none" }}>
-      <path
-        d={`M ${nx - 2} ${rowY - 1} v-1.4 a2 2 0 0 1 4 0 v1.4`}
-        fill="none"
-        stroke="var(--surface-3)"
-        strokeWidth={1.1}
-        strokeLinecap="round"
-      />
-      <rect x={nx - 2.6} y={rowY - 1.2} width={5.2} height={4} rx={0.8} fill="var(--surface-3)" />
-    </g>
-  );
+function tierPositions(
+  nx: number,
+  rowY: number,
+  count: 1 | 2,
+  forkOffset: number,
+  staggerX: number,
+): { x: number; y: number }[] {
+  if (count === 2) {
+    return [
+      { x: nx, y: rowY - forkOffset },
+      { x: nx + staggerX, y: rowY + forkOffset },
+    ];
+  }
+  return [{ x: nx, y: rowY }];
 }
 
-function CheckGlyph({ nx, rowY }: { nx: number; rowY: number }) {
-  return (
-    <path
-      d={`M ${nx - 3} ${rowY} L ${nx - 0.7} ${rowY + 2.2} L ${nx + 3.2} ${rowY - 2.6}`}
-      fill="none"
-      stroke="var(--surface-2)"
-      strokeWidth={1.4}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ pointerEvents: "none" }}
-    />
-  );
+function connectPairs<T>(src: T[], tgt: T[]): [T, T][] {
+  if (src.length === 1 && tgt.length === 1) return [[src[0], tgt[0]]];
+  if (src.length === 1) return tgt.map((t) => [src[0], t] as [T, T]);
+  if (tgt.length === 1) return src.map((s) => [s, tgt[0]] as [T, T]);
+  return src.map((s, i) => [s, tgt[i]] as [T, T]);
+}
+
+function bezierPath(x1: number, y1: number, x2: number, y2: number): string {
+  const midX = (x1 + x2) / 2;
+  return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
 }
 
 function MissionClassProgress({
@@ -209,31 +208,31 @@ function MissionClassProgress({
   completedIds: number[];
   getMission: (id: number | null) => { cls: string } | null;
 }) {
-  const rowH = 28;
-  const topPad = 12;
-  const originX = 12;
-  const branchX = 34;
-  const nodeXs = [66, 158, 250];
-  const width = 300;
+  const rowH = 30;
+  const topPad = 14;
+  const originX = 14;
+  const nodeXs = [70, 165, 260];
+  const staggerX = 16;
+  const forkOffset = 11;
+  const NODE_R = 7;
+  const LOCK_R = 6;
+  const width = 290;
   const height = topPad * 2 + (MISSION_CLASSES.length - 1) * rowH;
   const originY = height / 2;
-  const forkOffset = 9;
-  const forkStartOffset = 16;
 
   const rows = MISSION_CLASSES.map((cls, rowIdx) => {
     const rowY = topPad + rowIdx * rowH;
     const color = MISSION_CLASS_COLOR[cls];
-    const dimColor = `color-mix(in srgb, ${color} 45%, var(--muted-foreground) 55%)`;
     const states = ([1, 2, 3] as const).map((tier) =>
       getClassTierState(cls, tier, unlockedClasses, slots, completedIds, getMission),
     );
-    return { cls, rowY, color, dimColor, states };
+    const stopCounts = states.map((st) => (!st.locked && st.activeCount >= 2 ? 2 : 1)) as (1 | 2)[];
+    const stopPositions = [
+      [{ x: originX, y: originY }],
+      ...stopCounts.map((count, i) => tierPositions(nodeXs[i], rowY, count, forkOffset, staggerX)),
+    ];
+    return { cls, rowY, color, states, stopPositions };
   });
-
-  const stateColor = (st: { locked: boolean; activeCount: number }, color: string, dimColor: string) =>
-    st.locked ? "var(--muted-foreground)" : st.activeCount > 0 ? color : dimColor;
-
-  const NODE_R = 6;
 
   return (
     <svg
@@ -243,97 +242,106 @@ function MissionClassProgress({
       role="img"
       aria-label="Прогрес доступних місій за класами"
     >
+      <defs>
+        <filter id="kpk-node-glow" x="-150%" y="-150%" width="400%" height="400%">
+          <feGaussianBlur stdDeviation="3.2" />
+        </filter>
+      </defs>
+
       {/* Хаб-вузол зліва */}
       <circle cx={originX} cy={originY} r={5} fill="var(--surface-3)" stroke="var(--muted-foreground)" strokeWidth={1.5} />
       <circle cx={originX} cy={originY} r={2} fill="var(--foreground)" opacity={0.8} />
 
-      {/* Шар 1: усі лінії, для ВСІХ рядків одразу — завжди під вузлами */}
-      {rows.map(({ cls, rowY, color, dimColor, states }) => (
+      {/* Шар 1: криві — динамічний fan-out/конвергенція, яскравий колір класу без затемнення */}
+      {rows.map(({ cls, color, states, stopPositions }) => (
         <g key={`lines-${cls}`}>
-          <path
-            d={`M ${originX} ${originY} C ${branchX} ${originY}, ${branchX} ${rowY}, ${nodeXs[0]} ${rowY}`}
-            fill="none"
-            stroke={stateColor(states[0], color, dimColor)}
-            strokeWidth={1.5}
-            opacity={0.7}
-            style={{ transition: "stroke 0.6s ease" }}
-          />
-          <line
-            x1={nodeXs[0]} y1={rowY} x2={nodeXs[1]} y2={rowY}
-            stroke={stateColor(states[1], color, dimColor)}
-            strokeWidth={1.5}
-            strokeDasharray={states[1].locked ? undefined : "4 4"}
-            opacity={0.7}
-            style={{
-              transition: "stroke 0.6s ease",
-              animation: states[1].locked ? "none" : "hud-line-flow 1.2s linear infinite",
-            }}
-          />
-          <line
-            x1={nodeXs[1]} y1={rowY} x2={nodeXs[2]} y2={rowY}
-            stroke={stateColor(states[2], color, dimColor)}
-            strokeWidth={1.5}
-            strokeDasharray={states[2].locked ? undefined : "4 4"}
-            opacity={0.7}
-            style={{
-              transition: "stroke 0.6s ease",
-              animation: states[2].locked ? "none" : "hud-line-flow 1.2s linear infinite",
-            }}
-          />
+          {([0, 1, 2] as const).map((tierIdx) => {
+            const src = stopPositions[tierIdx];
+            const tgt = stopPositions[tierIdx + 1];
+            const st = states[tierIdx];
+            const stroke = st.locked ? "var(--muted-foreground)" : color;
+            const isActive = !st.locked && st.activeCount > 0;
+            return connectPairs(src, tgt).map((pair, pairIdx) => {
+              const [p1, p2] = pair;
+              return (
+                <path
+                  key={`seg-${cls}-${tierIdx}-${pairIdx}`}
+                  d={bezierPath(p1.x, p1.y, p2.x, p2.y)}
+                  fill="none"
+                  stroke={stroke}
+                  strokeWidth={1.6}
+                  strokeDasharray={st.locked ? undefined : "4 4"}
+                  style={{
+                    transition: "stroke 0.6s ease",
+                    animation: isActive ? "hud-line-flow 1.2s linear infinite" : "none",
+                  }}
+                />
+              );
+            });
+          })}
         </g>
       ))}
 
-      {/* Шар 2: усі вузли, для ВСІХ рядків одразу — завжди поверх ліній */}
-      {rows.map(({ cls, rowY, color, dimColor, states }) =>
-        nodeXs.map((nx, tierIdx) => {
+      {/* Шар 2: вузли — locked (тьмяне закрите коло), доступно (яскраве порожнє кільце), активно (яскрава заливка + glow) */}
+      {rows.map(({ cls, color, states, stopPositions }) =>
+        ([0, 1, 2] as const).map((tierIdx) => {
           const tier = (tierIdx + 1) as 1 | 2 | 3;
           const st = states[tierIdx];
-          const fill = st.locked ? "var(--muted-foreground)" : st.activeCount > 0 ? color : dimColor;
+          const positions = stopPositions[tierIdx + 1];
           const isActive = !st.locked && st.activeCount > 0;
           const label = `${cls} · Рівень ${tier === 1 ? "I" : tier === 2 ? "II" : "III"}`;
 
-          const renderNode = (cx: number, cy: number, key: string, sublabel?: string) => (
-            <g key={key} style={{ color: fill }}>
-              <circle
-                cx={cx}
-                cy={cy}
-                r={NODE_R}
-                fill={fill}
-                style={{
-                  transition: "fill 0.6s ease",
-                  animation: isActive ? "hud-node-pulse 2.4s ease-in-out infinite" : "none",
-                }}
-              >
-                <title>{sublabel ?? label}</title>
-              </circle>
-              {st.locked && <LockGlyph nx={cx} rowY={cy} />}
-              {isActive && <CheckGlyph nx={cx} rowY={cy} />}
-            </g>
-          );
+          return positions.map((pos, idx) => {
+            const sublabel = positions.length === 2 ? `${label} (${idx + 1}/2)` : label;
 
-          if (st.activeCount === 2) {
-            const forkX = nx - forkStartOffset;
+            if (st.locked) {
+              return (
+                <circle
+                  key={`node-${cls}-${tier}-${idx}`}
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={LOCK_R}
+                  fill="var(--surface-2)"
+                  stroke="var(--muted-foreground)"
+                  strokeWidth={1.5}
+                  opacity={0.6}
+                >
+                  <title>{sublabel}</title>
+                </circle>
+              );
+            }
+
+            if (isActive) {
+              return (
+                <g key={`node-${cls}-${tier}-${idx}`}>
+                  <circle cx={pos.x} cy={pos.y} r={NODE_R + 3} fill={color} opacity={0.5} filter="url(#kpk-node-glow)" />
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={NODE_R}
+                    fill={color}
+                    style={{ animation: "hud-node-pulse 2.4s ease-in-out infinite" }}
+                  >
+                    <title>{sublabel}</title>
+                  </circle>
+                </g>
+              );
+            }
+
             return (
-              <g key={`node-${cls}-${tier}`}>
-                <line
-                  x1={forkX} y1={rowY} x2={nx} y2={rowY - forkOffset}
-                  stroke={color}
-                  strokeWidth={1.5}
-                  style={{ transformOrigin: `${forkX}px ${rowY}px`, animation: "hud-fork-grow 0.5s ease both" }}
-                />
-                <line
-                  x1={forkX} y1={rowY} x2={nx} y2={rowY + forkOffset}
-                  stroke={color}
-                  strokeWidth={1.5}
-                  style={{ transformOrigin: `${forkX}px ${rowY}px`, animation: "hud-fork-grow 0.5s ease both" }}
-                />
-                {renderNode(nx, rowY - forkOffset, `node-${cls}-${tier}-a`, `${label} (1/2)`)}
-                {renderNode(nx, rowY + forkOffset, `node-${cls}-${tier}-b`, `${label} (2/2)`)}
-              </g>
+              <circle
+                key={`node-${cls}-${tier}-${idx}`}
+                cx={pos.x}
+                cy={pos.y}
+                r={NODE_R}
+                fill="var(--surface-2)"
+                stroke={color}
+                strokeWidth={2}
+              >
+                <title>{sublabel}</title>
+              </circle>
             );
-          }
-
-          return renderNode(nx, rowY, `node-${cls}-${tier}`);
+          });
         }),
       )}
     </svg>
