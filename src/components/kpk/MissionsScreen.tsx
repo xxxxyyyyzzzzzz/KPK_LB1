@@ -209,7 +209,7 @@ function MissionClassProgress({
   getMission: (id: number | null) => { cls: string } | null;
 }) {
   const rowH = 30;
-  const topPad = 14;
+  const topPad = 22;
   const originX = 14;
   const nodeXs = [70, 165, 260];
   const staggerX = 16;
@@ -239,6 +239,7 @@ function MissionClassProgress({
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="xMidYMid meet"
       className="w-full max-w-[300px] h-auto"
+      style={{ overflow: "visible" }}
       role="img"
       aria-label="Прогрес доступних місій за класами"
     >
