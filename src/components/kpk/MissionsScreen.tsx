@@ -169,6 +169,35 @@ function getClassTierState(
   return { locked: false, activeCount };
 }
 
+function LockGlyph({ nx, rowY }: { nx: number; rowY: number }) {
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <path
+        d={`M ${nx - 2} ${rowY - 1} v-1.4 a2 2 0 0 1 4 0 v1.4`}
+        fill="none"
+        stroke="var(--surface-3)"
+        strokeWidth={1.1}
+        strokeLinecap="round"
+      />
+      <rect x={nx - 2.6} y={rowY - 1.2} width={5.2} height={4} rx={0.8} fill="var(--surface-3)" />
+    </g>
+  );
+}
+
+function CheckGlyph({ nx, rowY }: { nx: number; rowY: number }) {
+  return (
+    <path
+      d={`M ${nx - 3} ${rowY} L ${nx - 0.7} ${rowY + 2.2} L ${nx + 3.2} ${rowY - 2.6}`}
+      fill="none"
+      stroke="var(--surface-2)"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ pointerEvents: "none" }}
+    />
+  );
+}
+
 function MissionClassProgress({
   unlockedClasses,
   slots,
@@ -204,6 +233,8 @@ function MissionClassProgress({
   const stateColor = (st: { locked: boolean; activeCount: number }, color: string, dimColor: string) =>
     st.locked ? "var(--muted-foreground)" : st.activeCount > 0 ? color : dimColor;
 
+  const NODE_R = 6;
+
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
@@ -212,11 +243,21 @@ function MissionClassProgress({
       role="img"
       aria-label="Прогрес доступних місій за класами"
     >
+      {/* Хаб-вузол зліва */}
+      <circle cx={originX} cy={originY} r={5} fill="var(--surface-3)" stroke="var(--muted-foreground)" strokeWidth={1.5} />
+      <circle cx={originX} cy={originY} r={2} fill="var(--foreground)" opacity={0.8} />
+
       {/* Шар 1: усі лінії, для ВСІХ рядків одразу — завжди під вузлами */}
       {rows.map(({ cls, rowY, color, dimColor, states }) => (
         <g key={`lines-${cls}`}>
-          <line x1={originX} y1={originY} x2={branchX} y2={rowY} stroke={stateColor(states[0], color, dimColor)} strokeWidth={1.5} opacity={0.7} style={{ transition: "stroke 0.6s ease" }} />
-          <line x1={branchX} y1={rowY} x2={nodeXs[0]} y2={rowY} stroke={stateColor(states[0], color, dimColor)} strokeWidth={1.5} opacity={0.7} style={{ transition: "stroke 0.6s ease" }} />
+          <path
+            d={`M ${originX} ${originY} C ${branchX} ${originY}, ${branchX} ${rowY}, ${nodeXs[0]} ${rowY}`}
+            fill="none"
+            stroke={stateColor(states[0], color, dimColor)}
+            strokeWidth={1.5}
+            opacity={0.7}
+            style={{ transition: "stroke 0.6s ease" }}
+          />
           <line
             x1={nodeXs[0]} y1={rowY} x2={nodeXs[1]} y2={rowY}
             stroke={stateColor(states[1], color, dimColor)}
@@ -251,6 +292,25 @@ function MissionClassProgress({
           const isActive = !st.locked && st.activeCount > 0;
           const label = `${cls} · Рівень ${tier === 1 ? "I" : tier === 2 ? "II" : "III"}`;
 
+          const renderNode = (cx: number, cy: number, key: string, sublabel?: string) => (
+            <g key={key} style={{ color: fill }}>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={NODE_R}
+                fill={fill}
+                style={{
+                  transition: "fill 0.6s ease",
+                  animation: isActive ? "hud-node-pulse 2.4s ease-in-out infinite" : "none",
+                }}
+              >
+                <title>{sublabel ?? label}</title>
+              </circle>
+              {st.locked && <LockGlyph nx={cx} rowY={cy} />}
+              {isActive && <CheckGlyph nx={cx} rowY={cy} />}
+            </g>
+          );
+
           if (st.activeCount === 2) {
             const forkX = nx - forkStartOffset;
             return (
@@ -267,32 +327,13 @@ function MissionClassProgress({
                   strokeWidth={1.5}
                   style={{ transformOrigin: `${forkX}px ${rowY}px`, animation: "hud-fork-grow 0.5s ease both" }}
                 />
-                <circle cx={nx} cy={rowY - forkOffset} r={6} fill={color} style={{ animation: "hud-node-pulse 2.4s ease-in-out infinite", color: fill }}>
-                  <title>{label} (1/2)</title>
-                </circle>
-                <circle cx={nx} cy={rowY + forkOffset} r={6} fill={color} style={{ animation: "hud-node-pulse 2.4s ease-in-out infinite", color: fill }}>
-                  <title>{label} (2/2)</title>
-                </circle>
+                {renderNode(nx, rowY - forkOffset, `node-${cls}-${tier}-a`, `${label} (1/2)`)}
+                {renderNode(nx, rowY + forkOffset, `node-${cls}-${tier}-b`, `${label} (2/2)`)}
               </g>
             );
           }
 
-          return (
-            <g key={`node-${cls}-${tier}`} style={{ color: fill }}>
-              <circle
-                cx={nx}
-                cy={rowY}
-                r={6}
-                fill={fill}
-                style={{
-                  transition: "fill 0.6s ease",
-                  animation: isActive ? "hud-node-pulse 2.4s ease-in-out infinite" : "none",
-                }}
-              >
-                <title>{label}</title>
-              </circle>
-            </g>
-          );
+          return renderNode(nx, rowY, `node-${cls}-${tier}`);
         }),
       )}
     </svg>
