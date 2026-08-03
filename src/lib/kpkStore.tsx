@@ -27,7 +27,15 @@ type ActionPoints = {
   build: number; buildMax: number;
 };
 
-type HistoryEntry = { nickname: string; reason: string; reward: number; currency: number };
+type HistoryEntry = {
+  nickname: string;
+  reason: string;
+  reward: number;
+  currency: number;
+  type: "mission_complete" | "upgrade" | "turn_end" | "news_round";
+  missionId?: number;
+  upgradeId?: string;
+};
 
 type PurchaseResult = { ok: boolean; reason?: string };
 
@@ -317,6 +325,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         reason: String((e.payload as any).reason ?? e.type),
         reward: Number((e.payload as any).reward ?? 0),
         currency: Number((e.payload as any).currency ?? 0),
+        type: e.type,
+        missionId: e.type === "mission_complete" ? Number((e.payload as any).mission_id) : undefined,
+        upgradeId: e.type === "upgrade" ? String((e.payload as any).upgrade_id ?? "") : undefined,
       }));
   }, [session?.events]);
 

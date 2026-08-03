@@ -13,7 +13,7 @@ export const MISSION_SLOT_COUNT = 6;
 export const slotLevel = (slotIndex: number): 1 | 2 | 3 =>
   ((slotIndex % 3) + 1) as 1 | 2 | 3;
 
-export const MISSION_CLASSES = ["Атака", "Захист", "Лут", "Економіка"] as const;
+export const MISSION_CLASSES = ["Атака", "Захист", "Розвиток"] as const;
 export type MissionClass = (typeof MISSION_CLASSES)[number];
 
 export const UPGRADE_CATEGORIES = ["Захист", "Атака", "Лут", "Економіка", "Командування"] as const;

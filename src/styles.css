@@ -55,6 +55,7 @@
   --color-mission-defense: var(--mission-defense);
   --color-mission-loot: var(--mission-loot);
   --color-mission-economy: var(--mission-economy);
+  --color-mission-development: var(--mission-development);
 
   --font-display: "Orbitron", "Rajdhani", sans-serif;
   --font-mono: "JetBrains Mono", "Share Tech Mono", monospace;
@@ -105,6 +106,7 @@
   --mission-defense: #66ADFF;
   --mission-loot: #F9FF9E;
   --mission-economy: #A9FFAF;
+  --mission-development: #D1FFA6;
 
   --level-1: #7CE495;
   --level-2: #F2E14D;

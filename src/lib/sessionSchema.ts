@@ -95,7 +95,7 @@ export function initialPlayerSlots(): PlayerSlot[] {
 
 export function makePlayer(nickname: string, faction: string): PlayerState {
   const ap = DEFAULT_ACTION_POINTS;
-  const MISSION_CLASSES = ["Атака", "Захист", "Лут", "Економіка"];
+  const MISSION_CLASSES = ["Атака", "Захист", "Розвиток"];
   return {
     nickname,
     faction,

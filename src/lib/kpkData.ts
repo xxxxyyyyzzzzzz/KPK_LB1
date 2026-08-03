@@ -12,14 +12,13 @@ export const FACTIONS: Record<string, string> = {
   Розсвіт: "#7EF2FF",
 };
 
-export const MISSION_CLASSES = ["Атака", "Захист", "Лут", "Економіка"] as const;
+export const MISSION_CLASSES = ["Атака", "Захист", "Розвиток"] as const;
 export type MissionClass = (typeof MISSION_CLASSES)[number];
 
 export const MISSION_CLASS_COLOR: Record<MissionClass, string> = {
   Атака: "var(--mission-attack)",
   Захист: "var(--mission-defense)",
-  Лут: "var(--mission-loot)",
-  Економіка: "var(--mission-economy)",
+  Розвиток: "var(--mission-development)",
 };
 
 export const DEFAULT_ACTION_POINTS = { active: 7, attack: 5, build: 4 } as const;
@@ -118,53 +117,53 @@ export const MISSION_RECIPES: Recipe[] = [
   ]},
   { action: "Перехопити", action_coeff: 5, cls: "Атака", objects: [{ object: "Точку", object_coeff: 15, quantity: "1" }]},
 
-  { action: "Купити", action_coeff: 2, cls: "Економіка", objects: [
+  { action: "Купити", action_coeff: 2, cls: "Розвиток", objects: [
     { object: "Предмет магазину", object_coeff: 2, quantity: "1-9" },
     { object: "Найманців", object_coeff: 4, quantity: "1-3" },
     { object: "Транпорт з магазину", object_coeff: 4, quantity: "1-3" },
   ]},
-  { action: "Налагодити стосунки з", action_coeff: 4, cls: "Економіка", objects: [{ object: "NPC", object_coeff: 8, quantity: "1-2" }]},
-  { action: "Побудувати", action_coeff: 2, cls: "Економіка", objects: [
+  { action: "Налагодити стосунки з", action_coeff: 4, cls: "Розвиток", objects: [{ object: "NPC", object_coeff: 8, quantity: "1-2" }]},
+  { action: "Побудувати", action_coeff: 2, cls: "Розвиток", objects: [
     { object: "Ринок", object_coeff: 3, quantity: "1" },
     { object: "Покращення точки", object_coeff: 3, quantity: "1-3" },
   ]},
-  { action: "Накопити", action_coeff: 1, cls: "Економіка", objects: [
+  { action: "Накопити", action_coeff: 1, cls: "Розвиток", objects: [
     { object: "Валюту", object_coeff: 0.5, quantity: "10,15,20,30" },
     { object: "Залізо", object_coeff: 2, quantity: "4,6,8,10,12" },
   ]},
-  { action: "Подружитись", action_coeff: 4, cls: "Економіка", objects: [{ object: "NPC", object_coeff: 8, quantity: "1-2" }]},
-  { action: "Торгувати з", action_coeff: 2, cls: "Економіка", objects: [
+  { action: "Подружитись", action_coeff: 4, cls: "Розвиток", objects: [{ object: "NPC", object_coeff: 8, quantity: "1-2" }]},
+  { action: "Торгувати з", action_coeff: 2, cls: "Розвиток", objects: [
     { object: "Гравцем", object_coeff: 5, quantity: "1-2" },
     { object: "NPC", object_coeff: 8, quantity: "1-2" },
   ]},
-  { action: "Нанести шкоду", action_coeff: 3, cls: "Економіка", objects: [
+  { action: "Нанести шкоду", action_coeff: 3, cls: "Розвиток", objects: [
     { object: "Найманцями", object_coeff: 4, quantity: "1-3" },
     { object: "Транспортом", object_coeff: 6, quantity: "1-3" },
   ]},
-  { action: "Витратити", action_coeff: 1, cls: "Економіка", objects: [
+  { action: "Витратити", action_coeff: 1, cls: "Розвиток", objects: [
     { object: "Валюту", object_coeff: 0.5, quantity: "10,15,20,30" },
     { object: "Залізо", object_coeff: 2, quantity: "4,6,8,10,12" },
   ]},
 
-  { action: "Здобути", action_coeff: 2, cls: "Лут", objects: [
+  { action: "Здобути", action_coeff: 2, cls: "Розвиток", objects: [
     { object: "Артефакт", object_coeff: 12, quantity: "1-3" },
     { object: "Шматки мутантів", object_coeff: 2, quantity: "1-8" },
     { object: "мисливський ніж", object_coeff: 3, quantity: "1-3" },
   ]},
-  { action: "Вбити", action_coeff: 2, cls: "Лут", objects: [
+  { action: "Вбити", action_coeff: 2, cls: "Розвиток", objects: [
     { object: "Мутантів 1 рів.", object_coeff: 2, quantity: "1-8" },
     { object: "Мутантів 2 рів.", object_coeff: 5, quantity: "1-5" },
     { object: "Мутантів 3 рів.", object_coeff: 7, quantity: "1-4" },
   ]},
-  { action: "дійти до", action_coeff: 3, cls: "Лут", objects: [{ object: "центрального сектора", object_coeff: 5, quantity: "1" }]},
-  { action: "Використати", action_coeff: 3, cls: "Лут", objects: [{ object: "мисливський ніж", object_coeff: 3, quantity: "1-3" }]},
-  { action: "Обікрасти", action_coeff: 4, cls: "Лут", objects: [
+  { action: "дійти до", action_coeff: 3, cls: "Розвиток", objects: [{ object: "центрального сектора", object_coeff: 5, quantity: "1" }]},
+  { action: "Використати", action_coeff: 3, cls: "Розвиток", objects: [{ object: "мисливський ніж", object_coeff: 3, quantity: "1-3" }]},
+  { action: "Обікрасти", action_coeff: 4, cls: "Розвиток", objects: [
     { object: "склад", object_coeff: 6, quantity: "1" },
     { object: "лут дроном", object_coeff: 1, quantity: "1-4" },
   ]},
-  { action: "Побудувати", action_coeff: 1, cls: "Лут", objects: [{ object: "склад", object_coeff: 6, quantity: "1" }]},
-  { action: "Обмінятись з", action_coeff: 2, cls: "Лут", objects: [{ object: "NPC", object_coeff: 8, quantity: "1-3" }]},
-  { action: "Дослідити", action_coeff: 4, cls: "Лут", objects: [
+  { action: "Побудувати", action_coeff: 1, cls: "Розвиток", objects: [{ object: "склад", object_coeff: 6, quantity: "1" }]},
+  { action: "Обмінятись з", action_coeff: 2, cls: "Розвиток", objects: [{ object: "NPC", object_coeff: 8, quantity: "1-3" }]},
+  { action: "Дослідити", action_coeff: 4, cls: "Розвиток", objects: [
     { object: "Аномалії 1 рів.", object_coeff: 5, quantity: "1-2" },
     { object: "Аномалії 2 рів.", object_coeff: 5, quantity: "1-2" },
     { object: "Аномалії 3 рів.", object_coeff: 5, quantity: "1-2" },
