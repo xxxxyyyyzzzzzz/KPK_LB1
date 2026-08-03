@@ -566,10 +566,16 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   function buildCandidatePool(allMissions: Mission[], p: PlayerState, slotIndex: number, cls: string): number[] {
     const lvl = ((slotIndex % 3) + 1) as 1 | 2 | 3;
     const taken = new Set<number>([...(p.completed_ids ?? []), ...p.slots.map((s) => s.mission_id ?? -1)]);
-    const pool = allMissions.filter((mm) => mm.level === lvl && mm.cls === cls && !taken.has(mm.id));
+    const isRandom = cls === "Рандом";
+    const unlockedForTier = p.unlocked_classes?.[String(lvl) as "1" | "2" | "3"] ?? [];
+    const pool = allMissions.filter((mm) =>
+      mm.level === lvl &&
+      !taken.has(mm.id) &&
+      (isRandom ? unlockedForTier.includes(mm.cls) : mm.cls === cls),
+    );
     const candidates: number[] = [];
     const poolCopy = [...pool];
-    for (let i = 0; i < 4 && poolCopy.length > 0; i++) {
+    for (let i = 0; i < 2 && poolCopy.length > 0; i++) {
       const idx = Math.floor(Math.random() * poolCopy.length);
       candidates.push(poolCopy[idx].id);
       poolCopy.splice(idx, 1);

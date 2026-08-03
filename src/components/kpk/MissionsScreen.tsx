@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
-import { MISSION_CLASS_COLOR, MISSION_CLASSES, LEVEL_COLOR } from "@/lib/kpkData";
-import { useKpk } from "@/lib/kpkStore";
+import { MISSION_CLASS_COLOR, MISSION_CLASSES, LEVEL_COLOR, CLASS_DESCRIPTIONS } from "@/lib/kpkData";
+import { useKpk, fmtClock } from "@/lib/kpkStore";
 import { formatPoints } from "@/lib/utils";
 import { sfx } from "@/lib/sounds";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
@@ -29,9 +29,26 @@ export function MissionsScreen() {
     backToClassBrowse,
     cancelBrowse,
     confirmMissionSelection,
+    turnSeconds,
+    turnRunning,
+    toggleTurn,
+    isMyTurn,
   } = useKpk();
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [lastCompletedReward, setLastCompletedReward] = useState(0);
+  const [activeTier, setActiveTier] = useState<1 | 2 | 3>(1);
+  const autoFocusedRef = useRef(false);
+  useEffect(() => {
+    if (autoFocusedRef.current || slots.length === 0) return;
+    autoFocusedRef.current = true;
+    const emptyByTier: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
+    slots.forEach((s) => {
+      const t = ((s.slot_index % 3) + 1) as 1 | 2 | 3;
+      if (s.mission_id == null) emptyByTier[t] += 1;
+    });
+    const firstEmpty = ([1, 2, 3] as const).find((t) => emptyByTier[t] > 0);
+    if (firstEmpty) setActiveTier(firstEmpty);
+  }, [slots]);
 
   const handleCompleteSlot = async (slotIndex: number, reward: number) => {
     const result = await completeSlot(slotIndex);
@@ -46,10 +63,23 @@ export function MissionsScreen() {
       <div className="mx-auto max-w-5xl">
         {/* Header з лічильниками */}
         <AnimatedItem index={0} className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-1">
             <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1">
               МІСІЇ
             </h2>
+            <span className="hud-mono text-[0.6rem] uppercase tracking-[0.25em] text-[color:var(--muted-foreground)]">
+              Місії → бали → рейтинг → перемога
+            </span>
+          </div>
+          <div className="flex items-center gap-2 hud-mono text-xs">
+            <span className={`tabular-nums text-sm ${turnSeconds <= 30 ? "text-[color:var(--hud-red)]" : "text-[color:var(--hud-amber-glow)]"}`}>
+              ⏱ {fmtClock(turnSeconds)}
+            </span>
+            {isMyTurn && (
+              <span className="hud-mono text-[0.65rem] text-[color:var(--hud-amber)] uppercase tracking-[0.2em]">
+                Ваш хід
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-4 hud-mono text-xs">
             <div className="text-[color:var(--muted-foreground)]">
@@ -87,58 +117,55 @@ export function MissionsScreen() {
           </div>
         </AnimatedItem>
 
-        {/* Блоки рівнів */}
-        {([1, 2, 3] as const).map((tier, tierIdx) => {
-          const tierColor =
-            tier === 1 ? "var(--mission-defense)" : tier === 2 ? "var(--mission-loot)" : "var(--mission-economy)";
-          return (
-            <AnimatedItem key={tier} index={tierIdx + 1} className="mb-6">
-              <div
-                className="overflow-hidden border border-[color:var(--hud-amber)]/20 border-l-4 bg-[color:var(--surface-3)]/80 shadow-[0_1px_0_0_rgba(245,184,64,0.08)]"
-                style={{ borderLeftColor: tierColor }}
-              >
-                <div className="border-b border-[color:var(--hud-amber)]/15 bg-[color:var(--surface-2)]/70 px-4 py-3">
-                  <span className="hud-label text-[color:var(--hud-amber)]">
-                    Рівень {tier === 1 ? "I" : tier === 2 ? "II" : "III"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 p-4">
-                  {slots
-                    .filter((s) => (s.slot_index % 3) + 1 === tier)
-                    .map((s, cardIdx) => {
-                      const m = getMission(s.mission_id);
-                      return (
-                        <div
-                          key={s.slot_index}
-                          style={{
-                            opacity: 0,
-                            animation: `hud-screen-in 0.4s cubic-bezier(0.2,0.8,0.2,1) ${(tierIdx * 0.15) + (cardIdx * 0.1) + 0.2}s both`,
-                          }}
-                        >
-                          <SlotCard
-                            slot={s}
-                            mission={m}
-                            tier={tier}
-                            unlockedClassesForTier={unlockedClasses[String(tier) as "1" | "2" | "3"] ?? []}
-                            onStartBrowseClass={() => startBrowseClass(s.slot_index)}
-                            onSelectBrowseClass={(cls) => selectBrowseClass(s.slot_index, cls)}
-                            onStartBrowseSameClass={() => startBrowseSameClass(s.slot_index)}
-                            onStartReplaceConfirm={() => startReplaceConfirm(s.slot_index)}
-                            onBackToClassBrowse={() => backToClassBrowse(s.slot_index)}
-                            onCancelBrowse={() => cancelBrowse(s.slot_index)}
-                            onConfirmMissionSelection={(missionId) => confirmMissionSelection(s.slot_index, missionId)}
-                            onUpdateProgress={(delta) => updateSlotProgress(s.slot_index, delta)}
-                            onComplete={() => handleCompleteSlot(s.slot_index, m?.currencyReward ?? 0)}
-                            canReplace={global_replacements_left > 0}
-                          />
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </AnimatedItem>
-          );
-        })}
+        {/* Вкладки рівнів */}
+        <MissionTierTabs slots={slots} activeTier={activeTier} onSelectTier={setActiveTier} />
+
+        {/* Блок обраного рівня */}
+        <AnimatedItem index={3} className="mb-6">
+          <div
+            className="overflow-hidden border border-[color:var(--hud-amber)]/20 border-l-4 bg-[color:var(--surface-3)]/80 shadow-[0_1px_0_0_rgba(245,184,64,0.08)]"
+            style={{
+              borderLeftColor:
+                activeTier === 1 ? "var(--mission-defense)" : activeTier === 2 ? "var(--mission-loot)" : "var(--mission-economy)",
+            }}
+          >
+            <div className="border-b border-[color:var(--hud-amber)]/15 bg-[color:var(--surface-2)]/70 px-4 py-3">
+              <span className="hud-label text-[color:var(--hud-amber)]">
+                Рівень {activeTier === 1 ? "I" : activeTier === 2 ? "II" : "III"}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 p-4">
+              {slots
+                .filter((s) => (s.slot_index % 3) + 1 === activeTier)
+                .map((s, cardIdx) => {
+                  const m = getMission(s.mission_id);
+                  return (
+                    <div
+                      key={s.slot_index}
+                      style={{ opacity: 0, animation: `hud-screen-in 0.4s cubic-bezier(0.2,0.8,0.2,1) ${cardIdx * 0.1 + 0.2}s both` }}
+                    >
+                      <SlotCard
+                        slot={s}
+                        mission={m}
+                        tier={activeTier}
+                        unlockedClassesForTier={unlockedClasses[String(activeTier) as "1" | "2" | "3"] ?? []}
+                        onStartBrowseClass={() => startBrowseClass(s.slot_index)}
+                        onSelectBrowseClass={(cls) => selectBrowseClass(s.slot_index, cls)}
+                        onStartBrowseSameClass={() => startBrowseSameClass(s.slot_index)}
+                        onStartReplaceConfirm={() => startReplaceConfirm(s.slot_index)}
+                        onBackToClassBrowse={() => backToClassBrowse(s.slot_index)}
+                        onCancelBrowse={() => cancelBrowse(s.slot_index)}
+                        onConfirmMissionSelection={(missionId) => confirmMissionSelection(s.slot_index, missionId)}
+                        onUpdateProgress={(delta) => updateSlotProgress(s.slot_index, delta)}
+                        onComplete={() => handleCompleteSlot(s.slot_index, m?.currencyReward ?? 0)}
+                        canReplace={global_replacements_left > 0}
+                      />
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </AnimatedItem>
       </div>
       <CurrencyPayoutModal
         open={payoutOpen}
@@ -148,6 +175,45 @@ export function MissionsScreen() {
         onClose={() => setPayoutOpen(false)}
       />
     </ScreenShell>
+  );
+}
+
+function MissionTierTabs({
+  slots,
+  activeTier,
+  onSelectTier,
+}: {
+  slots: import("@/lib/sessionSchema").PlayerSlot[];
+  activeTier: 1 | 2 | 3;
+  onSelectTier: (tier: 1 | 2 | 3) => void;
+}) {
+  const counts: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
+  slots.forEach((s) => {
+    const t = ((s.slot_index % 3) + 1) as 1 | 2 | 3;
+    if (s.mission_id == null) counts[t] += 1;
+  });
+  const labels: Record<1 | 2 | 3, string> = { 1: "I", 2: "II", 3: "III" };
+  return (
+    <div className="mb-4 flex gap-2">
+      {([1, 2, 3] as const).map((tier) => {
+        const isActive = tier === activeTier;
+        return (
+          <button
+            key={tier}
+            type="button"
+            onClick={() => { onSelectTier(tier); sfx.click(); }}
+            className={`hud-btn flex-1 !py-2 !text-sm ${isActive ? "" : "hud-btn-ghost"}`}
+          >
+            Рівень {labels[tier]}
+            {counts[tier] > 0 && (
+              <span className="ml-2 hud-mono text-[0.6rem] text-[color:var(--hud-amber-glow)]">
+                · {counts[tier]} вільн.
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -407,6 +473,12 @@ function SlotCard({
     availableByClass[cls] = pool.length > 0;
   }
   const hasAnyAvailable = Object.values(availableByClass).some((v) => v === true);
+  const availablePool = allMissions.filter(
+    (mm) => mm.level === tier && !taken.has(mm.id) && unlockedClassesForTier.includes(mm.cls),
+  );
+  const rewardRange = availablePool.length > 0
+    ? { min: Math.min(...availablePool.map((mm) => mm.mainReward)), max: Math.max(...availablePool.map((mm) => mm.mainReward)) }
+    : null;
   const candidateIds = slot.browse_class ? slot.candidates_by_class?.[slot.browse_class] ?? null : null;
 
   return (
@@ -461,14 +533,22 @@ function SlotCard({
           </div>
         );
       })() : (
-        <div className="hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)]/30 p-3 text-center">
+        <div
+          className="hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]/30 p-3 text-center"
+          style={hasAnyAvailable ? { animation: "hud-pulse 2.4s ease-in-out infinite" } : undefined}
+        >
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+          {rewardRange && (
+            <div className="hud-mono text-[0.7rem] text-[color:var(--hud-amber-glow)] mb-2">
+              +{formatPoints(rewardRange.min)}–{formatPoints(rewardRange.max)} балів
+            </div>
+          )}
           <button
             onClick={() => { captureOrigin(); onStartBrowseClass(); }}
             className="hud-btn w-full py-2 text-sm"
             disabled={!hasAnyAvailable}
             title={!hasAnyAvailable ? "Немає доступних місій" : undefined}
-          >Вибрати місію</button>
+          >Вільний слот · Вибрати місію</button>
         </div>
       )}
 
@@ -485,6 +565,7 @@ function SlotCard({
           tier={tier}
           unlockedClasses={unlockedClassesForTier}
           availableByClass={availableByClass}
+          randomAvailable={hasAnyAvailable}
           originOffset={originOffset}
           onSelect={(cls) => onSelectBrowseClass(cls)}
           onCancel={() => onCancelBrowse()}
@@ -508,10 +589,11 @@ type ClassSelectionModalProps = {
   onSelect: (cls: string) => void;
   onCancel: () => void;
   availableByClass?: Record<string, boolean>;
+  randomAvailable?: boolean;
   originOffset?: { x: number; y: number } | null;
 };
 
-function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOffset, onSelect, onCancel }: ClassSelectionModalProps & { availableByClass?: Record<string, boolean>; originOffset?: { x: number; y: number } | null }) {
+function ClassSelectionModal({ tier, unlockedClasses, availableByClass, randomAvailable, originOffset, onSelect, onCancel }: ClassSelectionModalProps & { availableByClass?: Record<string, boolean>; originOffset?: { x: number; y: number } | null }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.76)` : `scale(0.92)`;
@@ -540,23 +622,39 @@ function ClassSelectionModal({ tier, unlockedClasses, availableByClass, originOf
                 key={cls}
                 onClick={() => !disabled && (onSelect(cls), sfx.confirm())}
                 disabled={disabled}
-                className="w-full hud-btn py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full hud-btn py-2 text-sm flex flex-col items-start gap-1 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!isUnlocked ? `Розблокується після виконання місії рівня ${tier - 1}` : (!hasAvailable ? "Немає доступних місій" : undefined)}
               >
-                <span style={{ color: MISSION_CLASS_COLOR[cls as keyof typeof MISSION_CLASS_COLOR] }}>
-                  {cls}
-                </span>
-                {!isUnlocked && (
-                  <span className="hud-mono text-[0.65rem] ml-2 text-[color:var(--muted-foreground)]">
-                    (розблокується)
+                <span>
+                  <span style={{ color: MISSION_CLASS_COLOR[cls as keyof typeof MISSION_CLASS_COLOR] }}>
+                    {cls}
                   </span>
-                )}
-                {isUnlocked && !hasAvailable && (
-                  <span className="hud-mono text-[0.65rem] ml-2 text-[color:var(--muted-foreground)]">(немає місій)</span>
-                )}
+                  {!isUnlocked && (
+                    <span className="hud-mono text-[0.65rem] ml-2 text-[color:var(--muted-foreground)]">
+                      (розблокується)
+                    </span>
+                  )}
+                  {isUnlocked && !hasAvailable && (
+                    <span className="hud-mono text-[0.65rem] ml-2 text-[color:var(--muted-foreground)]">(немає місій)</span>
+                  )}
+                </span>
+                <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
+                  {CLASS_DESCRIPTIONS[cls]}
+                </span>
               </button>
             );
           })}
+          <button
+            onClick={() => !!randomAvailable && (onSelect("Рандом"), sfx.confirm())}
+            disabled={!randomAvailable}
+            className="w-full hud-btn py-2 text-sm flex flex-col items-start gap-1 text-left border-t border-[color:var(--hud-amber)]/15 mt-1 pt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!randomAvailable ? "Немає доступних місій" : undefined}
+          >
+            <span className="text-[color:var(--hud-amber)]">🎲 Рандом</span>
+            <span className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
+              {CLASS_DESCRIPTIONS["Рандом"]}
+            </span>
+          </button>
         </div>
         <button onClick={onCancel} className="w-full hud-btn hud-btn-ghost mt-4">
           Скасувати
@@ -586,6 +684,15 @@ function MissionSelectionModal({
   onCancel,
 }: MissionSelectionModalProps & { originOffset?: { x: number; y: number } | null }) {
   const { getMission } = useKpk();
+  const recommendedId = candidateMissionIds.reduce<{ id: number | null; ratio: number }>(
+    (best, mid) => {
+      const m = getMission(mid);
+      if (!m || !m.target) return best;
+      const ratio = m.mainReward / m.target;
+      return ratio > best.ratio ? { id: mid, ratio } : best;
+    },
+    { id: null, ratio: -Infinity },
+  ).id;
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); return () => setMounted(false); }, []);
   const initialTransform = originOffset ? `translate(${originOffset.x}px, ${originOffset.y}px) scale(0.78)` : `scale(0.96)`;
@@ -609,14 +716,25 @@ function MissionSelectionModal({
             {candidateMissionIds.map((mid) => {
               const m = getMission(mid);
               if (!m) return null;
+              const isRecommended = mid === recommendedId;
               return (
                 <button
                   key={mid}
                   onClick={() => { onSelect(mid); sfx.confirm(); }}
-                  className="hud-panel flex h-full flex-col justify-between border border-l-4 border-[color:var(--hud-amber)]/20 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5"
+                  className={`hud-panel flex h-full flex-col justify-between border border-l-4 bg-[color:var(--surface-2)] p-5 text-left transition hover:-translate-y-0.5 ${isRecommended ? "border-[color:var(--hud-amber)]" : "border-[color:var(--hud-amber)]/20"}`}
                   style={{ borderLeftColor: LEVEL_COLOR[m.level as 1 | 2 | 3] }}
                 >
                   <div>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      {isRecommended && (
+                        <span className="hud-mono text-[0.6rem] uppercase tracking-[0.2em] text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/50 px-2 py-0.5">
+                          ★ Рекомендовано
+                        </span>
+                      )}
+                      <span className="hud-mono text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: MISSION_CLASS_COLOR[m.cls as keyof typeof MISSION_CLASS_COLOR] }}>
+                        {m.cls}
+                      </span>
+                    </div>
                     <div className="font-semibold text-lg mb-2">{m.name}</div>
                     <div className="hud-mono text-sm leading-6 text-[color:var(--muted-foreground)] mb-4">{m.description}</div>
                   </div>

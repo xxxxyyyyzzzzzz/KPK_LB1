@@ -21,6 +21,13 @@ export const MISSION_CLASS_COLOR: Record<MissionClass, string> = {
   Розвиток: "var(--mission-development)",
 };
 
+export const CLASS_DESCRIPTIONS: Record<MissionClass | "Рандом", string> = {
+  Атака: "Агресивні дії проти ворогів і об'єктів на полі.",
+  Захист: "Оборона та зміцнення позицій — противага атаці.",
+  Розвиток: "Збір ресурсів і розвиток бази.",
+  Рандом: "Випадкова місія поточного рівня, без фільтру по класу.",
+};
+
 export const DEFAULT_ACTION_POINTS = { active: 7, attack: 5, build: 4 } as const;
 export const TURN_DURATION_SECONDS = 420;
 export const TOTAL_NEWS_ROUNDS = 4;
