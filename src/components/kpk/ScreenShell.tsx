@@ -443,7 +443,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className={`fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch gap-1.5 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto transition-all duration-300 ease-out ${visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0 pointer-events-none"}`}
+      className={`fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-end gap-1.5 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto transition-all duration-300 ease-out ${visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0 pointer-events-none"}`}
       style={{
         paddingTop: "0",
         paddingBottom: "env(safe-area-inset-bottom)",
@@ -460,7 +460,7 @@ export function BottomNav() {
             key={item.id}
             onClick={() => { sfx.click(); go(item.id); }}
             aria-label={item.label}
-            className={active ? "hud-nav-btn-active" : "hud-nav-btn-inactive"}
+            className={isMain ? "" : active ? "hud-nav-btn-active" : "hud-nav-btn-inactive"}
             style={{
               flex: "1 1 0%",
               minWidth: "0",
@@ -476,7 +476,7 @@ export function BottomNav() {
               whiteSpace: "nowrap",
               boxSizing: "border-box",
               color: isMain ? "var(--surface-2)" : active ? "var(--hud-amber)" : "var(--muted-foreground)",
-              borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
+              borderTop: isMain ? "none" : active ? "2px solid var(--hud-amber)" : "2px solid transparent",
               background: isMain ? "var(--hud-amber)" : "transparent",
               borderRadius: isMain ? "4px 4px 0 0" : undefined,
               zIndex: isMain ? 2 : undefined,
