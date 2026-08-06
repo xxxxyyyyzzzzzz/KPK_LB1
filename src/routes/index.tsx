@@ -9,7 +9,7 @@ import { MissionsScreen } from "@/components/kpk/MissionsScreen";
 import { ScoreScreen } from "@/components/kpk/ScoreScreen";
 import { NewsScreen } from "@/components/kpk/NewsScreen";
 import { UpgradesScreen } from "@/components/kpk/UpgradesScreen";
-import { TimerScreen } from "@/components/kpk/TimerScreen";
+import { HomeScreen } from "@/components/kpk/HomeScreen";
 import { AppShell } from "@/components/kpk/ScreenShell";
 import { SessionLoadingScreen } from "@/components/kpk/SessionLoadingScreen";
 
@@ -61,7 +61,7 @@ function KpkApp() {
             {screen === "score" && <ScoreScreen />}
             {screen === "news" && <NewsScreen />}
             {screen === "upgrades" && <UpgradesScreen />}
-            {screen === "timer" && <TimerScreen />}
+            {screen === "timer" && <HomeScreen />}
           </AppShell>
         )}
       </div>
