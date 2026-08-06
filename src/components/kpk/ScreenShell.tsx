@@ -454,6 +454,7 @@ export function BottomNav() {
     >
       {NAV_ITEMS.map((item) => {
         const active = screen === item.id;
+        const isMain = item.id === "main";
         return (
           <button
             key={item.id}
@@ -468,20 +469,22 @@ export function BottomNav() {
               alignItems: "center",
               justifyContent: "center",
               gap: "2px",
-              height: "100%",
+              height: isMain ? "calc(100% + 10px)" : "100%",
               padding: "0",
               minHeight: "0",
-              marginTop: "-1px",
+              marginTop: isMain ? "-10px" : "-1px",
               whiteSpace: "nowrap",
               boxSizing: "border-box",
-              color: active ? "var(--hud-amber)" : "var(--muted-foreground)",
-              borderTop: "2px solid transparent",
-              background: "transparent",
+              color: isMain ? "var(--surface-2)" : active ? "var(--hud-amber)" : "var(--muted-foreground)",
+              borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
+              background: isMain ? "var(--hud-amber)" : "transparent",
+              borderRadius: isMain ? "4px 4px 0 0" : undefined,
+              zIndex: isMain ? 2 : undefined,
               cursor: "pointer",
               fontSize: "0.95rem",
             }}
           >
-            <item.icon size={20} strokeWidth={1.75} />
+            <item.icon size={isMain ? 22 : 20} strokeWidth={1.75} />
             <span className="hud-mono" style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>{item.label}</span>
           </button>
         );
