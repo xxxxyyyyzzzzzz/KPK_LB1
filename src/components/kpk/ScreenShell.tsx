@@ -443,13 +443,14 @@ export function BottomNav() {
 
   return (
     <nav
-      className={`fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-end gap-1.5 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto transition-all duration-300 ease-out ${visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0 pointer-events-none"}`}
+      className={`fixed inset-x-0 bottom-0 z-40 flex flex-row flex-nowrap items-stretch gap-1.5 border-t border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)] overflow-x-auto transition-all duration-300 ease-out ${visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0 pointer-events-none"}`}
       style={{
         paddingTop: "0",
         paddingBottom: "env(safe-area-inset-bottom)",
         paddingLeft: "calc(6px + env(safe-area-inset-left))",
         paddingRight: "calc(6px + env(safe-area-inset-right))",
         height: `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
+        overflow: "visible",
       }}
     >
       {NAV_ITEMS.map((item) => {
@@ -461,7 +462,7 @@ export function BottomNav() {
             onClick={() => { sfx.click(); go(item.id); }}
             aria-label={item.label}
             className={isMain ? "" : active ? "hud-nav-btn-active" : "hud-nav-btn-inactive"}
-            style={{
+            style={isMain ? {
               flex: "1 1 0%",
               minWidth: "0",
               display: "flex",
@@ -469,17 +470,39 @@ export function BottomNav() {
               alignItems: "center",
               justifyContent: "center",
               gap: "2px",
-              height: isMain ? "calc(100% + 10px)" : "100%",
+              position: "relative",
+              height: "calc(100% + 12px)",
+              bottom: "0",
+              marginTop: "-12px",
+              padding: "0",
+              boxSizing: "border-box",
+              whiteSpace: "nowrap",
+              color: "var(--surface-2)",
+              background: "var(--hud-amber)",
+              border: "none",
+              borderRadius: "6px 6px 0 0",
+              zIndex: 2,
+              cursor: "pointer",
+              alignSelf: "flex-end",
+            } : {
+              flex: "1 1 0%",
+              minWidth: "0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "2px",
+              height: "100%",
               padding: "0",
               minHeight: "0",
-              marginTop: isMain ? "-10px" : "-1px",
+              marginTop: "-1px",
               whiteSpace: "nowrap",
               boxSizing: "border-box",
-              color: isMain ? "var(--surface-2)" : active ? "var(--hud-amber)" : "var(--muted-foreground)",
-              borderTop: isMain ? "none" : active ? "2px solid var(--hud-amber)" : "2px solid transparent",
-              background: isMain ? "var(--hud-amber)" : "transparent",
-              borderRadius: isMain ? "4px 4px 0 0" : undefined,
-              zIndex: isMain ? 2 : undefined,
+              color: active ? "var(--hud-amber)" : "var(--muted-foreground)",
+              borderTop: active ? "2px solid var(--hud-amber)" : "2px solid transparent",
+              background: "transparent",
+              borderRadius: undefined,
+              zIndex: undefined,
               cursor: "pointer",
               fontSize: "0.95rem",
             }}
