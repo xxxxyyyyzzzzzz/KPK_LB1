@@ -4,18 +4,17 @@ import { useKpk, fmtClock } from "@/lib/kpkStore";
 import { sfx } from "@/lib/sounds";
 import { FACTIONS } from "@/lib/kpkData";
 import type { Screen } from "@/lib/kpkData";
-import { ListTodo, TrendingUp, Radar, BarChart3 } from "lucide-react";
+import { ListTodo, TrendingUp, Radar, BarChart3, Home } from "lucide-react";
 import LobbyPlayersPanel from "./LobbyPlayersPanel";
 import CompletedMissionsModal from "./CompletedMissionsModal";
 import ScoreAdminModal from "./ScoreAdminModal";
 
 export const SCREEN_TITLES: Partial<Record<Screen, string>> = {
-  main: "КПК",
+  main: "Головна",
   missions: "Місії",
   upgrades: "Прокачки",
   news: "Новини",
   score: "Бали",
-  timer: "Таймер",
 };
 
 export function AnimatedItem({ children, index = 0, className = "" }: { children: ReactNode; index?: number; className?: string }) {
@@ -39,12 +38,12 @@ function HeaderTimer() {
     }
   }, [turnSeconds]);
 
-  if (screen === "timer") return null;
+  if (screen === "main") return null;
 
   return (
     <button
-      onClick={() => { sfx.click(); go("timer"); }}
-      aria-label="Перейти до таймера"
+      onClick={() => { sfx.click(); go("main"); }}
+      aria-label="Перейти на головну"
       className={[
         "hud-mono tabular-nums px-2 py-1 transition-all select-none shrink-0",
         ending
@@ -426,6 +425,7 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
 }
 
 const NAV_ITEMS: { id: Screen; label: string; icon: typeof ListTodo }[] = [
+  { id: "main", label: "Головна", icon: Home },
   { id: "missions", label: "Місії", icon: ListTodo },
   { id: "upgrades", label: "Прокачки", icon: TrendingUp },
   { id: "news", label: "Новини", icon: Radar },

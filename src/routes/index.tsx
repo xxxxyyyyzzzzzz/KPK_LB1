@@ -4,7 +4,6 @@ import { KpkProvider, useKpk } from "@/lib/kpkStore";
 import { installGlobalSfx, sfx } from "@/lib/sounds";
 import { LoginScreen } from "@/components/kpk/LoginScreen";
 import { LobbyScreen } from "@/components/kpk/LobbyScreen";
-import { MainMenu } from "@/components/kpk/MainMenu";
 import { MissionsScreen } from "@/components/kpk/MissionsScreen";
 import { ScoreScreen } from "@/components/kpk/ScoreScreen";
 import { NewsScreen } from "@/components/kpk/NewsScreen";
@@ -54,14 +53,13 @@ function KpkApp() {
         {screen === "login" && <LoginScreen />}
         {screen === "lobby" && <LobbyScreen />}
         {screen === "session-loading" && <SessionLoadingScreen />}
-        {['main', 'missions', 'score', 'news', 'upgrades', 'timer'].includes(screen) && (
+        {['main', 'missions', 'score', 'news', 'upgrades'].includes(screen) && (
           <AppShell>
-            {screen === "main" && <MainMenu />}
+            {screen === "main" && <HomeScreen />}
             {screen === "missions" && <MissionsScreen />}
             {screen === "score" && <ScoreScreen />}
             {screen === "news" && <NewsScreen />}
             {screen === "upgrades" && <UpgradesScreen />}
-            {screen === "timer" && <HomeScreen />}
           </AppShell>
         )}
       </div>

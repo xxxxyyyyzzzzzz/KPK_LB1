@@ -72,7 +72,8 @@ export function HomeScreen() {
   }, [currentRank, sessionPlayers, session, getMission]);
 
   const recentEvents = useMemo(() => {
-    const entries = Object.values((session?.events ?? {}) as Record<string, HomeEventEntry>)
+    const entries = Object.entries(session?.events ?? {})
+      .map(([id, entry]) => ({ id, ...(entry as Omit<HomeEventEntry, "id">) }) as HomeEventEntry)
       .sort((a, b) => b.ts - a.ts)
       .slice(0, 2)
       .map((entry) => {
