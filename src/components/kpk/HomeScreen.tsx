@@ -34,8 +34,14 @@ export function HomeScreen() {
     getMission,
     go,
     toggleTurn,
+    requestTurnTransfer,
+    acceptTurnTransfer,
     turnRunning,
     isMyTurn,
+    activePlayerId,
+    players,
+    pendingTurnTransferFrom,
+    pendingTurnTransferTo,
     sessionPlayers,
   } = useKpk();
   const { turnSeconds } = useTimerTick();
@@ -90,6 +96,12 @@ export function HomeScreen() {
   }, [getMission, session?.events]);
 
   const rankLabel = currentRank ? `#${currentRank} з ${sessionPlayers.length}` : `#— з ${sessionPlayers.length}`;
+  const pendingTransferToMe = pendingTurnTransferTo === playerId;
+  const pendingTransferFromMe = pendingTurnTransferFrom === playerId;
+  const currentTurnIndex = players.findIndex((p) => p.id === activePlayerId);
+  const nextTransferTargetId = currentTurnIndex >= 0
+    ? players[(currentTurnIndex + 1) % players.length]?.id ?? null
+    : null;
 
   return (
     <ScreenShell title="КПК">
@@ -118,7 +130,7 @@ export function HomeScreen() {
 
         <AnimatedItem index={1}>
           <div
-            className="rounded-[8px] border px-5 py-5 text-center"
+            className="rounded-[8px] border px-4 py-4 text-center"
             style={{
               background: "rgba(255,255,255,.04)",
               borderColor: "rgba(255,255,255,.08)",
@@ -126,7 +138,7 @@ export function HomeScreen() {
           >
             <div className="hud-label text-[0.65rem] text-[color:var(--hud-amber)]">// ТАЙМЕР ХОДУ</div>
             <div
-              className="mt-3 hud-mono text-7xl sm:text-8xl tracking-[0.2em]"
+              className="mt-3 hud-mono text-5xl sm:text-6xl tracking-[0.16em]"
               style={{
                 color: turnUrgent ? "#E66969" : "#f5b840",
                 fontFamily: "'JetBrains Mono', monospace",
@@ -153,6 +165,29 @@ export function HomeScreen() {
               >
                 {turnRunning ? "❚❚ Пауза" : "▸ Старт"}
               </button>
+              {pendingTransferToMe ? (
+                <button
+                  type="button"
+                  onClick={() => { sfx.click(); acceptTurnTransfer(); }}
+                  className="hud-btn hud-btn-ghost min-w-[180px]"
+                  aria-label="Прийняти передачу ходу"
+                >
+                  ✓ Прийняти передачу
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { if (nextTransferTargetId) { sfx.click(); requestTurnTransfer(nextTransferTargetId); } }}
+                  className="hud-btn hud-btn-ghost min-w-[180px]"
+                  disabled={!isMyTurn || !nextTransferTargetId || pendingTransferFromMe}
+                  aria-label="Передати хід наступному гравцю"
+                >
+                  ↦ Передати хід
+                </button>
+              )}
+              {pendingTransferFromMe && (
+                <span className="hud-mono text-[0.72rem] text-[color:var(--hud-amber)]">Чекаємо на підтвердження</span>
+              )}
               {turnUrgent && (
                 <span className="hud-mono text-[0.72rem] text-[color:#E66969]">⚠ УВАГА · час майже вичерпано</span>
               )}

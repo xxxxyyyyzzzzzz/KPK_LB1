@@ -102,6 +102,8 @@ type KpkState = {
     score: number; level1: number; level2: number; level3: number; currency: number;
   }[];
   activePlayerId: string | null;
+  pendingTurnTransferFrom: string | null;
+  pendingTurnTransferTo: string | null;
   isMyTurn: boolean;
   awaitingNewsAck: boolean;
   ackNews: () => void;
@@ -115,6 +117,8 @@ type KpkState = {
   toggleSessionTimer: () => void;
   setAP: (k: keyof ActionPoints, v: number) => void;
   toggleTurn: () => void;
+  requestTurnTransfer: (targetPlayerId: string) => void;
+  acceptTurnTransfer: () => void;
   nextPlayer: () => void;
   updateSlotProgress: (slotIndex: number, delta: number) => void;
   completeSlot: (slotIndex: number) => Promise<{ ok: boolean; reason?: string }>;
@@ -148,6 +152,12 @@ function pruneEvents(events: Record<string, any> | undefined): Record<string, an
 }
 
 const slotLevel = (i: number) => ((i % 3) + 1) as 1 | 2 | 3;
+
+function isTurnLockedForPlayer(pid: string | null | undefined, cur: SessionState | null | undefined, debugBypass: boolean): boolean {
+  if (!pid || !cur || debugBypass) return false;
+  if (cur.pending_turn_transfer_to === pid) return false;
+  return cur.active_player_id === pid;
+}
 
 function bonusActiveAP(upgrades: string[]) {
   return upgrades.includes("komanduvannya_2_3") ? 1 : 0;
@@ -363,6 +373,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   const activePlayerId = session?.active_player_id ?? null;
+  const pendingTurnTransferFrom = session?.pending_turn_transfer_from ?? null;
+  const pendingTurnTransferTo = session?.pending_turn_transfer_to ?? null;
   const isMyTurn = !!playerId && !!activePlayerId && activePlayerId === playerId;
   const awaitingNewsAck = !!session?.awaiting_news_ack;
 
@@ -396,10 +408,10 @@ export function KpkProvider({ children }: { children: ReactNode }) {
   }
 
   const canPurchase = useCallback((id: string): PurchaseResult => {
-    if (!me) return { ok: false, reason: "Немає сесії" };
-    const ownTurnLocked = isMyTurn && !debugBypassTurnLock;
+    if (!me || !playerId) return { ok: false, reason: "Немає сесії" };
+    const ownTurnLocked = isTurnLockedForPlayer(playerId, session, debugBypassTurnLock);
     return validateUpgrade(me, id, newsIndex, ownTurnLocked);
-  }, [me, newsIndex, isMyTurn, debugBypassTurnLock]);
+  }, [me, newsIndex, playerId, session, debugBypassTurnLock]);
 
   const purchaseUpgrade = useCallback((id: string): PurchaseResult => {
     if (!roomCode || !playerId) { sfx.deny(); return { ok: false, reason: "Немає сесії" }; }
@@ -410,7 +422,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
-      const ownTurnLocked = cur.active_player_id === playerId && !debugBypassTurnLock;
+      const ownTurnLocked = isTurnLockedForPlayer(playerId, cur, debugBypassTurnLock);
       const currentRound = (cur.newsIndex ?? cur.round ?? 1) as number;
       const v = validateUpgrade(p, id, currentRound, ownTurnLocked);
       if (!v.ok) return undefined;
@@ -672,7 +684,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     return txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
-      if (cur.active_player_id === playerId && !debugBypassTurnLock) return undefined;
+      if (isTurnLockedForPlayer(playerId, cur, debugBypassTurnLock)) return undefined;
       const slot = p.slots.find((s) => s.slot_index === slotIndex);
       if (!slot) return undefined;
       const wasActive = slot.mission_id != null;
@@ -687,6 +699,44 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       return { ...cur, players: { ...cur.players, [playerId]: np } };
     }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); return r.ok; });
   }, [roomCode, playerId, debugBypassTurnLock]);
+
+  const requestTurnTransfer = useCallback((targetPlayerId: string) => {
+    if (!roomCode || !playerId || !targetPlayerId || targetPlayerId === playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur) return undefined;
+      if (cur.active_player_id !== playerId) return undefined;
+      if (cur.pending_turn_transfer_to) return undefined;
+      const remaining = cur.turn_running && cur.turn_end_at
+        ? Math.max(0, Math.round((cur.turn_end_at - serverNow()) / 1000))
+        : (cur.turn_remaining_seconds ?? TURN_DURATION_SECONDS);
+      return {
+        ...cur,
+        pending_turn_transfer_from: playerId,
+        pending_turn_transfer_to: targetPlayerId,
+        turn_transfer_requested_at: Date.now(),
+        turn_running: false,
+        turn_end_at: null,
+        turn_remaining_seconds: remaining,
+      };
+    }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
+  }, [roomCode, playerId, serverTimeOffset]);
+
+  const acceptTurnTransfer = useCallback(() => {
+    if (!roomCode || !playerId) return;
+    txSession(roomCode, (cur) => {
+      if (!cur || cur.pending_turn_transfer_to !== playerId) return undefined;
+      return {
+        ...cur,
+        active_player_id: playerId,
+        pending_turn_transfer_from: null,
+        pending_turn_transfer_to: null,
+        turn_transfer_requested_at: null,
+        turn_running: false,
+        turn_end_at: null,
+        turn_remaining_seconds: TURN_DURATION_SECONDS,
+      };
+    }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); });
+  }, [roomCode, playerId]);
 
   // ── Turn rotation / News round (host engine triggers news on round boundary) ──
   // Сценарій: гравці ходять по черзі за player_order; коли всі N гравців відіграли
@@ -786,6 +836,9 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         turnInRound: nextTurn,
         player_order: nextOrder,
         active_player_id: nextActive,
+        pending_turn_transfer_from: null,
+        pending_turn_transfer_to: null,
+        turn_transfer_requested_at: null,
         turn_end_at: null,
         turn_remaining_seconds: TURN_DURATION_SECONDS,
         turn_running: false,
@@ -993,7 +1046,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     news, history,
     login: (u) => { createGame(u); },
     createGame, joinGame, rejoinAs, roomCode, playerId, isHost, players,
-    sessionPlayers, activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
+    sessionPlayers, activePlayerId, pendingTurnTransferFrom, pendingTurnTransferTo, isMyTurn, awaitingNewsAck, ackNews,
     takenFactions,
     status: (session?.status ?? "waiting") as "waiting" | "active" | "finished",
     startGame, reorderPlayers,
@@ -1048,6 +1101,8 @@ export function KpkProvider({ children }: { children: ReactNode }) {
         return { ...cur, turn_running: true, turn_end_at: serverNow() + remaining * 1000 };
       });
     },
+    requestTurnTransfer,
+    acceptTurnTransfer,
     nextPlayer,
     updateSlotProgress,
     completeSlot,
@@ -1067,10 +1122,10 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     slots, completedIds, missionsByLevel, allMissions, getMission,
     upgradesList, upgradePoints, canPurchase, purchaseUpgrade, cancelUpgrade, news, history,
     roomCode, playerId, isHost, players, sessionPlayers,
-    activePlayerId, isMyTurn, awaitingNewsAck, ackNews,
+    activePlayerId, pendingTurnTransferFrom, pendingTurnTransferTo, isMyTurn, awaitingNewsAck, ackNews,
     takenFactions, createGame, joinGame, rejoinAs,
     session?.status, startGame, reorderPlayers,
-    nextPlayer, updateSlotProgress, completeSlot, startReplaceConfirm, startBrowseClass, selectBrowseClass, startBrowseSameClass, backToClassBrowse, cancelBrowse, confirmMissionSelection,
+    nextPlayer, requestTurnTransfer, acceptTurnTransfer, updateSlotProgress, completeSlot, startReplaceConfirm, startBrowseClass, selectBrowseClass, startBrowseSameClass, backToClassBrowse, cancelBrowse, confirmMissionSelection,
     debugBypassTurnLock, isTestSession, useLegacyNewsSpawn, setUseLegacyNewsSpawn, cheatGenerateNews, cheatAddScore, debugAdjustScore,
   ]);
 

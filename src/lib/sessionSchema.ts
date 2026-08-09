@@ -69,6 +69,9 @@ export type SessionState = {
   turn?: number;
   turn_running: boolean;
   active_player_id: string | null;
+  pending_turn_transfer_from: string | null;
+  pending_turn_transfer_to: string | null;
+  turn_transfer_requested_at: number | null;
   player_order: string[];
   players: Record<string, PlayerState>;
   news: NewsEntry[];
@@ -139,6 +142,9 @@ export function makeSession(code: string, hostId: string, opts?: { isTest?: bool
     turn_remaining_seconds: TURN_DURATION_SECONDS,
     turn_running: false,
     active_player_id: null,
+    pending_turn_transfer_from: null,
+    pending_turn_transfer_to: null,
+    turn_transfer_requested_at: null,
     player_order: [],
     players: {},
     news: [],
