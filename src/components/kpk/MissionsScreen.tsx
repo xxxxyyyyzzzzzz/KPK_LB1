@@ -301,117 +301,132 @@ function MissionClassProgress({
   });
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="xMidYMid meet"
-      className="w-full max-w-[300px] h-auto"
-      style={{ overflow: "visible" }}
-      role="img"
-      aria-label="Прогрес доступних місій за класами"
+    <div
+      style={{
+        background: "#000",
+        border: "1px solid #1a1a1a",
+        borderRadius: 4,
+        padding: "12px 14px",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "'Share Tech Mono', 'Courier New', monospace",
+        display: "inline-block",
+      }}
     >
-      <defs>
-        <filter id="kpk-node-glow" x="-150%" y="-150%" width="400%" height="400%">
-          <feGaussianBlur stdDeviation="3.2" />
-        </filter>
-      </defs>
+      <style>{`
+        @keyframes kpkCrtScroll {
+          from { background-position: 0 0; }
+          to { background-position: 0 90px; }
+        }
 
-      {/* Хаб-вузол зліва */}
-      <circle cx={originX} cy={originY} r={5} fill="var(--surface-3)" stroke="var(--muted-foreground)" strokeWidth={1.5} />
-      <circle cx={originX} cy={originY} r={2} fill="var(--foreground)" opacity={0.8} />
+        @keyframes kpkCrtFlick {
+          0%, 89%, 91%, 95%, 97%, 100% { opacity: 1; }
+          90% { opacity: .8; }
+          96% { opacity: .88; }
+        }
 
-      {/* Шар 1: криві — динамічний fan-out/конвергенція, яскравий колір класу без затемнення */}
-      {rows.map(({ cls, color, states, stopPositions }) => (
-        <g key={`lines-${cls}`}>
-          {([0, 1, 2] as const).map((tierIdx) => {
-            const src = stopPositions[tierIdx];
-            const tgt = stopPositions[tierIdx + 1];
-            const st = states[tierIdx];
-            const stroke = st.locked ? "var(--muted-foreground)" : color;
-            const isActive = !st.locked && st.activeCount > 0;
-            return connectPairs(src, tgt).map((pair, pairIdx) => {
-              const [p1, p2] = pair;
-              return (
-                <path
-                  key={`seg-${cls}-${tierIdx}-${pairIdx}`}
-                  d={bezierPath(p1.x, p1.y, p2.x, p2.y)}
-                  fill="none"
-                  stroke={stroke}
-                  strokeWidth={1.6}
-                  strokeDasharray={st.locked ? undefined : "4 4"}
-                  style={{
-                    transition: "stroke 0.6s ease",
-                    animation: isActive ? "hud-line-flow 1.2s linear infinite" : "none",
-                  }}
-                />
-              );
-            });
-          })}
-        </g>
-      ))}
+        @keyframes kpkCrtAvail {
+          0%, 100% { opacity: 1; }
+          50% { opacity: .25; }
+        }
+      `}</style>
 
-      {/* Шар 2: вузли — locked (тьмяне закрите коло), доступно (яскраве порожнє кільце), активно (яскрава заливка + glow) */}
-      {rows.map(({ cls, color, states, stopPositions }) =>
-        ([0, 1, 2] as const).map((tierIdx) => {
-          const tier = (tierIdx + 1) as 1 | 2 | 3;
-          const st = states[tierIdx];
-          const positions = stopPositions[tierIdx + 1];
-          const isActive = !st.locked && st.activeCount > 0;
-          const label = `${cls} · Рівень ${tier === 1 ? "I" : tier === 2 ? "II" : "III"}`;
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 10,
+          background:
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0) 2px, rgba(255,255,255,0.07) 2px, rgba(255,255,255,0.07) 3px)",
+          animation: "kpkCrtScroll 10s linear infinite",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 9,
+          animation: "kpkCrtFlick 7s ease-in-out infinite",
+        }}
+      />
 
-          return positions.map((pos, idx) => {
-            const sublabel = positions.length === 2 ? `${label} (${idx + 1}/2)` : label;
+      <div style={{ position: "relative", zIndex: 11 }}>
+        <div style={{ fontSize: 10, color: "#4a7a4a", letterSpacing: ".06em", marginBottom: 9 }}>
+          <span style={{ color: "#4a7a4a" }}>root@kpk:~$ </span>
+          <span style={{ color: "#7aba7a" }}>статус_місій</span>
+          <span style={{ color: "#5a8a5a" }}> --гравець —</span>
+        </div>
 
-            if (st.locked) {
-              return (
-                <circle
-                  key={`node-${cls}-${tier}-${idx}`}
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={LOCK_R}
-                  fill="var(--surface-2)"
-                  stroke="var(--muted-foreground)"
-                  strokeWidth={1.5}
-                  opacity={0.6}
-                >
-                  <title>{sublabel}</title>
-                </circle>
-              );
-            }
+        {(["Атака", "Захист", "Розвиток"] as const).map((cls, rowIdx) => {
+          const rowColor = cls === "Атака" ? "#e06060" : cls === "Захист" ? "#5090d0" : "#50a050";
+          const dimColor = cls === "Атака" ? "#9a4a4a" : cls === "Захист" ? "#2d5580" : "#2d6630";
+          const states = ([1, 2, 3] as const).map((tier) =>
+            getClassTierState(cls, tier, unlockedClasses, slots, completedIds, getMission),
+          );
 
-            if (isActive) {
-              return (
-                <g key={`node-${cls}-${tier}-${idx}`}>
-                  <circle cx={pos.x} cy={pos.y} r={NODE_R + 3} fill={color} opacity={0.5} filter="url(#kpk-node-glow)" />
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={NODE_R}
-                    fill={color}
-                    style={{ animation: "hud-node-pulse 2.4s ease-in-out infinite" }}
-                  >
-                    <title>{sublabel}</title>
-                  </circle>
-                </g>
-              );
-            }
-
-            return (
-              <circle
-                key={`node-${cls}-${tier}-${idx}`}
-                cx={pos.x}
-                cy={pos.y}
-                r={NODE_R}
-                fill="var(--surface-2)"
-                stroke={color}
-                strokeWidth={2}
+          return (
+            <div
+              key={cls}
+              style={{
+                display: "flex",
+                gap: 6,
+                alignItems: "center",
+                marginBottom: rowIdx === 2 ? 0 : 7,
+              }}
+            >
+              <div
+                style={{
+                  width: 62,
+                  fontSize: 11,
+                  letterSpacing: ".06em",
+                  color: rowColor,
+                  textTransform: "uppercase",
+                }}
               >
-                <title>{sublabel}</title>
-              </circle>
-            );
-          });
-        }),
-      )}
-    </svg>
+                {cls}
+              </div>
+
+              {states.map((st, tierIdx) => {
+                const activeCount = Math.min(2, st.activeCount);
+                const symbols = st.locked
+                  ? ["-", "-"]
+                  : [activeCount >= 1 ? "■" : "▢", activeCount >= 2 ? "■" : "▢"];
+
+                return (
+                  <div key={tierIdx} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                    <span style={{ color: "#2a3a2a", fontSize: 11 }}>[</span>
+                    <span style={{ display: "inline-flex", gap: 2 }}>
+                      {symbols.map((symbol, symbolIdx) => (
+                        <span
+                          key={symbolIdx}
+                          style={{
+                            fontSize: 11,
+                            color: st.locked
+                              ? "#252525"
+                              : symbol === "■"
+                              ? rowColor
+                              : dimColor,
+                            animation:
+                              st.locked || symbol === "■"
+                                ? undefined
+                                : "kpkCrtAvail 1.4s ease-in-out infinite",
+                          }}
+                        >
+                          {symbol}
+                        </span>
+                      ))}
+                    </span>
+                    <span style={{ color: "#2a3a2a", fontSize: 11 }}>]</span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
