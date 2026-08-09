@@ -61,19 +61,33 @@ export function MissionsScreen() {
   return (
     <ScreenShell title="Місії">
       <div className="mx-auto max-w-5xl">
-        <AnimatedItem index={0} className="mb-5">
+        <AnimatedItem index={0} className="mb-4">
+          <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1 inline-block">
+            МІСІЇ
+          </h2>
+        </AnimatedItem>
+
+        <AnimatedItem index={1} className="mb-5">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <span className="hud-mono" style={{ fontSize: "0.65rem", letterSpacing: "0.2em", color: "var(--muted-foreground)", textTransform: "uppercase" }}>
               Місії → бали → рейтинг → перемога
             </span>
-            <span className="hud-mono" style={{ fontSize: "0.65rem", color: "var(--hud-amber)", letterSpacing: "0.1em" }}>
-              🔄 {global_replacements_left}
-            </span>
+            <div className="hud-mono" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", color: "var(--hud-amber)", letterSpacing: "0.12em" }}>
+              <span style={{ fontSize: "1rem" }}>🔄</span>
+              <span>{global_replacements_left}</span>
+              <span style={{ fontSize: "0.55rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                замін
+              </span>
+            </div>
           </div>
         </AnimatedItem>
 
-        <AnimatedItem index={1} className="mb-5">
-          <div className="hud-panel-corners-4 relative inline-block overflow-hidden border border-[color:var(--hud-amber)]/20" style={{ padding: 0 }}>
+        <AnimatedItem index={2} className="mb-5">
+          <div className="hud-panel-corners-4 relative block w-full overflow-hidden border border-[color:var(--hud-amber)]/30" style={{ padding: 0, marginBottom: 16 }}>
+            <span className="corner tl" />
+            <span className="corner tr" />
+            <span className="corner bl" />
+            <span className="corner br" />
             <MissionClassProgress
               unlockedClasses={unlockedClasses}
               slots={slots}
@@ -84,7 +98,7 @@ export function MissionsScreen() {
         </AnimatedItem>
 
         {/* Вкладки рівнів */}
-        <MissionTierTabs slots={slots} activeTier={activeTier} onSelectTier={setActiveTier} />
+        <MissionTierTabs slots={slots} activeTier={activeTier} onSelectTier={setActiveTier} unlockedClasses={unlockedClasses} />
 
         {/* Блок обраного рівня */}
         <AnimatedItem index={3} className="mb-6">
@@ -148,10 +162,12 @@ function MissionTierTabs({
   slots,
   activeTier,
   onSelectTier,
+  unlockedClasses,
 }: {
   slots: import("@/lib/sessionSchema").PlayerSlot[];
   activeTier: 1 | 2 | 3;
   onSelectTier: (tier: 1 | 2 | 3) => void;
+  unlockedClasses: { "1": string[]; "2": string[]; "3": string[] };
 }) {
   const counts: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
   slots.forEach((s) => {
@@ -163,26 +179,32 @@ function MissionTierTabs({
     <div className="mb-4 flex gap-2">
       {([1, 2, 3] as const).map((tier) => {
         const isActive = tier === activeTier;
+        const isTierUnlocked = (unlockedClasses[String(tier) as "1" | "2" | "3"]?.length ?? 0) > 0;
         return (
           <button
             key={tier}
             type="button"
             onClick={() => { onSelectTier(tier); sfx.click(); }}
             className={`hud-btn flex-1 !py-2 !text-sm ${isActive ? "" : "hud-btn-ghost"}`}
+            style={{ position: "relative", paddingBottom: isTierUnlocked && counts[tier] > 0 ? 22 : undefined }}
           >
             Рівень {labels[tier]}
-            {counts[tier] > 0 && (
+            {isTierUnlocked && counts[tier] > 0 && (
               <span
                 style={{
-                  marginLeft: 6,
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  textAlign: "center",
                   fontSize: "0.55rem",
                   fontFamily: "var(--font-mono)",
-                  letterSpacing: "0.08em",
-                  background: "rgba(230,105,105,0.15)",
-                  border: "1px solid rgba(230,105,105,0.35)",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  background: "rgba(230,105,105,0.2)",
+                  borderTop: "1px solid rgba(230,105,105,0.4)",
                   color: "#E66969",
-                  borderRadius: 3,
-                  padding: "1px 5px",
+                  padding: "2px 0",
                 }}
               >
                 {counts[tier]} вільн.
