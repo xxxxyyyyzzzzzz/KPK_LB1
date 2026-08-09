@@ -73,7 +73,7 @@ export function MissionsScreen() {
         </AnimatedItem>
 
         <AnimatedItem index={1} className="mb-5">
-          <div className="hud-panel-corners-4 relative block w-full overflow-hidden border border-[color:var(--hud-amber)]/20" style={{ padding: 0 }}>
+          <div className="hud-panel-corners-4 relative inline-block overflow-hidden border border-[color:var(--hud-amber)]/20" style={{ padding: 0 }}>
             <MissionClassProgress
               unlockedClasses={unlockedClasses}
               slots={slots}
