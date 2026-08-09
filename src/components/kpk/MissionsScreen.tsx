@@ -191,16 +191,20 @@ function MissionTierTabs({
               minHeight: 52,
               display: "flex",
               flexDirection: "column",
-              justifyContent: isTierUnlocked && counts[tier] > 0 ? "space-between" : "center",
               alignItems: "center",
-              paddingBottom: isTierUnlocked && counts[tier] > 0 ? 0 : undefined,
+              padding: "10px 0 0",
             }}
           >
-            <span style={{ display: "block", textAlign: "center" }}>Рівень {labels[tier]}</span>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+              <span style={{ textAlign: "center" }}>Рівень {labels[tier]}</span>
+            </div>
             {isTierUnlocked && counts[tier] > 0 && (
               <span
                 style={{
-                  width: "100%",
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
                   textAlign: "center",
                   fontSize: "0.55rem",
                   fontFamily: "var(--font-mono)",
