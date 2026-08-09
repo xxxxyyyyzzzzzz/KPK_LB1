@@ -425,9 +425,9 @@ export function HudHeader({ title, showStickyTitle, headerRef }: { title: string
 }
 
 const NAV_ITEMS: { id: Screen; label: string; icon: typeof ListTodo }[] = [
-  { id: "main", label: "Головна", icon: Home },
   { id: "missions", label: "Місії", icon: ListTodo },
   { id: "upgrades", label: "Прокачки", icon: TrendingUp },
+  { id: "main", label: "Головна", icon: Home },
   { id: "news", label: "Новини", icon: Radar },
   { id: "score", label: "Бали", icon: BarChart3 },
 ];
@@ -477,9 +477,9 @@ export function BottomNav() {
               padding: "0",
               boxSizing: "border-box",
               whiteSpace: "nowrap",
-              color: "var(--surface-2)",
-              background: "var(--hud-amber)",
-              border: "none",
+              color: "var(--hud-amber)",
+              background: "rgba(245, 184, 64, 0.15)",
+              border: "1px solid rgba(245, 184, 64, 0.4)",
               borderRadius: "6px 6px 0 0",
               zIndex: 2,
               cursor: "pointer",
