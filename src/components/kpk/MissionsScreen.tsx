@@ -139,6 +139,7 @@ export function MissionsScreen() {
                         onUpdateProgress={(delta) => updateSlotProgress(s.slot_index, delta)}
                         onComplete={() => handleCompleteSlot(s.slot_index, m?.currencyReward ?? 0)}
                         canReplace={global_replacements_left > 0}
+                        isMyTurn={isMyTurn}
                       />
                     </div>
                   );
@@ -457,6 +458,7 @@ type SlotCardProps = {
   onUpdateProgress: (delta: number) => void;
   onComplete: () => void;
   canReplace: boolean;
+  isMyTurn: boolean;
 };
 
 function SlotCard({
@@ -474,6 +476,7 @@ function SlotCard({
   onUpdateProgress,
   onComplete,
   canReplace,
+  isMyTurn,
 }: SlotCardProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [originOffset, setOriginOffset] = useState<{ x: number; y: number } | null>(null);
@@ -518,7 +521,7 @@ function SlotCard({
           <div
             className={`hud-panel-corners-4 relative flex flex-col gap-2 border border-l-4 bg-[color:var(--surface-2)] p-3 transition-all ${
               done ? "mission-active-glow" : "border-[color:var(--hud-amber)]/25"
-            }`}
+            } ${!isMyTurn ? "opacity-50" : ""}`}
             style={{ borderLeftColor: LEVEL_COLOR[m.level as 1 | 2 | 3] }}
           >
             <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
@@ -535,9 +538,9 @@ function SlotCard({
                 <span className="text-sm font-medium leading-tight">{m.name}</span>
               </div>
               <button
-                disabled={!canReplace}
+                disabled={!canReplace || !isMyTurn}
                 onClick={() => { captureOrigin(); onStartReplaceConfirm(); }}
-                title={canReplace ? "Замінити місію" : "Немає замін"}
+                title={!isMyTurn ? "Недоступно в ход суперника" : (canReplace ? "Замінити місію" : "Немає замін")}
                 className="grid h-6 w-6 shrink-0 place-items-center border border-[color:var(--hud-amber)]/40 text-[color:var(--hud-amber)] hover:bg-[color:var(--hud-amber)]/10 disabled:opacity-30"
               >⟲</button>
             </div>
@@ -550,10 +553,10 @@ function SlotCard({
               <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color, boxShadow: `0 0 8px ${color}` }} />
             </div>
             <div className="flex gap-2 pt-1">
-              <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(-1)}>−</button>
-              <button className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(+1)}>+</button>
+              <button disabled={!isMyTurn} className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(-1)}>−</button>
+              <button disabled={!isMyTurn} className="hud-btn hud-btn-ghost flex-1 !py-1 !text-[0.65rem]" onClick={() => onUpdateProgress(+1)}>+</button>
             </div>
-            <button className={`hud-btn w-full !py-1 !text-[0.65rem] ${done ? "bg-[color:var(--hud-green)]/15 text-[color:var(--hud-green)]" : ""}`} disabled={!done} onClick={onComplete}>✓ Виплатити</button>
+            <button className={`hud-btn w-full !py-1 !text-[0.65rem] ${done ? "bg-[color:var(--hud-green)]/15 text-[color:var(--hud-green)]" : ""}`} disabled={!done || !isMyTurn} onClick={onComplete}>✓ Виплатити</button>
             <div className="border-t border-dashed border-[color:var(--hud-amber)]/20 pt-1 hud-mono text-[0.65rem] text-[color:var(--muted-foreground)]">
               Нагорода: +{formatPoints(m.mainReward)} · +{formatPoints(m.levelReward)} · +{m.currencyReward} ⛁
             </div>
@@ -561,8 +564,8 @@ function SlotCard({
         );
       })() : (
         <div
-          className="hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]/30 p-3 text-center"
-          style={hasAnyAvailable ? { animation: "hud-pulse 2.4s ease-in-out infinite" } : undefined}
+          className={`hud-panel-corners-4 relative border border-dashed border-[color:var(--hud-amber)]/30 bg-[color:var(--surface-2)]/30 p-3 text-center ${!isMyTurn ? "opacity-50" : ""}`}
+          style={hasAnyAvailable && isMyTurn ? { animation: "hud-pulse 2.4s ease-in-out infinite" } : undefined}
         >
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] mb-2">
@@ -576,8 +579,8 @@ function SlotCard({
               border: "1px dashed rgba(245,184,64,0.35)",
               color: "var(--hud-amber)",
             }}
-            disabled={!hasAnyAvailable}
-            title={!hasAnyAvailable ? "Немає доступних місій" : undefined}
+            disabled={!hasAnyAvailable || !isMyTurn}
+            title={!isMyTurn ? "Недоступно в ход суперника" : (!hasAnyAvailable ? "Немає доступних місій" : undefined)}
           >Вільний слот · Вибрати місію</button>
         </div>
       )}

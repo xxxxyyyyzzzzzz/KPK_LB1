@@ -684,7 +684,6 @@ export function KpkProvider({ children }: { children: ReactNode }) {
     return txSession(roomCode, (cur) => {
       if (!cur) return undefined;
       const p = cur.players?.[playerId]; if (!p) return undefined;
-      if (isTurnLockedForPlayer(playerId, cur, debugBypassTurnLock)) return undefined;
       const slot = p.slots.find((s) => s.slot_index === slotIndex);
       if (!slot) return undefined;
       const wasActive = slot.mission_id != null;
@@ -698,7 +697,7 @@ export function KpkProvider({ children }: { children: ReactNode }) {
       } : s);
       return { ...cur, players: { ...cur.players, [playerId]: np } };
     }).then((r) => { if (r.ok) sfx.confirm(); else sfx.deny(); return r.ok; });
-  }, [roomCode, playerId, debugBypassTurnLock]);
+  }, [roomCode, playerId]);
 
   const requestTurnTransfer = useCallback((targetPlayerId: string) => {
     if (!roomCode || !playerId || !targetPlayerId || targetPlayerId === playerId) return;
