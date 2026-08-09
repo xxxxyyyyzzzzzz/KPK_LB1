@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ScreenShell, AnimatedItem } from "./ScreenShell";
 import { useKpk, fmtClock, useTimerTick } from "@/lib/kpkStore";
 import { TURN_DURATION_SECONDS } from "@/lib/kpkData";
@@ -53,7 +53,10 @@ export function HomeScreen() {
   }, [playerId, sessionPlayers]);
 
   const turnUrgent = turnSeconds <= Math.round(TURN_DURATION_SECONDS * 0.2);
-  const elapsedPercent = Math.min(100, Math.max(0, ((TURN_DURATION_SECONDS - turnSeconds) / TURN_DURATION_SECONDS) * 100));
+  const elapsedPercent = Math.min(
+    100,
+    Math.max(0, ((TURN_DURATION_SECONDS - turnSeconds) / TURN_DURATION_SECONDS) * 100),
+  );
 
   const activeMissionSlots = useMemo(() => slots.filter((slot) => slot.mission_id != null), [slots]);
   const emptySlotCount = useMemo(() => slots.filter((slot) => slot.mission_id == null).length, [slots]);
@@ -90,7 +93,7 @@ export function HomeScreen() {
   }, [currentRank, sessionPlayers, session, getMission]);
 
   const recentEvents = useMemo(() => {
-    const entries = Object.entries(session?.events ?? {})
+    return Object.entries(session?.events ?? {})
       .map(([id, entry]) => ({ id, ...(entry as Omit<HomeEventEntry, "id">) }) as HomeEventEntry)
       .sort((a, b) => b.ts - a.ts)
       .slice(0, 2)
@@ -104,7 +107,6 @@ export function HomeScreen() {
           text: `${minutes}хв · ${entry.nickname} виконав місію ${missionLabel}${rewardText}`,
         };
       });
-    return entries;
   }, [getMission, session?.events]);
 
   const rankLabel = currentRank ? `#${currentRank} з ${sessionPlayers.length}` : `#— з ${sessionPlayers.length}`;
@@ -112,6 +114,32 @@ export function HomeScreen() {
   const pendingTransferFromMe = pendingTurnTransferFrom === playerId;
   const currentTurnIndex = players.findIndex((p) => p.id === activePlayerId);
   const nextTransferTargetId = currentTurnIndex >= 0 ? players[(currentTurnIndex + 1) % players.length]?.id ?? null : null;
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmSeconds, setConfirmSeconds] = useState(4);
+
+  useEffect(() => {
+    if (!confirmOpen || confirmSeconds <= 0) return;
+    const timer = window.setTimeout(() => setConfirmSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [confirmOpen, confirmSeconds]);
+
+  const openConfirm = () => {
+    sfx.click();
+    setConfirmSeconds(4);
+    setConfirmOpen(true);
+  };
+
+  const closeConfirm = () => {
+    sfx.back();
+    setConfirmOpen(false);
+  };
+
+  const confirmAcceptTransfer = () => {
+    sfx.confirm();
+    acceptTurnTransfer();
+    setConfirmOpen(false);
+  };
 
   return (
     <ScreenShell title="КПК">
@@ -146,7 +174,7 @@ export function HomeScreen() {
                 {turnRunning ? "❚❚ Пауза" : "▸ Старт"}
               </button>
               {pendingTransferToMe ? (
-                <button type="button" onClick={() => { sfx.click(); acceptTurnTransfer(); }} className="hud-btn hud-btn-ghost min-w-[180px]" aria-label="Прийняти передачу ходу">
+                <button type="button" onClick={openConfirm} className="hud-btn hud-btn-ghost min-w-[180px]" aria-label="Прийняти передачу ходу">
                   ✓ Прийняти передачу
                 </button>
               ) : (
@@ -232,6 +260,34 @@ export function HomeScreen() {
           </div>
         </AnimatedItem>
       </div>
+
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[900] flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-[20px] border border-white/10 bg-slate-950/95 p-6 shadow-2xl">
+            <div className="space-y-3 text-center text-white">
+              <div className="text-lg font-semibold">Підтвердження прийняття ходу</div>
+              <div className="text-sm text-[color:var(--muted-foreground)]">
+                При настанні вашого ходу ви не зможете брати прокачки та нові місії.
+                Ви приймаєте хід?
+              </div>
+              <div className="mx-auto mt-2 h-16 w-16 rounded-full bg-[rgba(255,184,64,.12)] text-center text-3xl font-semibold text-[color:var(--hud-amber)]">
+                {confirmSeconds}s
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button type="button" onClick={confirmAcceptTransfer} className="hud-btn flex-1" disabled={confirmSeconds > 0}>
+                Підтвердити
+              </button>
+              <button type="button" onClick={closeConfirm} className="hud-btn hud-btn-ghost flex-1">
+                Відмінити
+              </button>
+              <button type="button" onClick={() => { sfx.click(); closeConfirm(); go("missions"); }} className="hud-btn hud-btn-ghost flex-1">
+                Місії
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ScreenShell>
   );
 }
