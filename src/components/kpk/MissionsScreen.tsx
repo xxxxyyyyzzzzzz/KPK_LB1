@@ -217,7 +217,7 @@ function MissionTierTabs({
                   borderTopRightRadius: 4,
                   boxSizing: "border-box",
                   color: "#E66969",
-                  padding: "2px 10px",
+                  padding: "2px 15px",
                   whiteSpace: "nowrap",
                 }}
               >
