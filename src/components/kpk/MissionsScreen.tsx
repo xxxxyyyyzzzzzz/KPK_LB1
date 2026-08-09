@@ -61,53 +61,19 @@ export function MissionsScreen() {
   return (
     <ScreenShell title="Місії">
       <div className="mx-auto max-w-5xl">
-        {/* Header з лічильниками */}
-        <AnimatedItem index={0} className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <h2 className="hud-title text-xl text-[color:var(--hud-amber)] border border-[color:var(--hud-amber)]/40 px-3 py-1">
-              МІСІЇ
-            </h2>
-            <span className="hud-mono text-[0.6rem] uppercase tracking-[0.25em] text-[color:var(--muted-foreground)]">
+        <AnimatedItem index={0} className="mb-5">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span className="hud-mono" style={{ fontSize: "0.65rem", letterSpacing: "0.2em", color: "var(--muted-foreground)", textTransform: "uppercase" }}>
               Місії → бали → рейтинг → перемога
             </span>
-          </div>
-          <div className="flex items-center gap-2 hud-mono text-xs">
-            <span className={`tabular-nums text-sm ${turnSeconds <= 30 ? "text-[color:var(--hud-red)]" : "text-[color:var(--hud-amber-glow)]"}`}>
-              ⏱ {fmtClock(turnSeconds)}
+            <span className="hud-mono" style={{ fontSize: "0.65rem", color: "var(--hud-amber)", letterSpacing: "0.1em" }}>
+              🔄 {global_replacements_left}
             </span>
-            {isMyTurn && (
-              <span className="hud-mono text-[0.65rem] text-[color:var(--hud-amber)] uppercase tracking-[0.2em]">
-                Ваш хід
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-4 hud-mono text-xs">
-            <div className="text-[color:var(--muted-foreground)]">
-              /<span className="text-[color:var(--hud-amber-glow)]">{user?.nickname}</span>
-            </div>
-            <div className="flex gap-3">
-              <div>
-                Бали: <span className="text-[color:var(--hud-amber)]">{formatPoints(totalScore)}</span>
-              </div>
-              <div>
-                I: <span className="text-[color:var(--level-1)]">{formatPoints(level1)}</span>
-              </div>
-              <div>
-                II: <span className="text-[color:var(--level-2)]">{formatPoints(level2)}</span>
-              </div>
-              <div>
-                III: <span className="text-[color:var(--level-3)]">{formatPoints(level3)}</span>
-              </div>
-              <div className="border-l border-[color:var(--hud-amber)]/20 pl-3">
-                🔄 <span className="text-[color:var(--hud-amber)]">{global_replacements_left}</span>
-              </div>
-            </div>
           </div>
         </AnimatedItem>
 
         <AnimatedItem index={1} className="mb-5">
-          <div className="hud-panel-corners-4 relative inline-block border border-[color:var(--hud-cyan)]/40 bg-[color:var(--surface-2)] px-4 py-3">
-            <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
+          <div className="hud-panel-corners-4 relative block w-full overflow-hidden border border-[color:var(--hud-amber)]/20" style={{ padding: 0 }}>
             <MissionClassProgress
               unlockedClasses={unlockedClasses}
               slots={slots}
@@ -206,8 +172,20 @@ function MissionTierTabs({
           >
             Рівень {labels[tier]}
             {counts[tier] > 0 && (
-              <span className="ml-2 hud-mono text-[0.6rem] text-[color:var(--hud-amber-glow)]">
-                · {counts[tier]} вільн.
+              <span
+                style={{
+                  marginLeft: 6,
+                  fontSize: "0.55rem",
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.08em",
+                  background: "rgba(230,105,105,0.15)",
+                  border: "1px solid rgba(230,105,105,0.35)",
+                  color: "#E66969",
+                  borderRadius: 3,
+                  padding: "1px 5px",
+                }}
+              >
+                {counts[tier]} вільн.
               </span>
             )}
           </button>
@@ -551,14 +529,17 @@ function SlotCard({
           style={hasAnyAvailable ? { animation: "hud-pulse 2.4s ease-in-out infinite" } : undefined}
         >
           <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
-          {rewardRange && (
-            <div className="hud-mono text-[0.7rem] text-[color:var(--hud-amber-glow)] mb-2">
-              +{formatPoints(rewardRange.min)}–{formatPoints(rewardRange.max)} балів
-            </div>
-          )}
+          <div className="hud-mono text-[0.65rem] text-[color:var(--muted-foreground)] mb-2">
+            {rewardRange ? `+${formatPoints(rewardRange.min)}–${formatPoints(rewardRange.max)} балів` : "+4–27 балів"}
+          </div>
           <button
             onClick={() => { captureOrigin(); onStartBrowseClass(); }}
-            className="hud-btn w-full py-2 text-sm"
+            className="w-full py-2 text-sm"
+            style={{
+              background: "transparent",
+              border: "1px dashed rgba(245,184,64,0.35)",
+              color: "var(--hud-amber)",
+            }}
             disabled={!hasAnyAvailable}
             title={!hasAnyAvailable ? "Немає доступних місій" : undefined}
           >Вільний слот · Вибрати місію</button>
