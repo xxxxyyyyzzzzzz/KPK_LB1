@@ -274,6 +274,8 @@ function MissionClassProgress({
   completedIds: number[];
   getMission: (id: number | null) => { cls: string } | null;
 }) {
+  const { user } = useKpk();
+  const nickname = user?.nickname ?? "—";
   const rowH = 30;
   const topPad = 22;
   const originX = 14;
@@ -303,10 +305,10 @@ function MissionClassProgress({
   return (
     <div
       style={{
-        background: "#000",
-        border: "1px solid #1a1a1a",
+        background: "#0d0f13",
+        border: "none",
         borderRadius: 4,
-        padding: "12px 14px",
+        padding: 0,
         position: "relative",
         overflow: "hidden",
         fontFamily: "'Share Tech Mono', 'Courier New', monospace",
@@ -321,13 +323,8 @@ function MissionClassProgress({
 
         @keyframes kpkCrtFlick {
           0%, 89%, 91%, 95%, 97%, 100% { opacity: 1; }
-          90% { opacity: .8; }
-          96% { opacity: .88; }
-        }
-
-        @keyframes kpkCrtAvail {
-          0%, 100% { opacity: 1; }
-          50% { opacity: .25; }
+          90% { opacity: .92; }
+          96% { opacity: .96; }
         }
       `}</style>
 
@@ -338,7 +335,7 @@ function MissionClassProgress({
           pointerEvents: "none",
           zIndex: 10,
           background:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0) 2px, rgba(255,255,255,0.07) 2px, rgba(255,255,255,0.07) 3px)",
+            "repeating-linear-gradient(0deg, rgba(245,184,64,0) 0px, rgba(245,184,64,0) 2px, rgba(245,184,64,0.06) 2px, rgba(245,184,64,0.06) 3px)",
           animation: "kpkCrtScroll 10s linear infinite",
         }}
       />
@@ -352,16 +349,16 @@ function MissionClassProgress({
         }}
       />
 
-      <div style={{ position: "relative", zIndex: 11 }}>
-        <div style={{ fontSize: 10, color: "#4a7a4a", letterSpacing: ".06em", marginBottom: 9 }}>
-          <span style={{ color: "#4a7a4a" }}>root@kpk:~$ </span>
-          <span style={{ color: "#7aba7a" }}>статус_місій</span>
-          <span style={{ color: "#5a8a5a" }}> --гравець —</span>
+      <div style={{ position: "relative", zIndex: 11, padding: "10px 12px" }}>
+        <div style={{ fontSize: 10, color: "#4a4020", letterSpacing: ".06em", marginBottom: 9 }}>
+          <span style={{ color: "#4a4020" }}>root@kpk:~$ </span>
+          <span style={{ color: "#f5b840" }}>статус_місій</span>
+          <span style={{ color: "#a07830" }}> --гравець {nickname}</span>
         </div>
 
         {(["Атака", "Захист", "Розвиток"] as const).map((cls, rowIdx) => {
-          const rowColor = cls === "Атака" ? "#e06060" : cls === "Захист" ? "#5090d0" : "#50a050";
-          const dimColor = cls === "Атака" ? "#9a4a4a" : cls === "Захист" ? "#2d5580" : "#2d6630";
+          const rowColor = cls === "Атака" ? "#c45555" : cls === "Захист" ? "#4a7aaa" : "#4a8a4e";
+          const activeColor = cls === "Атака" ? "#E66969" : cls === "Захист" ? "#66ADFF" : "#A9FFAF";
           const states = ([1, 2, 3] as const).map((tier) =>
             getClassTierState(cls, tier, unlockedClasses, slots, completedIds, getMission),
           );
@@ -396,7 +393,7 @@ function MissionClassProgress({
 
                 return (
                   <div key={tierIdx} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
-                    <span style={{ color: "#2a3a2a", fontSize: 11 }}>[</span>
+                    <span style={{ color: "#2a2e38", fontSize: 11 }}>[</span>
                     <span style={{ display: "inline-flex", gap: 2 }}>
                       {symbols.map((symbol, symbolIdx) => (
                         <span
@@ -404,21 +401,22 @@ function MissionClassProgress({
                           style={{
                             fontSize: 11,
                             color: st.locked
-                              ? "#252525"
+                              ? "#1e2028"
                               : symbol === "■"
-                              ? rowColor
-                              : dimColor,
-                            animation:
+                              ? activeColor
+                              : activeColor,
+                            opacity: st.locked || symbol === "■" ? 1 : 0.7,
+                            textShadow:
                               st.locked || symbol === "■"
                                 ? undefined
-                                : "kpkCrtAvail 1.4s ease-in-out infinite",
+                                : `${activeColor} 0 0 6px`,
                           }}
                         >
                           {symbol}
                         </span>
                       ))}
                     </span>
-                    <span style={{ color: "#2a3a2a", fontSize: 11 }}>]</span>
+                    <span style={{ color: "#2a2e38", fontSize: 11 }}>]</span>
                   </div>
                 );
               })}
