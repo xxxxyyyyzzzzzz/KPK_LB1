@@ -269,13 +269,13 @@ export function HomeScreen() {
               <div className="text-sm text-[color:var(--muted-foreground)]">
                 при настанні вашого ходу ви не зможете брати прокачки та нові місії, ви приймаєте хід ?
               </div>
-              <div className="mx-auto mt-2 h-16 w-16 rounded-full bg-[rgba(255,184,64,.12)] text-center text-3xl font-semibold text-[color:var(--hud-amber)]">
-                {confirmSeconds}s
-              </div>
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button type="button" onClick={confirmAcceptTransfer} className="hud-btn flex-1" disabled={confirmSeconds > 0}>
-                Підтвердити
+                <span className="flex items-center justify-center gap-2">
+                  Підтвердити
+                  <span className="hud-mono text-sm font-semibold text-[color:var(--hud-amber)]">{confirmSeconds}s</span>
+                </span>
               </button>
               <button type="button" onClick={closeConfirm} className="hud-btn hud-btn-ghost flex-1">
                 Відмінити
