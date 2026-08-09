@@ -267,8 +267,7 @@ export function HomeScreen() {
             <div className="space-y-3 text-center text-white">
               <div className="text-lg font-semibold">Підтвердження прийняття ходу</div>
               <div className="text-sm text-[color:var(--muted-foreground)]">
-                При настанні вашого ходу ви не зможете брати прокачки та нові місії.
-                Ви приймаєте хід?
+                при настанні вашого ходу ви не зможете брати прокачки та нові місії, ви приймаєте хід ?
               </div>
               <div className="mx-auto mt-2 h-16 w-16 rounded-full bg-[rgba(255,184,64,.12)] text-center text-3xl font-semibold text-[color:var(--hud-amber)]">
                 {confirmSeconds}s
