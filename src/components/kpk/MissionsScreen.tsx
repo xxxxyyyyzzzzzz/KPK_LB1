@@ -203,8 +203,8 @@ function MissionTierTabs({
                 style={{
                   position: "absolute",
                   bottom: 0,
-                  left: 0,
-                  right: 0,
+                  left: "50%",
+                  transform: "translateX(-50%)",
                   textAlign: "center",
                   fontSize: "0.55rem",
                   fontFamily: "var(--font-mono)",
@@ -218,7 +218,8 @@ function MissionTierTabs({
                   borderTopRightRadius: 4,
                   boxSizing: "border-box",
                   color: "#E66969",
-                  padding: "2px 0",
+                  padding: "2px 5px",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {counts[tier]} вільн.
