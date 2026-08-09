@@ -186,16 +186,21 @@ function MissionTierTabs({
             type="button"
             onClick={() => { onSelectTier(tier); sfx.click(); }}
             className={`hud-btn flex-1 !py-2 !text-sm ${isActive ? "" : "hud-btn-ghost"}`}
-            style={{ position: "relative", paddingBottom: isTierUnlocked && counts[tier] > 0 ? 22 : undefined }}
+            style={{
+              position: "relative",
+              minHeight: 52,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: isTierUnlocked && counts[tier] > 0 ? "space-between" : "center",
+              alignItems: "center",
+              paddingBottom: isTierUnlocked && counts[tier] > 0 ? 8 : undefined,
+            }}
           >
-            Рівень {labels[tier]}
+            <span style={{ display: "block", textAlign: "center" }}>Рівень {labels[tier]}</span>
             {isTierUnlocked && counts[tier] > 0 && (
               <span
                 style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
+                  width: "100%",
                   textAlign: "center",
                   fontSize: "0.55rem",
                   fontFamily: "var(--font-mono)",
