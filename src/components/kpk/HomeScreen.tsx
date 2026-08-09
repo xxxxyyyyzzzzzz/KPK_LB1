@@ -55,25 +55,37 @@ export function HomeScreen() {
   const turnUrgent = turnSeconds <= Math.round(TURN_DURATION_SECONDS * 0.2);
   const elapsedPercent = Math.min(100, Math.max(0, ((TURN_DURATION_SECONDS - turnSeconds) / TURN_DURATION_SECONDS) * 100));
 
-  const activeMissionSlots = useMemo(() => {
-    return slots.filter((slot) => slot.mission_id != null);
-  }, [slots]);
-
-  const emptySlotCount = useMemo(() => {
-    return slots.filter((slot) => slot.mission_id == null).length;
-  }, [slots]);
+  const activeMissionSlots = useMemo(() => slots.filter((slot) => slot.mission_id != null), [slots]);
+  const emptySlotCount = useMemo(() => slots.filter((slot) => slot.mission_id == null).length, [slots]);
 
   const nearbyThreats = useMemo(() => {
     if (!currentRank || sessionPlayers.length === 0) return [];
     const rows: Array<{ id: string; nickname: string; rank: number; potentialPoints: number }> = [];
+
     if (currentRank > 1) {
       const above = sessionPlayers[currentRank - 2];
-      if (above) rows.push({ id: above.id, nickname: above.nickname, rank: currentRank - 1, potentialPoints: calculatePotentialPoints(above.id, session, getMission) });
+      if (above) {
+        rows.push({
+          id: above.id,
+          nickname: above.nickname,
+          rank: currentRank - 1,
+          potentialPoints: calculatePotentialPoints(above.id, session, getMission),
+        });
+      }
     }
+
     if (currentRank < sessionPlayers.length) {
       const below = sessionPlayers[currentRank];
-      if (below) rows.push({ id: below.id, nickname: below.nickname, rank: currentRank + 1, potentialPoints: calculatePotentialPoints(below.id, session, getMission) });
+      if (below) {
+        rows.push({
+          id: below.id,
+          nickname: below.nickname,
+          rank: currentRank + 1,
+          potentialPoints: calculatePotentialPoints(below.id, session, getMission),
+        });
+      }
     }
+
     return rows;
   }, [currentRank, sessionPlayers, session, getMission]);
 
@@ -99,21 +111,13 @@ export function HomeScreen() {
   const pendingTransferToMe = pendingTurnTransferTo === playerId;
   const pendingTransferFromMe = pendingTurnTransferFrom === playerId;
   const currentTurnIndex = players.findIndex((p) => p.id === activePlayerId);
-  const nextTransferTargetId = currentTurnIndex >= 0
-    ? players[(currentTurnIndex + 1) % players.length]?.id ?? null
-    : null;
+  const nextTransferTargetId = currentTurnIndex >= 0 ? players[(currentTurnIndex + 1) % players.length]?.id ?? null : null;
 
   return (
     <ScreenShell title="КПК">
       <div className="w-full space-y-4 px-3 pb-4">
         <AnimatedItem index={0}>
-          <div
-            className="rounded-[8px] border px-4 py-3"
-            style={{
-              background: "rgba(255,255,255,.04)",
-              borderColor: "rgba(255,255,255,.08)",
-            }}
-          >
+          <div className="rounded-[8px] border px-4 py-3" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.08)" }}>
             <div className="hud-label text-[0.65rem] text-[color:var(--hud-amber)]">// РЕЙТИНГ</div>
             <div className="mt-1 flex items-end justify-between gap-3">
               <div>
@@ -129,59 +133,24 @@ export function HomeScreen() {
         </AnimatedItem>
 
         <AnimatedItem index={1}>
-          <div
-            className="rounded-[8px] border px-4 py-4 text-center"
-            style={{
-              background: "rgba(255,255,255,.04)",
-              borderColor: "rgba(255,255,255,.08)",
-            }}
-          >
+          <div className="rounded-[8px] border px-4 py-4 text-center" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.08)" }}>
             <div className="hud-label text-[0.65rem] text-[color:var(--hud-amber)]">// ТАЙМЕР ХОДУ</div>
-            <div
-              className="mt-3 hud-mono text-5xl sm:text-6xl tracking-[0.16em]"
-              style={{
-                color: turnUrgent ? "#E66969" : "#f5b840",
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
+            <div className="mt-3 hud-mono text-5xl sm:text-6xl tracking-[0.16em]" style={{ color: turnUrgent ? "#E66969" : "#f5b840", fontFamily: "'JetBrains Mono', monospace" }}>
               {fmtClock(turnSeconds)}
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--surface-3)]">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${elapsedPercent}%`,
-                  background: turnUrgent ? "#E66969" : "#f5b840",
-                }}
-              />
+              <div className="h-full rounded-full transition-all" style={{ width: `${elapsedPercent}%`, background: turnUrgent ? "#E66969" : "#f5b840" }} />
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => { sfx.click(); toggleTurn(); }}
-                className="hud-btn min-w-[140px]"
-                disabled={!isMyTurn}
-                aria-label={turnRunning ? "Пауза таймера" : "Старт таймера"}
-              >
+              <button type="button" onClick={() => { sfx.click(); toggleTurn(); }} className="hud-btn min-w-[140px]" disabled={!isMyTurn} aria-label={turnRunning ? "Пауза таймера" : "Старт таймера"}>
                 {turnRunning ? "❚❚ Пауза" : "▸ Старт"}
               </button>
               {pendingTransferToMe ? (
-                <button
-                  type="button"
-                  onClick={() => { sfx.click(); acceptTurnTransfer(); }}
-                  className="hud-btn hud-btn-ghost min-w-[180px]"
-                  aria-label="Прийняти передачу ходу"
-                >
+                <button type="button" onClick={() => { sfx.click(); acceptTurnTransfer(); }} className="hud-btn hud-btn-ghost min-w-[180px]" aria-label="Прийняти передачу ходу">
                   ✓ Прийняти передачу
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => { if (nextTransferTargetId) { sfx.click(); requestTurnTransfer(nextTransferTargetId); } }}
-                  className="hud-btn hud-btn-ghost min-w-[180px]"
-                  disabled={!isMyTurn || !nextTransferTargetId || pendingTransferFromMe}
-                  aria-label="Передати хід наступному гравцю"
-                >
+                <button type="button" onClick={() => { if (nextTransferTargetId) { sfx.click(); requestTurnTransfer(nextTransferTargetId); } }} className="hud-btn hud-btn-ghost min-w-[180px]" disabled={!isMyTurn || !nextTransferTargetId || pendingTransferFromMe} aria-label="Передати хід наступному гравцю">
                   ↦ Передати хід
                 </button>
               )}
@@ -196,15 +165,7 @@ export function HomeScreen() {
         </AnimatedItem>
 
         <AnimatedItem index={2}>
-          <button
-            type="button"
-            onClick={() => { sfx.click(); go("missions"); }}
-            className="w-full rounded-[8px] border px-4 py-3 text-left"
-            style={{
-              background: "rgba(255,255,255,.04)",
-              borderColor: "rgba(255,255,255,.08)",
-            }}
-          >
+          <button type="button" onClick={() => { sfx.click(); go("missions"); }} className="w-full rounded-[8px] border px-4 py-3 text-left" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.08)" }}>
             <div className="flex items-center justify-between gap-3">
               <div className="hud-label text-[0.65rem] text-[color:var(--hud-amber)]">// МІСІЇ</div>
               {emptySlotCount > 0 && (
@@ -234,13 +195,7 @@ export function HomeScreen() {
         </AnimatedItem>
 
         <AnimatedItem index={3}>
-          <div
-            className="rounded-[8px] border px-4 py-3"
-            style={{
-              background: "rgba(255,255,255,.04)",
-              borderColor: "rgba(255,255,255,.08)",
-            }}
-          >
+          <div className="rounded-[8px] border px-4 py-3" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.08)" }}>
             <div className="hud-label text-[0.65rem] text-[color:var(--hud-amber)]">// НАБЛИЖЕННЯ</div>
             <div className="mt-3 space-y-2">
               {nearbyThreats.length > 0 ? (
@@ -261,13 +216,7 @@ export function HomeScreen() {
         </AnimatedItem>
 
         <AnimatedItem index={4}>
-          <div
-            className="rounded-[8px] border px-4 py-3"
-            style={{
-              background: "rgba(255,255,255,.04)",
-              borderColor: "rgba(255,255,255,.08)",
-            }}
-          >
+          <div className="rounded-[8px] border px-4 py-3" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.08)" }}>
             <div className="hud-label text-[0.65rem] text-[color:var(--hud-amber)]">// ПОДІЇ</div>
             <div className="mt-3 space-y-2">
               {recentEvents.length > 0 ? (
